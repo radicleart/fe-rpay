@@ -1,0 +1,132 @@
+<template>
+<b-card-text class="mb-3">
+  <order-info/>
+  <div class="mt-2 d-flex justify-content-between mb-4">
+    <div class="ff-cancel"><a href="#" @click.prevent="prev()">Change / Cancel Order</a></div>
+  </div>
+  <div class="mt-2 d-flex justify-content-center mb-4">
+    <div class="d-flex justify-content-center">
+      <span class="ff-scanner mr-3">Scan the QR Code with <br/> your <b>Lightning Wallet</b></span>
+      <font-awesome-icon style="margin-top: 5px; color: #FFCE00;" width="20px" height="20px" icon="camera"/>
+    </div>
+  </div>
+  <div class="" v-if="timeout || expired">
+    <div class="d-flex justify-content-center" v-if="expired">
+      Lightning payment has expired - <a href="#" @click.prevent="prev()">Start Over</a>
+    </div>
+    <div class="d-flex justify-content-center" v-else>
+      Lightning payment has expired - <a href="#" @click.prevent="prev()">Start Over</a>
+    </div>
+  </div>
+  <div class="" v-else>
+    <div class="d-flex justify-content-center">
+      <lightning-payment-address v-if="paymentOption === 'lightning'"/>
+      <bitcoin-payment-address v-if="paymentOption === 'bitcoin'"/>
+      <stacks-payment-address v-if="paymentOption === 'stacks'"/>
+    </div>
+  </div>
+</b-card-text>
+</template>
+
+<script>
+import { LSAT_CONSTANTS } from '@/lsat-constants'
+import OrderInfo from '@/views/components/OrderInfo'
+import LightningPaymentAddress from '@/views/components/LightningPaymentAddress'
+import BitcoinPaymentAddress from '@/views/components/BitcoinPaymentAddress'
+import StacksPaymentAddress from '@/views/components/StacksPaymentAddress'
+
+export default {
+  name: 'PaymentScreen',
+  components: {
+    LightningPaymentAddress,
+    BitcoinPaymentAddress,
+    StacksPaymentAddress,
+    OrderInfo
+  },
+  props: ['lookAndFeel'],
+  data () {
+    return {
+      timeout: false,
+      expired: false,
+      message: null,
+      paying: false,
+      paymentOption: null,
+      loading: true
+    }
+  },
+  mounted () {
+    const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+    this.paymentOption = configuration.paymentOption
+    if (configuration.opcode === 'lsat-place-order') {
+      this.$store.commit('setDisplayCard', 0)
+    }
+    this.loading = false
+  },
+  methods: {
+    paymentEvent: function (data) {
+      if (data.opcode === 'eth-payment-begun1') {
+        this.paying = true
+        this.message = 'Sending payment ... takes up to a minute.'
+      } else if (data.opcode === 'eth-payment-begun2') {
+        this.paying = true
+        this.message = 'Payment successful - starting...'
+      } else if (data.opcode === 'eth-payment-begun3') {
+        this.paying = false
+      } else {
+        this.paying = false
+        this.$emit('paymentEvent', data)
+      }
+    },
+    prev () {
+      this.$emit('prev')
+    },
+    evPaymentExpired () {
+      this.loading = true
+      this.timeout = true
+      this.$store.dispatch('deleteExpiredPayment').then(() => {
+        this.loading = false
+      })
+    },
+    evTimeout () {
+      this.timeout = true
+      this.loading = true
+      this.$store.dispatch('deleteExpiredPayment').then(() => {
+        this.loading = false
+      })
+    }
+  },
+  computed: {
+    showStepper () {
+      if (this.lookAndFeel && this.lookAndFeel.sections) {
+        return this.lookAndFeel.sections.stepper
+      }
+      return true
+    },
+    background () {
+      return (this.lookAndFeel) ? this.lookAndFeel.background : ''
+    }
+  }
+}
+</script>
+<style lang="scss" scoped>
+@import "@/assets/scss/customv2.scss";
+.ff-symbol {
+  font-weight: 700;
+}
+.ff-scanner {
+  text-align: center;
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0px;
+  color: #000000;
+  opacity: 1;
+}
+.ff-cancel {
+  text-align: left;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0px;
+  color: #FF7272;
+  opacity: 1;
+}
+</style>
