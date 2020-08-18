@@ -13,9 +13,12 @@ let stompClient = null
 const headers = function () {
   return store.getters[LSAT_CONSTANTS.GET_HEADERS]
 }
-const getPurchaseOrder = function (paymentChallenge) {
+const getPurchaseOrder = function (paymentChallenge, configuration) {
   return {
     status: 3,
+    serviceKey: configuration.serviceKey,
+    serviceData: configuration.serviceData,
+    serviceStatus: -1,
     paymentId: paymentChallenge.paymentId,
     memo: 'product-id=' + paymentChallenge.paymentId,
     amountSat: paymentChallenge.xchange.amountSat,
@@ -79,7 +82,7 @@ const lsatHelper = {
         method: 'post',
         url: API_PATH + configuration.purchaseEndpoint,
         headers: headers(),
-        data: getPurchaseOrder(paymentChallenge)
+        data: getPurchaseOrder(paymentChallenge, configuration)
       }
       request.headers[AUTHORIZATION] = fullMac
       axios(request).then(response => {
@@ -97,11 +100,12 @@ const lsatHelper = {
         resolve(paymentChallenge)
         return
       }
+
       const request = {
         method: 'post',
         url: API_PATH + configuration.purchaseEndpoint,
         headers: headers(),
-        data: getPurchaseOrder(paymentChallenge)
+        data: getPurchaseOrder(paymentChallenge, configuration)
       }
       request.headers[AUTHORIZATION] = null
       axios(request).then(response => {

@@ -1,26 +1,23 @@
 <template>
 <b-card-text class="mb-3">
-  <order-info/>
+  <order-info :lookAndFeel="lookAndFeel"/>
   <div class="mt-2 d-flex justify-content-between mb-4">
     <div class="ff-cancel"><a href="#" @click.prevent="prev()">Change / Cancel Order</a></div>
   </div>
   <div class="mt-2 d-flex justify-content-center mb-4">
     <div class="d-flex justify-content-center">
-      <span class="ff-scanner mr-3">Scan the QR Code with <br/> your <b>Lightning Wallet</b></span>
-      <font-awesome-icon style="margin-top: 5px; color: #FFCE00;" width="20px" height="20px" icon="camera"/>
+      <span class="ff-scanner mr-3" :style="lookAndFeel.text1Color">Scan the QR Code with <br/> your <b>Lightning Wallet</b></span>
+      <font-awesome-icon :style="lookAndFeel.text2Color" style="margin-top: 5px;" width="25px" height="25px" icon="camera"/>
     </div>
   </div>
-  <div class="" v-if="timeout || expired">
-    <div class="d-flex justify-content-center" v-if="expired">
-      Lightning payment has expired - <a href="#" @click.prevent="prev()">Start Over</a>
-    </div>
-    <div class="d-flex justify-content-center" v-else>
-      Lightning payment has expired - <a href="#" @click.prevent="prev()">Start Over</a>
+  <div class="" v-if="timedOutOrExpired || expired">
+    <div class="d-flex justify-content-center" :style="lookAndFeel.text1Color">
+      Lightning invoice has expired - &nbsp;<a href="#" @click.prevent="prev()">Start Over</a>
     </div>
   </div>
   <div class="" v-else>
-    <div class="d-flex justify-content-center">
-      <lightning-payment-address v-if="paymentOption === 'lightning'"/>
+    <div class="d-flex justify-content-center" :style="lookAndFeel.text1Color">
+      <lightning-payment-address :lookAndFeel="lookAndFeel" v-if="paymentOption === 'lightning'"/>
       <bitcoin-payment-address v-if="paymentOption === 'bitcoin'"/>
       <stacks-payment-address v-if="paymentOption === 'stacks'"/>
     </div>
@@ -46,7 +43,6 @@ export default {
   props: ['lookAndFeel'],
   data () {
     return {
-      timeout: false,
       expired: false,
       message: null,
       paying: false,
@@ -82,28 +78,16 @@ export default {
     },
     evPaymentExpired () {
       this.loading = true
-      this.timeout = true
-      this.$store.dispatch('deleteExpiredPayment').then(() => {
-        this.loading = false
-      })
-    },
-    evTimeout () {
-      this.timeout = true
-      this.loading = true
+      this.expired = true
       this.$store.dispatch('deleteExpiredPayment').then(() => {
         this.loading = false
       })
     }
   },
   computed: {
-    showStepper () {
-      if (this.lookAndFeel && this.lookAndFeel.sections) {
-        return this.lookAndFeel.sections.stepper
-      }
-      return true
-    },
-    background () {
-      return (this.lookAndFeel) ? this.lookAndFeel.background : ''
+    timedOutOrExpired () {
+      const expired = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE_EXPIRED]
+      return expired
     }
   }
 }

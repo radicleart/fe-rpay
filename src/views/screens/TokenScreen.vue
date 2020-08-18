@@ -1,6 +1,6 @@
 <template>
 <div>
-  <order-info/>
+  <order-info :lookAndFeel="lookAndFeel"/>
   <div v-if="preimage">
     <div class="d-flex justify-content-center mt-5">
       <span class="ff-confirmed">Your payment is confirmed.</span>
@@ -8,17 +8,26 @@
     <div class="d-flex justify-content-center mt-3">
       <font-awesome-icon style="margin-top: 3px;padding: 3px; border-radius: 50%; border: 2pt solid #FFCE00; color: #FFCE00;" width="25px" height="25px" icon="check"/>
     </div>
-    <div class="mt-5">
-      <div><a href="#" @click.prevent="reveal = !reveal">reveal punchlines</a></div>
-      <div class="mt-3" v-for="(item, index) in payload" :key="index">
-        <div>{{item.tagline}}</div>
-        <div class="mt-2 text-danger" v-if="reveal">{{item.punchline}}</div>
+    <div class="p-3 mt-5" ref="payload">
+      <div class="d-flex justify-content-center mt-3"><a href="#" @click.prevent="reveal = !reveal" :style="lookAndFeel.text1Color">{{lookAndFeel.labels.successMsg}}</a></div>
+        <div v-if="jokePayload">
+          <div class="mt-3" v-for="(item, index) in payload()" :key="index">
+            <div v-if="item && item">
+              <div>{{item.tagline}}</div>
+              <div class="mt-2 text-danger" v-if="reveal" :style="lookAndFeel.text1Color">{{item.punchline}}</div>
+          </div>
+        </div>
       </div>
+    </div>
+    <div class="d-flex justify-content-center mt-5 mx-3" ref="payload">
+      <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress($event)" style="text-decoration: underline;">
+        <span ref="myPaymentAddress" class="mr-2" :style="lookAndFeel.text1Color">Copy the lsat ticket</span>
+      </a> <font-awesome-icon width="15px" height="15px" icon="copy" :style="lookAndFeel.text1Color"/>
     </div>
   </div>
   <div v-else>
     <div class="d-flex justify-content-center mt-5">
-      <span class="ff-confirmed">Your payment is not confirmed.</span>
+      <span class="ff-confirmed" :style="lookAndFeel.text1Color">Your payment is not confirmed.</span>
     </div>
     <div class="d-flex justify-content-center mt-3">
       <font-awesome-icon style="margin-top: 3px;padding: 3px; border-radius: 50%; border: 2pt solid #FF7272; color: #FF7272;" width="25px" height="25px" icon="times"/>
@@ -36,7 +45,7 @@ export default {
   components: {
     OrderInfo
   },
-  props: ['messages'],
+  props: ['lookAndFeel'],
   data () {
     return {
       resource: null,
@@ -51,29 +60,59 @@ export default {
     })
   },
   methods: {
+    copyAddress () {
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
+      var tempInput = document.createElement('input')
+      tempInput.style = 'position: absolute; left: -1000px; top: -1000px'
+      tempInput.value = paymentChallenge.lsatInvoice.token
+      document.body.appendChild(tempInput)
+      tempInput.select()
+      document.execCommand('copy')
+      document.body.removeChild(tempInput)
+      // const flasher = document.getElementById('flash-me')
+      const flasher = this.$refs.payload
+      flasher.classList.add('flasher')
+      setTimeout(function () {
+        flasher.classList.remove('flasher')
+      }, 1000)
+    },
+    payload () {
+      const payload = this.$store.getters[LSAT_CONSTANTS.KEY_PAYLOAD]
+      if (payload && Array.isArray(payload)) {
+        return payload
+      }
+      const jokes = []
+      jokes.push({ tagline: 'What is black, white and red all over?', punchline: 'A newspaper' })
+      jokes.push({ tagline: 'What is brown and sticky', punchline: 'A stick' })
+      return jokes
+    }
   },
   computed: {
     token () {
       const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
       return (paymentChallenge) ? paymentChallenge.lsatInvoice.token : null
     },
-    payload () {
-      const payload = this.$store.getters[LSAT_CONSTANTS.KEY_PAYLOAD]
-      return payload
-    },
     preimage () {
       const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
       return (paymentChallenge) ? paymentChallenge.lsatInvoice.preimage : null
     },
-    lsatToken () {
-      const lsatToken = this.$store.getters[LSAT_CONSTANTS.KEY_LSAT_OBJECT]
-      return lsatToken
+    jokePayload () {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      if (configuration.apiKey) {
+        return configuration.apiKey === 'risidio-1'
+      }
+      return false
     }
   }
 }
 </script>
 <style lang="scss">
-ff-confirmed {
+.flasher {
+  font-size: 16px;
+  border: 2pt solid #FFCE00;
+  border-radius: 10px;
+}
+.ff-confirmed {
   font-weight: 200;
   font-size: 11px;
   letter-spacing: 0px;

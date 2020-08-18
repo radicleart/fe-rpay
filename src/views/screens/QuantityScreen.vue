@@ -1,17 +1,17 @@
 <template>
 <div>
-  <div class="w-75 purpose border-bottom pb-3 mb-3" v-html="messages.orderMsg"></div>
-  <crypto-stepper :key="componentKey" :paymentOption="paymentOption" :messages="messages" />
+  <div class="w-75 purpose border-bottom pb-3 mb-3" :style="lookAndFeel.text1Color" v-html="lookAndFeel.labels.orderMsg"></div>
+  <crypto-stepper :key="componentKey" :paymentOption="paymentOption" :lookAndFeel="lookAndFeel" />
   <div class="text-center my-4 d-flex justify-content-center">
     <button class="place-order" @click="placeOrder">
-      <span class="place-order-text">
+      <span class="place-order-text" :style="lookAndFeel.text3Color">
         Place your order
-        <font-awesome-icon class="ml-5" width="15px" height="15px" icon="qrcode"/>
+        <font-awesome-icon class="ml-5" width="15px" height="15px" icon="qrcode" :style="lookAndFeel.text3Color"/>
       </span>
     </button>
   </div>
-  <!-- <crypto-picker :messages="messages" :paymentOption="paymentOption" @updatePaymentOption="updatePaymentOption" /> -->
-  <div class="mx-auto w-75">{{messages.networkMsg}}</div>
+  <!-- <crypto-picker :labels="lookAndFeel.labels" :paymentOption="paymentOption" @updatePaymentOption="updatePaymentOption" /> -->
+  <div class="mx-auto w-75" :style="lookAndFeel.text1Color">{{lookAndFeel.labels.networkMsg}}</div>
 </div>
 </template>
 
@@ -23,7 +23,7 @@ export default {
   components: {
     CryptoStepper
   },
-  props: ['messages'],
+  props: ['lookAndFeel'],
   data () {
     return {
       value: 0,

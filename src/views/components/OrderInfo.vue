@@ -2,12 +2,12 @@
 <div>
   <div class="mt-2 d-flex justify-content-between border-bottom pb-4 mb-4">
     <div>
-      <div class="mb-2 ff-placed">You placed the following order:</div>
+      <div class="mb-2 ff-placed" :style="lookAndFeel.text1Color">You placed the following order:</div>
       <div class="text-warning">{{currentQuantity}} {{quantityLabel}}</div>
     </div>
     <div class="text-warn">
-      <div class="mb-2"><span class="ff-symbol" v-html="fiatSymbol"></span> {{formattedFiat}}</div>
-      <div class=""><span class="ff-symbol" v-html="currentSymbol"></span> {{currentAmount}}</div>
+      <div class="mb-2" :style="lookAndFeel.text1Color"><span class="ff-symbol" v-html="fiatSymbol"></span> {{formattedFiat}}</div>
+      <div class="" :style="lookAndFeel.text1Color"><span class="ff-symbol" v-html="currentSymbol"></span> {{currentAmount}}</div>
     </div>
   </div>
 </div>
@@ -53,7 +53,7 @@ export default {
       return configuration.creditAttributes.start
     },
     quantityLabel () {
-      if (this.lookAndFeel && this.lookAndFeel.labels && this.lookAndFeel.labels.quantityLabel) {
+      if (this.lookAndFeel.labels.quantityLabel) {
         return this.lookAndFeel.labels.quantityLabel
       }
       return 'items'

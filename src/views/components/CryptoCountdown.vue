@@ -1,5 +1,5 @@
 <template>
-    <div v-if="expired" class="rd-text my-5 py-5 text-center">
+    <div v-if="expired" class="">
       Timeout - <a href="#" @click.prevent="evPaymentExpired">please start again</a>
     </div>
     <div v-else>
@@ -61,7 +61,7 @@ export default {
     clockReset () {
       this.$store.dispatch('fetchRates')
       this.expired = true
-      this.$emit('evTimeout')
+      this.$emit('evPaymentExpired')
     },
     startCountdown () {
       var duration = moment.duration(this.timeout)

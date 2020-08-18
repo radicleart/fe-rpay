@@ -1,6 +1,6 @@
 <template>
-    <div class="">
-      <div class="mb-3 ff-label">{{messages.card2Label1}}</div>
+    <div class="" :style="lookAndFeel.text1Color">
+      <div class="mb-3 ff-label">{{lookAndFeel.labels.card2Label1}}</div>
       <div class="mt-5 d-flex justify-content-center" style="margin-top: 20px; text-align: center; width: 100%;">
         <span @click.prevent="countDown" class="stepper" :style="(fadeMin) ? 'opacity: 0.3;' : ''">
           <font-awesome-icon style="padding: 3px; border-radius: 50%; border: 2pt solid #000;" width="25px" height="25px" icon="minus"/>
@@ -13,8 +13,8 @@
       <div v-if="loading" class="mt-3 d-flex justify-content-center">
         <waiting-view/>
       </div>
-      <div v-else>
-        <p class="ff-total">Your total</p>
+      <div v-else >
+        <p class="ff-total" >Your total</p>
         <div style="margin-bottom: 20px;margin-top: 20px;">
           <span class="symbol" v-html="currentSymbol"></span> <span style="font-weight: 300; margin-left: 20px;">{{currentAmount}}</span>
         </div>
@@ -34,16 +34,16 @@ export default {
   components: {
     WaitingView
   },
-  props: ['messages', 'paymentOption'],
+  props: ['lookAndFeel', 'paymentOption'],
   data () {
     return {
-      localCredits: 2,
+      localCredits: 0,
       loading: false
     }
   },
   mounted () {
-    const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
-    this.localCredits = paymentChallenge.xchange.numbCredits
+    const config = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+    this.localCredits = config.creditAttributes.start
   },
   methods: {
     countDown () {
@@ -51,8 +51,8 @@ export default {
       if (this.localCredits <= config.creditAttributes.min) {
         return
       }
-      if (this.localCredits === config.creditAttributes.min + 1) {
-        this.localCredits--
+      if (this.localCredits < config.creditAttributes.min + config.creditAttributes.step) {
+        this.localCredits = config.creditAttributes.min
       } else {
         this.localCredits -= config.creditAttributes.step
       }
@@ -67,24 +67,25 @@ export default {
       this.updateCredits()
     },
     updateCredits (evt) {
+      const config = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
       let numbC = 0
       try {
         if (this.localCredits.length === 0) {
           return
         }
         if (isNaN(this.localCredits)) {
-          this.$notify({ type: 'warn', title: 'Number of Credits', text: 'Credits must be a number between 2 and 20!' })
-          this.localCredits = 2
+          // this.$notify({ type: 'warn', title: 'Number of Credits', text: 'Credits must be a number between ' + config.creditAttributes.min + ' and ' + config.creditAttributes.max + '!' })
+          this.localCredits = config.creditAttributes.start
           return
         }
         numbC = Number(this.localCredits)
-        if (numbC < 1 || numbC > 20) {
-          this.$notify({ type: 'warn', title: 'Number of Credits', text: 'Credits must be between 2 and 20!' })
-          this.localCredits = 2
+        if (numbC < config.creditAttributes.min || numbC > config.creditAttributes.max) {
+          // this.$notify({ type: 'warn', title: 'Number of Credits', text: 'Credits must be a number between ' + config.creditAttributes.min + ' and ' + config.creditAttributes.max + '!' })
+          this.localCredits = config.creditAttributes.start
         }
       } catch (e) {
-        this.$notify({ type: 'warn', title: 'Number of Credits', text: 'Credits must be between 2 and 20!' })
-        this.localCredits = 2
+        // this.$notify({ type: 'warn', title: 'Number of Credits', text: 'Credits must be a number between ' + config.creditAttributes.min + ' and ' + config.creditAttributes.max + '!' })
+        this.localCredits = config.creditAttributes.start
       }
       this.$store.dispatch('updateAmount', { numbCredits: this.localCredits })
     }
@@ -92,8 +93,8 @@ export default {
   computed: {
     quantityLabel () {
       let ql = 'Spins'
-      if (this.messages && this.messages.quantityLabel) {
-        ql = this.messages.quantityLabel
+      if (this.lookAndFeel.labels && this.lookAndFeel.labels.quantityLabel) {
+        ql = this.lookAndFeel.labels.quantityLabel
       }
       return ql
     },

@@ -14,11 +14,12 @@
     <script>
       const lookAndFeel = {
         labels: {
-          orderMsg: 'Place order for \'Satoshi Jokes\' select number required and pay.',
-          title: 'Risidio',
+          orderMsg: 'Place order for \'Stax to Lightning\' select number required and pay.',
+          successMsg: 'Your order has been received with thanks.',
+          title: 'R-Pay',
           subtitle: 'Stacks Lightning Exchange',
           card1Label: 'Select payment option',
-          card2Label1: 'How many Jokes do you require?',
+          card2Label1: 'How many stax tokens do you need?',
           card2Label2: 'Select operation',
           card2Label3: 'Make Payment',
           card2Label4: 'Open Channel',
@@ -29,10 +30,19 @@
         sections: {
           stepper: true
         },
-        loginStyles: 'color: green; text-decoration: none;',
         cardStyle: {
           margin: '0',
-          'border-radius': '10px'
+          'border-radius': '20px',
+          'color': '#fff'
+        },
+        text1Color: {
+          'color': '#000'
+        },
+        text2Color: {
+          'color': '#FFCE00'
+        },
+        text3Color: {
+          'color': '#fff'
         },
         background: {
           padding: '0px 0 0 0',
@@ -46,11 +56,15 @@
           '-moz-background-size': 'cover',
           '-o-background-size': 'cover',
           'background-size': 'cover',
-          'background-color': '#fff',
+          'background-color': '#000',
+          // 'background-image': 'url("https://images.prismic.io/risidio-journal/59455bcb-a954-4713-9afd-cfe6130f0b26_Group+994.svg?auto=compress,format")',
           opacity: 1
         }
       }
-      window.risidioPaymentConfig = JSON.stringify({ opcode: 'lsat-place-order', apiKey: 'demo-local', paymentOption: 'lightning', paymentOptions: { allowLightning: true, allowEthereum: false, allowBitcoin: false, allowStacks: true }, paymentId: 'XqLKQxEAACQAYvsu', purchaseEndpoint: '/assets/buy-now', lookAndFeel: lookAndFeel, creditAttributes: {amountFiatPerCredit: 0.1, fiatCurrency: 'EUR', useCredits: true, start: 1, step: 1, min: 1, max: 20}})
+      const serviceData = {
+        stxAddress: 'ST-RPAY-ADDRESS'
+      }
+      window.risidioPaymentConfig = JSON.stringify({ opcode: 'lsat-place-order', serviceKey: 'stax-lightning-exchange', serviceData: serviceData, paymentOption: 'lightning', paymentOptions: { allowLightning: true, allowEthereum: false, allowBitcoin: false, allowStacks: true }, paymentId: 'XqLKQxEAACQAYvsu', purchaseEndpoint: '/assets/buy-now', lookAndFeel: lookAndFeel, creditAttributes: {amountFiatPerCredit: 0, fiatCurrency: 'EUR', useCredits: true, amountFiatPerCredit: 0.20, start: 500, step: 100, min: 100, max: 2000}})
     </script>
     <rpay-entry msg="aint no sunshine!"></rpay-entry>
   </body>

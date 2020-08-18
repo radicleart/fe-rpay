@@ -1,19 +1,19 @@
 <template>
 <waiting-view v-if="loading" />
 <div class="d-flex justify-content-center" v-else>
-  <div class="mx-auto my-5">
+  <div class="mx-auto">
     <b-card-group :style="lookAndFeel.cardStyle">
       <b-card header-tag="header" footer-tag="footer" :style="background">
         <template v-slot:header class="">
-          <div class="d-flex justify-content-center"><span class="ff-title">{{lookAndFeel.labels.title}}</span>&nbsp;<span class="ff-subtitle">{{lookAndFeel.labels.subtitle}}</span></div>
+          <div class="d-flex justify-content-center"><span class="ff-title" :style="lookAndFeel.text1Color">{{lookAndFeel.labels.title}}</span>&nbsp;<span class="ff-subtitle" :style="lookAndFeel.text2Color">{{lookAndFeel.labels.subtitle}}</span></div>
         </template>
 
-        <quantity-screen v-if="displayCard === 0" :messages="lookAndFeel.labels" @placeOrder="placeOrder"/>
-        <payment-screen  v-if="displayCard === 1" :messages="lookAndFeel.labels" @prev="prev"/>
-        <token-screen  v-if="displayCard === 2" :messages="lookAndFeel.labels"/>
+        <quantity-screen v-if="displayCard === 0" :lookAndFeel="lookAndFeel" @placeOrder="placeOrder"/>
+        <payment-screen  v-if="displayCard === 1" :lookAndFeel="lookAndFeel" @prev="prev"/>
+        <token-screen  v-if="displayCard === 2" :lookAndFeel="lookAndFeel"/>
 
         <template v-slot:footer>
-          <footer-view :rangeValue="displayCard" @rangeEvent="rangeEvent"/>
+          <footer-view :lookAndFeel="lookAndFeel" :rangeValue="displayCard" @rangeEvent="rangeEvent"/>
         </template>
       </b-card>
     </b-card-group>
@@ -110,14 +110,12 @@ export default {
   font-weight: 300;
   font-size: 14px;
   letter-spacing: 0px;
-  color: #000000;
   margin-right: 5px;
 }
 .ff-subtitle {
   font-weight: 500;
   font-size: 14px;
   letter-spacing: 0px;
-  color: #FFCE00;
 }
 .card-group {
   margin: 10px 10px 10px 10px;

@@ -7,16 +7,16 @@
       </div>
       <!-- <input v-show="false" class="input2" readonly="true" ref="paymentAddressBtc"  @click="copyAddress($event)" :value="paymentRequest" placeholder="Lightning invoice"/> -->
       <div class="ff-countdown mb-3 d-flex justify-content-center">
-        <span class="mr-2">Code is valid for</span> <crypto-countdown class="" @evPaymentExpired="evPaymentExpired" @evTimeout="evTimeout" />
+        <span class="mr-2">Code is valid for</span> <crypto-countdown class="" @evPaymentExpired="evPaymentExpired" />
       </div>
       <div class="d-flex justify-content-center">
-        <span class="mr-3">or</span> <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress($event)" style="text-decoration: underline;">
-          <span ref="myPaymentAddress" class="mr-2">Copy the address</span>
-        </a> <font-awesome-icon width="15px" height="15px" icon="copy"/>
+        <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress($event)" style="text-decoration: underline;">
+          <span ref="myPaymentAddress" class="mr-2" :style="lookAndFeel.text1Color">Copy the address</span>
+        </a> <font-awesome-icon width="15px" height="15px" icon="copy" :style="lookAndFeel.text1Color"/>
       </div>
     </div>
     <div title="Open Channel" v-else>
-      <div class="text-info scan-text">
+      <div class="text-info scan-text" :style="lookAndFeel.text1Color">
         For better connectivity you can open a lightning channel.
       </div>
       <div class="d-flex justify-content-center mb-3">
@@ -44,7 +44,7 @@ export default {
   components: {
     CryptoCountdown
   },
-  props: ['value'],
+  props: ['value', 'lookAndFeel'],
   data () {
     return {
       showChannel: false,
@@ -80,9 +80,6 @@ export default {
     },
     evPaymentExpired () {
       this.$emit('evPaymentExpired')
-    },
-    evTimeout () {
-      this.$emit('evTimeout')
     },
     addChannelQrCode () {
       var element = this.$refs.lndChannel

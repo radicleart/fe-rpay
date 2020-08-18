@@ -52,10 +52,10 @@ const getPaymentOptions = function (paymentChallenge, configuration) {
   return allowedOptions
 }
 const initPaymentChallenge = function (rates, fiatCurrency, creditAttributes) {
-  let amountFiat = creditAttributes.amountFiatPerCredit
+  let amountFiat = (creditAttributes.amountFiatPerCredit > 0) ? creditAttributes.amountFiatPerCredit : creditAttributes.amountFiatFixed
   if (creditAttributes.useCredits) {
     const start = (creditAttributes.start) ? creditAttributes.start : 2
-    amountFiat = creditAttributes.amountFiatPerCredit * start
+    amountFiat = (creditAttributes.amountFiatPerCredit > 0) ? creditAttributes.amountFiatPerCredit * start : amountFiat
   }
   const rateObject = rates.find(item => item.fiatCurrency === fiatCurrency)
   let amountBtc = amountFiat * rateObject.amountBtc
@@ -100,7 +100,7 @@ export default new Vuex.Store({
         opcode: data.opcode,
         token: (data.token) ? data.token : state.paymentChallenge.lsatInvoice.token,
         status: (data.status) ? data.status : state.paymentChallenge.status,
-        numbCredits: state.paymentChallenge.xchange.numbCredits,
+        numbCredits: state.configuration.creditAttributes.start,
         paymentId: state.paymentChallenge.paymentId
       }
       if (data.opcode === 'lsat-payment-confirmed') {
@@ -129,9 +129,6 @@ export default new Vuex.Store({
     },
     getPaymentChallenge: state => {
       return state.paymentChallenge
-    },
-    getNumbCredits: state => {
-      return state.paymentChallenge.xchange.numbCredits
     },
     getBitcoinAddress: state => {
       return state.paymentChallenge.bitcoinInvoice.bitcoinAddress
@@ -321,7 +318,7 @@ export default new Vuex.Store({
           rates.fetchSTXRates().then((rates) => {
             commit('setXgeRates', rates)
           })
-        }, 60000)
+        }, 3600000)
       })
     },
     startListening ({ state }) {
