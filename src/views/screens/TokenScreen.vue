@@ -107,9 +107,10 @@ export default {
 }
 </script>
 <style lang="scss">
+@import "@/assets/scss/customv2.scss";
 .flasher {
   font-size: 16px;
-  border: 2pt solid #FFCE00;
+  border: 2pt solid $warning;
   border-radius: 10px;
 }
 .ff-confirmed {

@@ -49,7 +49,7 @@ export default {
 .place-order {
   width: 191px;
   height: 51px;
-  background: #FFCE00 0% 0% no-repeat padding-box;
+  background: $warning 0% 0% no-repeat padding-box;
   box-shadow: 0px 3px 6px #00000029;
   border-radius: 10px;
   opacity: 1;
