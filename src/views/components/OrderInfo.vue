@@ -3,7 +3,7 @@
   <div class="mt-2 d-flex justify-content-between border-bottom pb-4 mb-4">
     <div>
       <div class="mb-2 ff-placed" :style="lookAndFeel.text1Color">You placed the following order:</div>
-      <div class="text-warning">{{currentQuantity}} {{quantityLabel}}</div>
+      <div class="text-warning tokens">{{currentQuantity}} {{quantityLabel}}</div>
     </div>
     <div class="text-warn">
       <div class="mb-2" :style="lookAndFeel.text1Color"><span class="ff-symbol" v-html="fiatSymbol"></span> {{formattedFiat}}</div>
@@ -118,20 +118,7 @@ export default {
   color: #000000;
   opacity: 1;
 }
-.ff-scanner {
-  text-align: center;
-  font-weight: 500;
-  font-size: 12px;
-  letter-spacing: 0px;
-  color: #000000;
-  opacity: 1;
-}
-.ff-cancel {
-  text-align: left;
-  font-weight: 700;
-  font-size: 10px;
-  letter-spacing: 0px;
-  color: #FF7272;
-  opacity: 1;
+.tokens {
+  font-weight: bold;
 }
 </style>

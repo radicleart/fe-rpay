@@ -21,7 +21,7 @@
     </div>
     <div class="d-flex justify-content-center mt-5 mx-3" ref="payload">
       <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress($event)" style="text-decoration: underline;">
-        <span ref="myPaymentAddress" class="mr-2" :style="lookAndFeel.text1Color">Copy the lsat ticket</span>
+        <span ref="myPaymentAddress" class="mr-2" :style="lookAndFeel.text1Color">Copy your receipt</span>
       </a> <font-awesome-icon width="15px" height="15px" icon="copy" :style="lookAndFeel.text1Color"/>
     </div>
   </div>

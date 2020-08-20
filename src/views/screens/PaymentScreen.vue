@@ -103,14 +103,14 @@ export default {
   font-size: 12px;
   letter-spacing: 0px;
   color: #000000;
-  opacity: 1;
 }
 .ff-cancel {
   text-align: left;
   font-weight: 700;
   font-size: 10px;
   letter-spacing: 0px;
-  color: #FF7272;
-  opacity: 1;
+}
+.ff-cancel a {
+  color: $danger;
 }
 </style>

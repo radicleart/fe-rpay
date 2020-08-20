@@ -1,10 +1,10 @@
 <template>
-<div>
+<div class="footer-container">
   <b-form-input disabled id="range-2" v-model="rangeValue" type="range" min="0" max="2" step="1"></b-form-input>
   <div  :style="lookAndFeel.text1Color" class="d-flex justify-content-between" style="font-size: 11px;">
-    <div class="" @click="skipAhead(0)">Place Order</div>
-    <div class="" @click="skipAhead(1)">Scan with Wallet</div>
-    <div class="" @click="skipAhead(2)">Receive Goods</div>
+    <div class="click-effect" @click="skipAhead(0)">Place Order</div>
+    <div class="click-effect" @click="skipAhead(1)">Scan with Wallet</div>
+    <div class="click-effect" @click="skipAhead(2)">Receive Goods</div>
   </div>
 </div>
 </template>
@@ -48,7 +48,7 @@ input[type=range]:focus {
 
 input[type=range]::-ms-track {
   width: 100%;
-  cursor: pointer;
+  cursor: default;
 
   /* Hides the slider so custom styles can be added */
   background: transparent;
@@ -65,13 +65,16 @@ input[type=range]::-webkit-slider-runnable-track {
   border-radius: 1.3px;
   border: 0.2px solid #ccc;
 }
-input[type=range]::-webkit-slider-thumb {
+.footer-container input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  border: 1px solid #000000;
+  cursor: default;
   height: 18px;
   width: 18px;
-  border-radius: 5px;
-  background: #ffffff;
+  border-radius: 50%;
+  background-color: $warning;
   margin-top: -7px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+}
+.click-effect {
+  cursor: pointer;
 }
 </style>
