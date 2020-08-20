@@ -78,6 +78,11 @@ export default {
       if (paymentChallenge.status > 3) {
         const data = { opcode: 'lsat-payment-confirmed', status: paymentChallenge.status }
         const paymentEvent = this.$store.getters[LSAT_CONSTANTS.KEY_RETURN_STATE](data)
+        paymentEvent.preimage = paymentChallenge.lsatInvoice.preimage
+        paymentEvent.token = paymentChallenge.lsatInvoice.token
+        paymentEvent.numSatoshis = paymentChallenge.lsatInvoice.numSatoshis
+        paymentEvent.xchange = paymentChallenge.xchange
+        paymentEvent.memo = paymentChallenge.lsatInvoice.memo
         this.$emit('paymentEvent', paymentEvent)
         this.page = 'invoice'
         this.componentKey++
