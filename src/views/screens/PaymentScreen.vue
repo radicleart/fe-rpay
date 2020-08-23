@@ -12,7 +12,10 @@
   </div>
   <div class="" v-if="timedOutOrExpired || expired">
     <div class="d-flex justify-content-center" :style="lookAndFeel.text1Color">
-      Lightning invoice has expired - &nbsp;<a href="#" @click.prevent="prev()">Start Over</a>
+      <b>Lightning invoice has expired</b>
+    </div>
+    <div class="mt-3 d-flex justify-content-center" :style="lookAndFeel.text2Color">
+      <b-button @click="prev()" variant="danger" class="text-white button1 bg-danger">Start Over</b-button>
     </div>
   </div>
   <div class="" v-else>

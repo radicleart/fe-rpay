@@ -10,7 +10,7 @@
 
         <quantity-screen v-if="displayCard === 0" :lookAndFeel="lookAndFeel" @placeOrder="placeOrder"/>
         <payment-screen  v-if="displayCard === 1" :lookAndFeel="lookAndFeel" @prev="prev"/>
-        <token-screen  v-if="displayCard === 2" :lookAndFeel="lookAndFeel"/>
+        <token-screen  v-if="displayCard === 2" :lookAndFeel="lookAndFeel" @prev="prev"/>
 
         <template v-slot:footer>
           <footer-view :lookAndFeel="lookAndFeel" :rangeValue="displayCard" @rangeEvent="rangeEvent"/>
@@ -51,7 +51,7 @@ export default {
     if (paymentChallenge.status > 3) {
       this.$store.commit('setDisplayCard', 2)
     } else if (paymentChallenge.lsatInvoice && paymentChallenge.lsatInvoice.paymentHash) {
-      this.$store.commit('setDisplayCard', 1)
+      this.$store.commit('setDisplayCard', 0)
     }
     this.loading = false
   },
@@ -86,7 +86,7 @@ export default {
     prev () {
       let displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
       displayCard--
-      if (displayCard < 0) {
+      if (displayCard < 0 || displayCard === 1) {
         displayCard = 0
       }
       this.rangeValue = displayCard

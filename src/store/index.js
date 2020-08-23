@@ -52,7 +52,7 @@ const getPaymentOptions = function (paymentChallenge, configuration) {
   return allowedOptions
 }
 const initPaymentChallenge = function (rates, fiatCurrency, creditAttributes) {
-  let amountFiat = (creditAttributes.amountFiatPerCredit > 0) ? creditAttributes.amountFiatPerCredit : creditAttributes.amountFiatFixed
+  let amountFiat = creditAttributes.amountFiatFixed
   if (creditAttributes.useCredits) {
     const start = (creditAttributes.start) ? creditAttributes.start : 2
     amountFiat = (creditAttributes.amountFiatPerCredit > 0) ? creditAttributes.amountFiatPerCredit * start : amountFiat
@@ -302,7 +302,11 @@ export default new Vuex.Store({
     updateAmount ({ state, commit }, data) {
       return new Promise((resolve) => {
         const configuration = state.configuration
-        configuration.creditAttributes.start = data.numbCredits
+        configuration.serviceData.numbCredits = data.numbCredits
+        let prec = configuration.creditAttributes.precision
+        if (!prec) prec = 1
+        const numbCredits = Math.round((data.numbCredits) * prec) / prec
+        configuration.creditAttributes.start = numbCredits
         commit('addPaymentConfig', configuration)
         commit('addPaymentChallenge', initPaymentChallenge(state.xgeRates, state.fiatCurrency, state.configuration.creditAttributes))
         resolve()

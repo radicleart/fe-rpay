@@ -3,12 +3,12 @@
   <div class="w-75 purpose border-bottom pb-3 mb-3" :style="lookAndFeel.text1Color" v-html="lookAndFeel.labels.orderMsg"></div>
   <crypto-stepper :key="componentKey" :paymentOption="paymentOption" :lookAndFeel="lookAndFeel" />
   <div class="text-center my-4 d-flex justify-content-center">
-    <button class="place-order" @click="placeOrder">
-      <span class="place-order-text" :style="lookAndFeel.text3Color">
+    <b-button @click="placeOrder" variant="warning" class="text-white button1 bg-warning bg-large">
+      <span class="place-order-text" :style="lookAndFeel.text3Color" style="white-space: nowrap;">
         Place your order
-        <font-awesome-icon class="ml-5" width="15px" height="15px" icon="qrcode" :style="lookAndFeel.text3Color"/>
+        <font-awesome-icon class="ml-2" width="15px" height="15px" icon="qrcode" :style="lookAndFeel.text3Color"/>
       </span>
-    </button>
+    </b-button>
   </div>
   <!-- <crypto-picker :labels="lookAndFeel.labels" :paymentOption="paymentOption" @updatePaymentOption="updatePaymentOption" /> -->
   <div class="mx-auto w-75" :style="lookAndFeel.text1Color">{{lookAndFeel.labels.networkMsg}}</div>
@@ -49,7 +49,7 @@ export default {
 .place-order {
   width: 191px;
   height: 51px;
-  background: $warning 0% 0% no-repeat padding-box;
+  background: $info 0% 0% no-repeat padding-box;
   box-shadow: 0px 3px 6px #00000029;
   border-radius: 10px;
   opacity: 1;
@@ -61,6 +61,10 @@ export default {
   letter-spacing: 0px;
   color: #000000;
   opacity: 1;
+}
+.place-order:hover {
+  color: #000000;
+  background: $warning 0% 0% no-repeat padding-box;
 }
 .purpose {
   text-align: left;

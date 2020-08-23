@@ -117,7 +117,7 @@ export default {
     },
     formattedFiat () {
       const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
-      const amount = (paymentChallenge.xchange) ? paymentChallenge.xchange.amountFiat : '0'
+      const amount = (paymentChallenge.xchange) ? paymentChallenge.xchange.amountFiat : 0
       const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'EUR'
@@ -138,7 +138,7 @@ export default {
     },
     amountFiat () {
       const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
-      return (paymentChallenge.xchange) ? paymentChallenge.xchange.amountFiat : '0'
+      return (paymentChallenge.xchange) ? paymentChallenge.xchange.amountFiat : 0
     },
     fiatCurrency () {
       const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]

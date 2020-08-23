@@ -2,13 +2,13 @@
 <div>
   <order-info :lookAndFeel="lookAndFeel"/>
   <div v-if="preimage">
-    <div class="d-flex justify-content-center mt-5">
+    <div ref="payload" class="d-flex justify-content-center mt-5">
       <span class="ff-confirmed">Your payment is confirmed.</span>
     </div>
     <div class="d-flex justify-content-center mt-3">
       <font-awesome-icon style="margin-top: 3px;padding: 3px; border-radius: 50%; border: 2pt solid #FFCE00; color: #FFCE00;" width="25px" height="25px" icon="check"/>
     </div>
-    <div class="p-3 mt-5" ref="payload">
+    <div class="p-3 mt-5">
       <div class="d-flex justify-content-center mt-3"><a href="#" @click.prevent="reveal = !reveal" :style="lookAndFeel.text1Color">{{lookAndFeel.labels.successMsg}}</a></div>
         <div v-if="jokePayload">
           <div class="mt-3" v-for="(item, index) in payload()" :key="index">
@@ -19,19 +19,27 @@
         </div>
       </div>
     </div>
+    <div class="mt-3 d-flex justify-content-center" :style="lookAndFeel.text2Color">
+      <b-button @click="prev()" variant="danger" class="text-white button1 bg-danger">Start Over</b-button>
+    </div>
     <div class="d-flex justify-content-center mt-5 mx-3" ref="payload">
-      <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress($event)" style="text-decoration: underline;">
-        <span ref="myPaymentAddress" class="mr-2" :style="lookAndFeel.text1Color">Copy your receipt</span>
+      <a class="copyAddress" href="#" @click.prevent="copyAddress($event)" style="text-decoration: underline;">
+        <span class="mr-2" :style="lookAndFeel.text1Color">Copy your receipt</span>
       </a> <font-awesome-icon width="15px" height="15px" icon="copy" :style="lookAndFeel.text1Color"/>
     </div>
   </div>
   <div v-else>
-    <div class="d-flex justify-content-center mt-5">
-      <span class="ff-confirmed" :style="lookAndFeel.text1Color">Your payment is not confirmed.</span>
+    <div class="my-5 d-flex justify-content-center" :style="lookAndFeel.text2Color">
+      <b-button @click="prev()" variant="danger" class="text-white button1 bg-danger">Start Over</b-button>
     </div>
+    <div class="d-flex justify-content-center mt-5">
+      <span class="ff-confirmed" :style="lookAndFeel.text1Color">Payment has not been received.</span>
+    </div>
+    <!--
     <div class="d-flex justify-content-center mt-3">
       <font-awesome-icon style="margin-top: 3px;padding: 3px; border-radius: 50%; border: 2pt solid #FF7272; color: #FF7272;" width="25px" height="25px" icon="times"/>
     </div>
+    -->
   </div>
 </div>
 </template>
@@ -75,6 +83,9 @@ export default {
       setTimeout(function () {
         flasher.classList.remove('flasher')
       }, 1000)
+    },
+    prev () {
+      this.$emit('prev')
     },
     payload () {
       const payload = this.$store.getters[LSAT_CONSTANTS.KEY_PAYLOAD]

@@ -235,3 +235,22 @@ a:hover {
   opacity: 0.51;
   padding: 10px;
 }
+.button1 {
+  width: 158px;
+  height: 40px;
+  font-weight: 600;
+  background: #50B1B5 0% 0% no-repeat padding-box;
+  border-radius: 22px !important;
+}
+.button2 {
+  width: 158px;
+  height: 40px;
+  background: #323131 0% 0% no-repeat padding-box !important;
+  border: 0px solid #50B1B5 !important;
+  border-radius: 22px !important;
+  font-weight: 600;
+}
+.button2:hover {
+  color: #fff !important;
+}
+
