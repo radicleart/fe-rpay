@@ -47,7 +47,7 @@ export default {
   },
   computed: {
     etherScanUrl () {
-      return EXPLORER + '/tx/' + this.result.txId
+      return EXPLORER + '/tx/' + this.result.txid
     },
     cardStyle () {
       return (this.lookAndFeel) ? this.lookAndFeel.cardStyle : ''
