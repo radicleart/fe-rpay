@@ -2,21 +2,12 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import lsatHelper from './lsatHelper'
 import rates from 'risidio-rates'
+import axios from 'axios'
 
 Vue.use(Vuex)
 
+const API_PATH = process.env.VUE_APP_RADICLE_API
 const precision = 100000000
-const authHeaders = function (configuration) {
-  var publicKey
-  const token = 'v1:no-token' // note: not all requests require auth token - e.g. getPaymentAddress
-  const headers = {
-    ApiKey: configuration.apiKey,
-    IdentityAddress: publicKey,
-    'Content-Type': 'application/json',
-    Authorization: 'Bearer ' + token
-  }
-  return headers
-}
 const getAmountSat = function (amountBtc) {
   try {
     if (typeof amountBtc === 'string') {
@@ -51,7 +42,17 @@ const getPaymentOptions = function (paymentChallenge, configuration) {
   })
   return allowedOptions
 }
-const initPaymentChallenge = function (rates, fiatCurrency, creditAttributes) {
+
+const updatePaymentChallenge = function (authHeaders, paymentChallenge) {
+  return new Promise(resolve => {
+    axios.put(API_PATH + '/lsat/v1/payment', paymentChallenge, { headers: authHeaders }).then(response => {
+      resolve(response.data)
+    })
+  })
+}
+
+const initPaymentChallenge = function (rates, fiatCurrency, configuration) {
+  const creditAttributes = configuration.creditAttributes
   let amountFiat = creditAttributes.amountFiatFixed
   if (creditAttributes.useCredits) {
     const start = (creditAttributes.start) ? creditAttributes.start : 2
@@ -61,6 +62,9 @@ const initPaymentChallenge = function (rates, fiatCurrency, creditAttributes) {
   let amountBtc = amountFiat * rateObject.amountBtc
   amountBtc = Math.round(amountBtc * precision) / precision
   const pc = {
+    serviceKey: configuration.serviceKey,
+    serviceData: configuration.serviceData,
+    serviceStatus: configuration.serviceStatus || -1,
     paymentId: localStorage.getItem('402-payment-id'),
     xchange: {
       numbCredits: creditAttributes.start,
@@ -122,7 +126,7 @@ export default new Vuex.Store({
       return paymentOptions
     },
     getHeaders: state => {
-      return state.headers
+      return state.configuration.authHeaders
     },
     getConfiguration: state => {
       return state.configuration
@@ -181,7 +185,9 @@ export default new Vuex.Store({
           lsatInvoice: {}
         }
       }
-      localStorage.setItem('402-payment-id', o.paymentId)
+      if (o.paymentId && o.paymentId !== 'null') {
+        localStorage.setItem('402-payment-id', o.paymentId)
+      }
       state.paymentChallenge = o
     },
     addPaymentOption (state, o) {
@@ -198,9 +204,6 @@ export default new Vuex.Store({
     },
     setFiatCurrency (state, fiatCurrency) {
       state.fiatCurrency = fiatCurrency
-    },
-    addHeaders (state, o) {
-      state.headers = o
     },
     addPayload (state, payload) {
       state.payload = payload
@@ -227,10 +230,9 @@ export default new Vuex.Store({
         if (!configuration.purchaseEndpoint) {
           configuration.purchaseEndpoint = '/assets/buy-now'
         }
-        commit('addHeaders', authHeaders(configuration))
         commit('addPaymentConfig', configuration)
         this.dispatch('fetchRates').then(() => {
-          const paymentChallenge = initPaymentChallenge(state.xgeRates, state.fiatCurrency, state.configuration.creditAttributes)
+          const paymentChallenge = initPaymentChallenge(state.xgeRates, state.fiatCurrency, state.configuration)
           commit('addPaymentChallenge', paymentChallenge)
           configuration.opcode = 'payment'
           commit('addPaymentConfig', configuration)
@@ -253,9 +255,8 @@ export default new Vuex.Store({
         if (!configuration.purchaseEndpoint) {
           configuration.purchaseEndpoint = '/assets/buy-now'
         }
-        commit('addHeaders', authHeaders(configuration))
         commit('addPaymentConfig', configuration)
-        commit('addPaymentChallenge', initPaymentChallenge(state.xgeRates, state.fiatCurrency, state.configuration.creditAttributes))
+        commit('addPaymentChallenge', initPaymentChallenge(state.xgeRates, state.fiatCurrency, state.configuration))
         lsatHelper.checkPayment(state.paymentChallenge).then((paymentChallenge) => {
           commit('addPaymentChallenge', paymentChallenge)
           if (paymentChallenge.lsatInvoice && paymentChallenge.lsatInvoice.state === 'SETTLED' && paymentChallenge.lsatInvoice.preimage) {
@@ -302,13 +303,20 @@ export default new Vuex.Store({
     updateAmount ({ state, commit }, data) {
       return new Promise((resolve) => {
         const configuration = state.configuration
-        configuration.serviceData.numbCredits = data.numbCredits
+        const pc = state.paymentChallenge
+        if (!pc.paymentId) {
+          return
+        }
+        configuration.creditAttributes.start = data.numbCredits
         let prec = configuration.creditAttributes.precision
         if (!prec) prec = 1
         const numbCredits = Math.round((data.numbCredits) * prec) / prec
+        if (!pc.serviceData) pc.serviceData = {}
+        pc.serviceData.numbCredits = numbCredits
         configuration.creditAttributes.start = numbCredits
+        updatePaymentChallenge(configuration.authHeaders, pc)
         commit('addPaymentConfig', configuration)
-        commit('addPaymentChallenge', initPaymentChallenge(state.xgeRates, state.fiatCurrency, state.configuration.creditAttributes))
+        commit('addPaymentChallenge', pc)
         resolve()
       })
     },

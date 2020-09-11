@@ -11,14 +11,14 @@ const API_PATH = process.env.VUE_APP_RADICLE_API
 let socket = null
 let stompClient = null
 const headers = function () {
-  return store.getters[LSAT_CONSTANTS.GET_HEADERS]
+  return store.getters[LSAT_CONSTANTS.GET_HEADERS] || {}
 }
-const getPurchaseOrder = function (paymentChallenge, configuration) {
+const getPurchaseOrder = function (paymentChallenge) {
   return {
     status: 3,
-    serviceKey: configuration.serviceKey,
-    serviceData: configuration.serviceData,
-    serviceStatus: -1,
+    serviceKey: paymentChallenge.serviceKey,
+    serviceData: paymentChallenge.serviceData,
+    serviceStatus: paymentChallenge.serviceStatus,
     paymentId: paymentChallenge.paymentId,
     memo: 'product-id=' + paymentChallenge.paymentId,
     amountSat: paymentChallenge.xchange.amountSat,
@@ -82,7 +82,7 @@ const lsatHelper = {
         method: 'post',
         url: API_PATH + configuration.purchaseEndpoint,
         headers: headers(),
-        data: getPurchaseOrder(paymentChallenge, configuration)
+        data: getPurchaseOrder(paymentChallenge)
       }
       request.headers[AUTHORIZATION] = fullMac
       axios(request).then(response => {
@@ -105,7 +105,7 @@ const lsatHelper = {
         method: 'post',
         url: API_PATH + configuration.purchaseEndpoint,
         headers: headers(),
-        data: getPurchaseOrder(paymentChallenge, configuration)
+        data: getPurchaseOrder(paymentChallenge)
       }
       request.headers[AUTHORIZATION] = null
       axios(request).then(response => {
