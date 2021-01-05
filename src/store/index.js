@@ -1,12 +1,12 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import lsatHelper from './lsatHelper'
-import rates from 'risidio-rates'
 import axios from 'axios'
 
 Vue.use(Vuex)
 
 const API_PATH = process.env.VUE_APP_RADICLE_API
+const RATES_PATH = process.env.VUE_APP_RATES_API
 const precision = 100000000
 const getAmountSat = function (amountBtc) {
   try {
@@ -18,17 +18,21 @@ const getAmountSat = function (amountBtc) {
     return 0
   }
 }
-const options = [{ text: 'Lightning', value: 'lightning' }, { text: 'Bitcoin', value: 'bitcoin' }, { text: 'Ether', value: 'ethereum' }, { text: 'Stacks', value: 'stacks' }]
+const options = [{ text: 'Risidio LSAT', value: 'lsat' }, { text: 'Lightning', value: 'lightning' }, { text: 'Bitcoin', value: 'bitcoin' }, { text: 'Ether', value: 'ethereum' }, { text: 'Stacks', value: 'stacks' }]
 const getPaymentOptions = function (paymentChallenge, configuration) {
   const allowedOptions = []
   options.forEach(function (option) {
-    if (option.value === 'lightning' && paymentChallenge.lsatInvoice && paymentChallenge.lsatInvoice.paymentHash) {
+    if (option.value === 'lightning') { //  && paymentChallenge.lsatInvoice && paymentChallenge.lsatInvoice.paymentHash) {
       if (!configuration.paymentOptions || configuration.paymentOptions.allowLightning) {
         allowedOptions.push({ text: 'Lightning', value: 'lightning' })
       }
-    } else if (option.value === 'bitcoin' && paymentChallenge.bitcoinInvoice && paymentChallenge.bitcoinInvoice.bitcoinAddress) {
+    } else if (option.value === 'bitcoin') { //  && paymentChallenge.bitcoinInvoice && paymentChallenge.bitcoinInvoice.bitcoinAddress) {
       if (!configuration.paymentOptions || configuration.paymentOptions.allowBitcoin) {
         allowedOptions.push({ text: 'Bitcoin', value: 'bitcoin' })
+      }
+    } else if (option.value === 'lsat') { //  && paymentChallenge.bitcoinInvoice && paymentChallenge.bitcoinInvoice.bitcoinAddress) {
+      if (!configuration.paymentOptions || configuration.paymentOptions.allowLSAT) {
+        allowedOptions.push({ text: 'Risidio LSAT', value: 'lsat' })
       }
     } else if (option.value === 'ethereum') {
       if (!configuration.paymentOptions || configuration.paymentOptions.allowEthereum) {
@@ -52,14 +56,19 @@ const updatePaymentChallenge = function (authHeaders, paymentChallenge) {
 }
 
 const initPaymentChallenge = function (rates, fiatCurrency, configuration) {
+  if (configuration.mode && configuration.mode === 'rpay-crowdfund') {
+    return {
+      xchange: {}
+    }
+  }
   const creditAttributes = configuration.creditAttributes
   let amountFiat = creditAttributes.amountFiatFixed
   if (creditAttributes.useCredits) {
     const start = (creditAttributes.start) ? creditAttributes.start : 2
     amountFiat = (creditAttributes.amountFiatPerCredit > 0) ? creditAttributes.amountFiatPerCredit * start : amountFiat
   }
-  const rateObject = rates.find(item => item.fiatCurrency === fiatCurrency)
-  let amountBtc = amountFiat * rateObject.amountBtc
+  const rateObject = rates.find(item => item.currency === fiatCurrency)
+  let amountBtc = amountFiat * rateObject.last
   amountBtc = Math.round(amountBtc * precision) / precision
   const pc = {
     serviceKey: configuration.serviceKey,
@@ -239,6 +248,7 @@ export default new Vuex.Store({
           if (paymentChallenge.paymentId) {
             lsatHelper.checkPayment(state.paymentChallenge).then((paymentChallenge) => {
               commit('addPaymentChallenge', paymentChallenge)
+              commit('addPaymentOptions')
               lsatHelper.startListening(paymentChallenge.paymentId)
               resolve({ tokenAcquired: false, resource: paymentChallenge })
             })
@@ -322,15 +332,13 @@ export default new Vuex.Store({
     },
     fetchRates ({ commit }, data) {
       return new Promise((resolve, reject) => {
-        rates.fetchSTXRates().then((rates) => {
-          commit('setXgeRates', rates)
-          resolve(rates)
+        axios.get(RATES_PATH + '/mesh/v1/rates/ticker').then(response => {
+          commit('setXgeRates', response.data)
+          resolve()
+        }).catch((error) => {
+          console.log(error)
+          resolve()
         })
-        setInterval(function () {
-          rates.fetchSTXRates().then((rates) => {
-            commit('setXgeRates', rates)
-          })
-        }, 3600000)
       })
     },
     startListening ({ state }) {

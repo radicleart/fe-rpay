@@ -8,6 +8,7 @@
           <div class="d-flex justify-content-center"><span class="ff-title" :style="lookAndFeel.text1Color">{{lookAndFeel.labels.title}}</span>&nbsp;<span class="ff-subtitle" :style="lookAndFeel.text2Color">{{lookAndFeel.labels.subtitle}}</span></div>
         </template>
 
+        <crypto-picker v-if="displayCard === -1" :lookAndFeel="lookAndFeel" @paymentEvent="paymentEvent"/>
         <quantity-screen v-if="displayCard === 0" :lookAndFeel="lookAndFeel" @placeOrder="placeOrder"/>
         <payment-screen  v-if="displayCard === 1" :lookAndFeel="lookAndFeel" @prev="prev"/>
         <token-screen  v-if="displayCard === 2" :lookAndFeel="lookAndFeel" @prev="prev"/>
@@ -28,6 +29,7 @@ import TokenScreen from './screens/TokenScreen'
 import QuantityScreen from './screens/QuantityScreen'
 import PaymentScreen from './screens/PaymentScreen'
 import WaitingView from './components/WaitingView'
+import CryptoPicker from './screens/CryptoPicker'
 
 export default {
   name: 'FrameworkFlow',
@@ -36,7 +38,8 @@ export default {
     QuantityScreen,
     PaymentScreen,
     WaitingView,
-    FooterView
+    FooterView,
+    CryptoPicker
   },
   props: ['lookAndFeel'],
   data () {
@@ -47,11 +50,19 @@ export default {
     }
   },
   mounted () {
+    const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
     const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
-    if (paymentChallenge.status > 3) {
-      this.$store.commit('setDisplayCard', 2)
-    } else if (paymentChallenge.lsatInvoice && paymentChallenge.lsatInvoice.paymentHash) {
-      this.$store.commit('setDisplayCard', 0)
+    if (configuration.mode === 'rpay-crowdfund') {
+      this.$store.commit('setDisplayCard', -1)
+      if (paymentChallenge.status > 3) {
+        this.$store.commit('setDisplayCard', 2)
+      }
+    } else {
+      if (paymentChallenge.status > 3) {
+        this.$store.commit('setDisplayCard', 2)
+      } else if (paymentChallenge.lsatInvoice && paymentChallenge.lsatInvoice.paymentHash) {
+        this.$store.commit('setDisplayCard', 0)
+      }
     }
     this.loading = false
   },
@@ -65,6 +76,10 @@ export default {
         this.message = 'Payment successful - starting...'
       } else if (data.opcode === 'eth-payment-begun3') {
         this.paying = false
+      } else if (data.opcode === 'cfd-payment-1') {
+        this.$store.dispatch('generateInvoice').then((invoice) => {
+          this.$store.commit('setDisplayCard', 101)
+        })
       } else {
         this.paying = false
         this.$emit('paymentEvent', data)

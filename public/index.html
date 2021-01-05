@@ -16,9 +16,9 @@
         labels: {
           orderMsg: 'Place order for \'STX to Lightning\' select number required and pay.',
           successMsg: 'Your order has been received with thanks.',
-          title: 'rPay',
-          subtitle: 'Stacks Lightning Exchange',
-          card1Label: 'Select payment option',
+          title: 'Risidio',
+          subtitle: 'Crowdfund Module',
+          card1Label: 'Select amount to send',
           card2Label1: 'How many STX tokens do you need?',
           card2Label2: 'Select operation',
           card2Label3: 'Make Payment',
@@ -33,7 +33,6 @@
         cardStyle: {
           margin: '0',
           'border-radius': '20px',
-          'color': '#fff'
         },
         text1Color: {
           'color': '#000'
@@ -75,7 +74,7 @@
         min: 0.01,
         max: 1
       }
-      window.risidioPaymentConfig = JSON.stringify({ opcode: 'lsat-place-order', serviceKey: 'stacks-lightning-exchange', serviceData: serviceData, paymentOption: 'lightning', paymentOptions: { allowLightning: true, allowEthereum: false, allowBitcoin: false, allowStacks: true }, paymentId: 'XqLKQxEAACQAYvsu', purchaseEndpoint: '/assets/buy-now', lookAndFeel: lookAndFeel, creditAttributes: credits})
+      window.risidioPaymentConfig = JSON.stringify({ mode: 'rpay-crowdfund', serviceKey: 'stacks-lightning-exchange', serviceData: serviceData, paymentOption: 'lightning', paymentOptions: { allowLightning: true, allowLSAT: false, allowEthereum: false, allowBitcoin: true, allowStacks: true }, paymentId: 'XqLKQxEAACQAYvsu', purchaseEndpoint: '/assets/buy-now', lookAndFeel: lookAndFeel, creditAttributes: credits})
     </script>
     <rpay-entry msg="aint no sunshine!"></rpay-entry>
   </body>
