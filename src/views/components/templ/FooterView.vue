@@ -1,10 +1,10 @@
 <template>
 <div class="footer-container">
-  <b-form-input disabled id="range-2" v-model="rangeValue" type="range" min="0" max="2" step="1"></b-form-input>
-  <div  :style="lookAndFeel.text1Color" class="d-flex justify-content-between" style="font-size: 11px;">
-    <div class="click-effect" @click="skipAhead(0)">Place Order</div>
-    <div class="click-effect" @click="skipAhead(1)">Scan with Wallet</div>
-    <div class="click-effect" @click="skipAhead(2)">Receive Goods</div>
+  <b-form-input disabled id="range-2" v-model="rangeValue" type="range" min="100" max="104" step="2"></b-form-input>
+  <div  :style="$globalLookAndFeel.text1Color" class="d-flex justify-content-between" style="font-size: 11px;">
+    <div class="click-effect" @click="skipAhead(100)">Place Order</div>
+    <div class="click-effect" @click="skipAhead(102)">Scan with Wallet</div>
+    <div class="click-effect" @click="skipAhead(104)">Receive Goods</div>
   </div>
 </div>
 </template>
@@ -14,7 +14,7 @@ export default {
   name: 'FooterView',
   components: {
   },
-  props: ['lookAndFeel', 'rangeValue'],
+  props: ['rangeValue'],
   data () {
     return {
       intValue: 0
@@ -30,7 +30,7 @@ export default {
 }
 </script>
 <style lang="scss" >
-@import "@/assets/scss/customv2.scss";
+@import "@/assets/scss/custom.scss";
 
 input[type=range] {
   -webkit-appearance: none; /* Hides the slider so that custom slider can be made */

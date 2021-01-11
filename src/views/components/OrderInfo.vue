@@ -1,16 +1,17 @@
 <template>
-<div>
-  <div class="mt-2 d-flex justify-content-between border-bottom pb-4 mb-4">
-    <div>
-      <div class="mb-2 ff-placed" :style="lookAndFeel.text1Color">You placed the following order:</div>
-      <div class="text-warning tokens">{{currentQuantity}} {{quantityLabel}}</div>
-    </div>
-    <div class="text-warn">
-      <div class="mb-2" :style="lookAndFeel.text1Color"><span class="ff-symbol" v-html="fiatSymbol"></span> {{formattedFiat}}</div>
-      <div class="" :style="lookAndFeel.text1Color"><span class="ff-symbol" v-html="currentSymbol"></span> {{currentAmount}}</div>
-    </div>
+<b-card-text>
+  <div v-if="method === 'fiat' || 'bitcoin'" class="d-column align-items-center text-center">
+    <h1 class="mb-2" :style="$globalLookAndFeel.text1Color"><span class="" v-html="fiatSymbol"></span> {{formattedFiat}}</h1>
+    <div class="" :style="$globalLookAndFeel.text1Color">[ <span class="" v-html="currentSymbol"></span> {{currentAmount}} ]</div>
   </div>
-</div>
+  <div v-else class="d-column align-items-center text-center">
+    <h1 class="" :style="$globalLookAndFeel.text1Color"><span class="" v-html="currentSymbol"></span> {{currentAmount}}</h1>
+    <div class="mb-2" :style="$globalLookAndFeel.text1Color">[ <span class="" v-html="fiatSymbol"></span> {{formattedFiat}} ]</div>
+  </div>
+  <div class="my-2 d-flex justify-content-center border-bottom pb-4 mb-4">
+    <div class="text-info mb-2" :style="$globalLookAndFeel.text2Color">Thank you for your support!</div>
+  </div>
+</b-card-text>
 </template>
 
 <script>
@@ -20,7 +21,6 @@ export default {
   name: 'OrderInfo',
   components: {
   },
-  props: ['lookAndFeel'],
   data () {
     return {
       value: 0,
@@ -48,29 +48,23 @@ export default {
   methods: {
   },
   computed: {
-    currentQuantity () {
+    method () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      return configuration.creditAttributes.start
-    },
-    quantityLabel () {
-      if (this.lookAndFeel.labels.quantityLabel) {
-        return this.lookAndFeel.labels.quantityLabel
-      }
-      return 'items'
+      return configuration.payment.method
     },
     formattedFiat () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
-      const amount = (paymentChallenge.xchange) ? paymentChallenge.xchange.amountFiat : '0'
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const amountFiat = (configuration.payment) ? configuration.payment.amountFiat : '0'
       const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'EUR'
       })
-      const ffiat = formatter.formatToParts(amount) /* $2,500.00 */
+      const ffiat = formatter.formatToParts(amountFiat) /* $2,500.00 */
       return ffiat[1].value + '.' + ffiat[3].value
     },
     fiatSymbol () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
-      const fc = (paymentChallenge.xchange) ? paymentChallenge.xchange.fiatCurrency : '???'
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const fc = (configuration.payment) ? configuration.payment.currency : '???'
       if (fc === 'EUR') {
         return '&euro;'
       } else if (fc === 'GBP') {
@@ -89,24 +83,22 @@ export default {
       }
     },
     currentAmount () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
-      if (paymentChallenge.xchange) {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      if (configuration && configuration.payment.amountBtc) {
         if (this.paymentOption === 'ethereum') {
-          return paymentChallenge.xchange.amountEth
+          return configuration.payment.amountEth
         } else if (this.paymentOption === 'stacks') {
-          return paymentChallenge.xchange.amountStx
+          return configuration.payment.amountStx
         } else {
-          return paymentChallenge.xchange.amountBtc
+          return configuration.payment.amountBtc / 100000000
         }
-      } else {
-        return 0
       }
+      return 0
     }
   }
 }
 </script>
 <style lang="scss" scoped>
-@import "@/assets/scss/customv2.scss";
 .ff-symbol {
   font-weight: 700;
 }

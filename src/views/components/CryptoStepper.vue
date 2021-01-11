@@ -1,13 +1,13 @@
 <template>
-    <div class="" :style="lookAndFeel.text1Color">
-      <div class="mb-3 ff-label">{{lookAndFeel.labels.card2Label1}}</div>
+    <div class="" :style="$globalLookAndFeel.text1Color">
+      <div class="mb-3 ff-label">{{$globalLookAndFeel.labels.card2Label1}}</div>
       <div class="mt-5 d-flex justify-content-center" style="margin-top: 20px; text-align: center; width: 100%;">
         <span @click.prevent="countDown" class="stepper" :style="(fadeMin) ? 'opacity: 0.3;' : ''">
-          <font-awesome-icon style="padding: 3px; border-radius: 50%; border: 2pt solid #000;" width="25px" height="25px" icon="minus"/>
+          <b-icon style="padding: 3px; border-radius: 50%; border: 2pt solid #000;" width="25px" height="25px" icon="minus"/>
         </span>
         <input class="mx-3 input1" @input="updateCredits($event)" id="input-horizontal1" v-model="localCredits" placeholder="$$$"/>
         <span @click.prevent="countUp" class="stepper" :style="(fadeMax) ? 'opacity: 0.3;' : ''">
-          <font-awesome-icon style="margin-top: 3px;padding: 3px; border-radius: 50%; border: 2pt solid #000;" width="25px" height="25px" icon="plus"/>
+          <b-icon style="margin-top: 3px;padding: 3px; border-radius: 50%; border: 2pt solid #000;" width="25px" height="25px" icon="plus"/>
         </span>
       </div>
       <div v-if="loading" class="mt-3 d-flex justify-content-center">
@@ -34,7 +34,7 @@ export default {
   components: {
     WaitingView
   },
-  props: ['lookAndFeel', 'paymentOption'],
+  props: ['paymentOption'],
   data () {
     return {
       localCredits: 0,
@@ -93,8 +93,8 @@ export default {
   computed: {
     quantityLabel () {
       let ql = 'Spins'
-      if (this.lookAndFeel.labels && this.lookAndFeel.labels.quantityLabel) {
-        ql = this.lookAndFeel.labels.quantityLabel
+      if (this.$globalLookAndFeel.labels && this.$globalLookAndFeel.labels.quantityLabel) {
+        ql = this.$globalLookAndFeel.labels.quantityLabel
       }
       return ql
     },
@@ -116,7 +116,7 @@ export default {
       }
     },
     formattedFiat () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
       const amount = (paymentChallenge.xchange) ? paymentChallenge.xchange.amountFiat : 0
       const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -126,7 +126,7 @@ export default {
       return ffiat[1].value + '.' + ffiat[3].value
     },
     fiatSymbol () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
       const fc = (paymentChallenge.xchange) ? paymentChallenge.xchange.fiatCurrency : '???'
       if (fc === 'EUR') {
         return '&euro;'
@@ -137,15 +137,15 @@ export default {
       }
     },
     amountFiat () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
       return (paymentChallenge.xchange) ? paymentChallenge.xchange.amountFiat : 0
     },
     fiatCurrency () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
       return (paymentChallenge.xchange) ? paymentChallenge.xchange.fiatCurrency : '???'
     },
     currentAmount () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
       if (paymentChallenge.xchange) {
         if (this.paymentOption === 'ethereum') {
           return paymentChallenge.xchange.amountEth

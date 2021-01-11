@@ -24,12 +24,12 @@ export default {
       countdown: null,
       showExpires: false,
       expired: false,
-      timeout: this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE_DURATION] // { hours: 0, minutes: 1, seconds: 0 }
+      timeout: this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE_EXPIRY] // { hours: 0, minutes: 1, seconds: 0 }
     }
   },
   mounted () {
-    this.timeout = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE_DURATION]
-    this.expired = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE_EXPIRED]
+    this.timeout = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE_DURATION]
+    this.expired = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE_EXPIRED]
     if (this.expired) {
       this.$emit('evPaymentExpired')
     }
@@ -37,7 +37,7 @@ export default {
   },
   computed: {
     currentCountdown () {
-      if (!this.countdown) {
+      if (!this.countdown && this.timeout) {
         var hrs = this.timeout.hours
         var min = this.timeout.minutes
         var sec = this.timeout.seconds
@@ -56,7 +56,7 @@ export default {
   },
   methods: {
     expires () {
-      return this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE_EXPIRES]
+      return this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE_EXPIRES]
     },
     clockReset () {
       this.$store.dispatch('fetchRates')

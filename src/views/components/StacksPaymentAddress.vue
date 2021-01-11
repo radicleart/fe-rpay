@@ -15,7 +15,7 @@
     </b-input-group-prepend>
     <b-form-input readonly id="payment-amount-btc" style="height: 50px;" :value="paymentAmount" placeholder="Bitcoin amount"></b-form-input>
     <b-input-group-append>
-      <b-button class="bg-white text-dark" @click="copyAmount($event)"><font-awesome-icon width="15px" height="15px" icon="copy"/></b-button>
+      <b-button class="bg-white text-dark" @click="copyAmount($event)"><b-icon width="15px" height="15px" icon="copy"/></b-button>
     </b-input-group-append>
   </b-input-group>
   <b-input-group class="mb-3" v-if="stacksSupported">
@@ -24,7 +24,7 @@
     </b-input-group-prepend>
     <b-form-input readonly id="payment-address-btc" style="height: 50px;" :value="paymentAddress" placeholder="Stacks address"></b-form-input>
     <b-input-group-append>
-      <b-button class="bg-white text-dark" @click="copyAddress($event)"><font-awesome-icon width="15px" height="15px" icon="copy"/></b-button>
+      <b-button class="bg-white text-dark" @click="copyAddress($event)"><b-icon width="15px" height="15px" icon="copy"/></b-button>
     </b-input-group-append>
   </b-input-group>
 </div>
@@ -67,19 +67,19 @@ export default {
       return false
     },
     paymentAmount () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
       return paymentChallenge.xchange.amountBtc
     },
     paymentAddress () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
-      return paymentChallenge.bitcoinInvoice.bitcoinAddress
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      return paymentChallenge.address
     }
   },
 
   methods: {
     paymentUri () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
-      let uri = 'bitcoin:' + paymentChallenge.bitcoinInvoice.bitcoinAddress
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      let uri = 'bitcoin:' + paymentChallenge.address
       uri += '?amount=' + paymentChallenge.xchange.amountBtc
       if (paymentChallenge.stacksInvoice) uri += '&label=' + paymentChallenge.stacksInvoice.memo
       return uri

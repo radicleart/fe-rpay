@@ -1,0 +1,437 @@
+<template>
+<div>
+  <b-card-text>
+    <div id="sq-ccbox">
+      <!--
+        You should replace the action attribute of the form with the path of
+        the URL you want to POST the nonce to (for example, "/process-card")
+      -->
+    </div>
+  </b-card-text>
+  <b-card-text>
+    <form id="nonce-form" novalidate :action="submitUrl" method="post">
+      <div class="errorbox">
+        <div class="error" v-for="(error, index) in errors" :key="index">
+          {{error}}
+        </div>
+      </div>
+      <div id="card-tainer">
+        <div class="cardfields card-number" :id="internalId+'-sq-card-number'">o</div>
+        <div class="cardfields expiration-date" :id="internalId+'-sq-expiration-date'">e</div>
+        <div class="cardfields cvv" :id="internalId+'-sq-cvv'">e</div>
+        <div class="cardfields postal-code" :id="internalId+'-sq-postal-code'">e</div>
+      </div>
+
+      <input type="hidden" id="card-nonce" name="nonce">
+      <div class="mt-5" id="sq-walletbox">
+        <button v-show=applePay :id="id+'-sq-apple-pay'" class="button-apple-pay"></button>
+        <button v-show=masterpass :id="id+'-sq-masterpass'" class="button-masterpass"></button>
+      </div>
+    </form>
+  </b-card-text>
+  <b-card-text>
+    <div class="mt-2 d-flex justify-content-center mt-5">
+      <b-button variant="info" @click="requestCardNonce($event)" class='productPurchase payButton'>Send <span class="" v-html="fiatSymbol"></span> {{formattedFiat}}</b-button>
+    </div>
+  </b-card-text>
+  <b-card-text>
+    <div class="mt-2 d-flex justify-content-around mt-5">
+      <div class="ff-cancel"><a href="#" @click="$emit('paymentEvent', { opcode: 'switch-method', method: 'bitcoin' })">Switch to Bitcoin</a></div>
+      <div v-if="testMode" class="ff-cancel"><a href="#" @click.prevent="showTestPayments = !showTestPayments">Test Numbers</a></div>
+    </div>
+  </b-card-text>
+  <test-payments v-if="showTestPayments" />
+</div>
+</template>
+
+<script>
+import { LSAT_CONSTANTS } from '@/lsat-constants'
+import TestPayments from '@/views/components/TestPayments'
+
+const MESH_API = process.env.VUE_APP_RADICLE_API + '/mesh'
+const APPLICATION_ID = process.env.VUE_APP_SQUARE_APPLICATION_ID
+const LOCATION_ID = process.env.VUE_APP_SQUARE_LOCATION_ID
+
+export default {
+  name: 'paymentForm',
+  components: {
+    TestPayments
+  },
+  props: {
+    id: String,
+    showPaymentForm: Boolean
+  },
+  data () {
+    return {
+      errors: [],
+      showTestPayments: false,
+      applePay: false,
+      masterpass: false,
+      submitUrl: MESH_API + '/v1/square/charge',
+      internalId: null
+    }
+  },
+  watch: {
+    showPaymentForm: function () {
+      if (!this.showPaymentForm) {
+        return 1
+      }
+      this.paymentForm.build()
+    }
+  },
+  mounted: function () {
+    this.internalId = this.id
+    const idempotencyKey = this.uuidv4()
+    const locationId = LOCATION_ID
+    const applicationId = APPLICATION_ID // 'sq0idp-gbQhcOCpmb2X4W1588Ky7A'
+    const that = this
+    // eslint-disable-next-line no-undef
+    this.paymentForm = new SqPaymentForm({
+      autoBuild: false,
+      applicationId: applicationId,
+      locationId: locationId,
+      idempotency_key: idempotencyKey,
+      inputClass: 'sq-input',
+      // Initialize the payment form elements
+
+      // Customize the CSS for SqPaymentForm iframe elements
+      inputStyles: [
+        {
+          fontSize: '.9em'
+        }
+      ],
+
+      // Initialize Apple Pay placeholder ID
+      applePay: {
+        elementId: that.id + '-sq-apple-pay'
+      },
+
+      // Initialize Masterpass placeholder ID
+      masterpass: {
+        elementId: that.id + '-sq-masterpass'
+      },
+
+      // Initialize the credit card placeholders
+      cardNumber: {
+        elementId: that.id + '-sq-card-number',
+        placeholder: 'Card number'
+      },
+      cvv: {
+        elementId: that.id + '-sq-cvv',
+        placeholder: 'CVV'
+      },
+      expirationDate: {
+        elementId: that.id + '-sq-expiration-date',
+        placeholder: 'MM / YY'
+      },
+      postalCode: {
+        elementId: that.id + '-sq-postal-code',
+        placeholder: 'Zip Code'
+      },
+
+      // SqPaymentForm callback functions
+      callbacks: {
+        /*
+           * callback function: methodsSupported
+           * Triggered when: the page is loaded.
+           */
+        methodsSupported: function (methods) {
+          // Only show the button if Apple Pay for Web is enabled
+          // Otherwise, display the wallet not enabled message.
+          that.applePay = methods.applePay
+          // that.masterpass = methods.masterpass
+        },
+
+        /*
+           * Digital Wallet related functions
+           */
+        createPaymentRequest: function () {
+          var paymentRequestJson
+          /* ADD CODE TO SET/CREATE paymentRequestJson */
+          return paymentRequestJson
+        },
+        validateShippingContact: function (contact) {
+          var validationErrorObj
+          /* ADD CODE TO SET validationErrorObj IF ERRORS ARE FOUND */
+          return validationErrorObj
+        },
+
+        /*
+           * callback function: cardNonceResponseReceived
+           * Triggered when: SqPaymentForm completes a card nonce request
+           */
+        cardNonceResponseReceived: function (errors, nonce, cardData) {
+          if (errors) {
+            errors.forEach(function (error) {
+              that.errors.push(error.message)
+            })
+            return
+          }
+          // Assign the nonce value to the hidden form field
+          document.getElementById('card-nonce').value = nonce
+
+          // POST the nonce form to the payment processing page
+          // document.getElementById('nonce-form').submit()
+          const configuration = that.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+          fetch(that.submitUrl, {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              nonce: nonce,
+              idempotencyKey: idempotencyKey,
+              currency: configuration.payment.currency,
+              amountFiat: configuration.payment.amountFiat * 100, // amounts are in smallest denomination (cents, pence, etc)
+              locationId: LOCATION_ID
+            })
+          }).catch(err => {
+            alert('Network error: ' + err)
+          }).then(response => {
+            if (!response.ok) {
+              return response.json().then(
+                errorInfo => Promise.reject(errorInfo))
+            }
+            return response.json()
+          }).then(data => {
+            // console.log(data)
+            data.opcode = 'fiat-payment-success'
+            that.$emit('paymentEvent', data)
+          }).catch(err => {
+            // console.error(err)
+            const data = {
+              opcode: 'fiat-payment-error',
+              reason: err
+            }
+            that.$emit('paymentEvent', data)
+          })
+        },
+        /*
+           * callback function: paymentFormLoaded
+           * Triggered when: SqPaymentForm is fully loaded
+           */
+        paymentFormLoaded: function () {
+          // console.log('paymentFormLoaded')
+        }
+      }
+    })
+    this.paymentForm.build()
+  },
+  methods: {
+    // Generate a random UUID as an idempotency key for the payment request
+    // length of idempotency_key should be less than 45
+    uuidv4: function () {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0
+        const v = c === 'x' ? r : (r & 0x3 | 0x8)
+        return v.toString(16)
+      })
+    },
+    requestCardNonce: function (event) {
+      // Don't submit the form until SqPaymentForm returns with a nonce
+      event.preventDefault()
+
+      // Request a nonce from the SqPaymentForm object
+      this.paymentForm.requestCardNonce()
+    },
+    testNumbers: function (event) {
+      // cross origin security restricted!
+      const iframe = document.getElementById(this.internalId + '-sq-card-number')
+      iframe.contentWindow.document.getElementsByTagName('input')[0].value = '4111'
+      iframe.contentWindow.document.getElementsByTagName('input')[1].value = '1111'
+      iframe.contentWindow.document.getElementsByTagName('input')[2].value = '1111'
+      iframe.contentWindow.document.getElementsByTagName('input')[3].value = '1111'
+      document.getElementById(this.internalId + '-sq-expiration-date').value = '12/2022'
+      document.getElementById(this.internalId + '-sq-cvv').value = '111'
+      document.getElementById(this.internalId + '-sq-postal-code').value = 'BN1 TRY'
+    }
+  },
+  computed: {
+    formattedFiat () {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const amountFiat = (configuration.payment) ? configuration.payment.amountFiat : '0'
+      const formatter = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'EUR'
+      })
+      const ffiat = formatter.formatToParts(amountFiat) /* $2,500.00 */
+      return ffiat[1].value + '.' + ffiat[3].value
+    },
+    fiatSymbol () {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const fc = (configuration.payment) ? configuration.payment.currency : '???'
+      if (fc === 'EUR') {
+        return '&euro;'
+      } else if (fc === 'GBP') {
+        return '&pound;'
+      } else {
+        return '&dollar;'
+      }
+    },
+    testMode () {
+      return APPLICATION_ID.indexOf('sandbox') > -1
+    }
+  }
+}
+</script>
+
+<style>
+.sq-input {
+  height: 30px;
+  background-color: #fff;
+  border: 2px solid rgb(223, 223, 223);
+  margin-bottom: 15px;
+  display: block;
+  padding: 5px;
+  line-height: 18px;
+  font-size: 16px;
+  margin: 0 0px 0px 0px;
+}
+.sq-input:first-child {
+  width: 100% !important;
+  margin-bottom: 15px;
+}
+.sq-input:nth-child(2) {
+  width: 31% !important;
+  margin-right: 2%;
+}
+.sq-input:nth-child(3) {
+  width: 31% !important;
+  margin-right: 2%;
+}
+.sq-input:nth-child(4) {
+  width: 33% !important;
+  margin-right: 0px;
+}
+.sq-input ::placeholder {
+  color: #aab7c4;
+  opacity: 0.5;
+}
+/* Define how SqPaymentForm iframes should look when they have focus */
+/* Define how SqPaymentForm iframes should look when they contain invalid values */
+.sq-input--error {
+  outline: 3px auto rgb(255, 97, 97);
+}
+.errorbox {
+  line-height: 14px;
+  text-align: left;
+}
+.error {
+  font-size: 10px;
+  color: rgb(164, 0, 30);
+  width: 45%;
+  display: inline-block;
+  margin-top: -10px;
+  font-weight: 400;
+}
+/* Customize the "Pay with Credit Card" button */
+.button-credit-card {
+  min-width: 200px;
+  min-height: 20px;
+  padding: 0;
+  margin: 5px;
+  line-height: 20px;
+  box-shadow: 2px 2px 1px rgb(200, 200, 200);
+  background: rgb(255, 255, 255);
+  border-radius: 5px;
+  border: 1px solid rgb(200, 200, 200);
+  font-weight: bold;
+  cursor: pointer;
+}
+.card-number {
+  width: 100%;
+}
+.modal .payButton {
+  margin-left: 0px;
+  position: absolute;
+  bottom: 0px;
+  width: 400px;
+}
+/* Customize the "{{Wallet}} not enabled" message */
+.wallet-not-enabled {
+  min-width: 200px;
+  min-height: 40px;
+  max-height: 64px;
+  padding: 0;
+  margin: 10px;
+  line-height: 40px;
+  background: #eee;
+  border-radius: 5px;
+  font-weight: lighter;
+  font-style: italic;
+  font-family: inherit;
+  display: block;
+}
+/* Customize the Apple Pay on the Web button */
+.button-apple-pay {
+  min-width: 200px;
+  min-height: 40px;
+  max-height: 64px;
+  padding: 0;
+  margin: 10px;
+  background-image: -webkit-named-image(apple-pay-logo-white);
+  background-color: black;
+  background-size: 100% 60%;
+  background-repeat: no-repeat;
+  background-position: 50% 50%;
+  border-radius: 5px;
+  cursor: pointer;
+  display: none;
+}
+/* Customize the Masterpass button */
+.button-masterpass button:hover {
+  background-image: url(https://static.masterpass.com/dyn/img/btn/global/mp_chk_btn_147x034px.svg);
+  border: 1pt solid rgb(44, 57, 240);
+}
+.button-masterpass {
+  min-width: 200px;
+  min-height: 40px;
+  max-height: 40px;
+  padding: 0;
+  margin: 10px;
+  background-image: url(https://static.masterpass.com/dyn/img/btn/global/mp_chk_btn_147x034px.svg);
+  background-color: black;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: 50% 50%;
+  border-radius: 5px;
+  border-color: rgb(255, 255, 255);
+  cursor: pointer;
+}
+#sq-walletbox {
+  text-align: center;
+  font-weight: bold;
+}
+#sq-ccbox {
+  margin: 5px;
+  padding: 0px 10px;
+  text-align: center;
+  vertical-align: top;
+  font-weight: bold;
+}
+.expiration-date,
+.cvv,
+.postal-code {
+  width: 30%;
+  display: inline-block;
+}
+#card-tainer {
+  min-height: 100px;
+  text-align: left;
+  margin-top: 8px;
+  background-color: white;
+  height: 80px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+  border-bottom-left-radius: 4px;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 3px 0 #e6ebf1;
+  -webkit-transition: box-shadow 150ms ease;
+  transition: box-shadow 150ms ease;
+  box-sizing: border-box;
+}
+</style>

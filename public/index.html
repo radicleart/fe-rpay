@@ -1,12 +1,13 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <link rel="icon" href="<%= BASE_URL %>favicon.ico">
-    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400&display=swap" rel="stylesheet">
-    <link href="https://use.fontawesome.com/releases/v5.0.6/css/all.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="icon" href="<%= BASE_URL %>favicon.ico">    
+    <!-- link to the SqPaymentForm library -->
+    <script type="text/javascript" src="https://js.squareupsandbox.com/v2/paymentform"></script>
+    <!-- link to the local custom styles for SqPaymentForm -->
     <title><%= htmlWebpackPlugin.options.title %></title>
   </head>
   <body class="bg-dark">
@@ -16,8 +17,8 @@
         labels: {
           orderMsg: 'Place order for \'STX to Lightning\' select number required and pay.',
           successMsg: 'Your order has been received with thanks.',
-          title: 'Risidio',
-          subtitle: 'Crowdfund Module',
+          title: 'The People\'s',
+          subtitle: 'Republic of Movies',
           card1Label: 'Select amount to send',
           card2Label1: 'How many STX tokens do you need?',
           card2Label2: 'Select operation',
@@ -38,7 +39,7 @@
           'color': '#000'
         },
         text2Color: {
-          'color': '#F9B807'
+          'color': '#0277bd'
         },
         text3Color: {
           'color': '#fff'
@@ -55,27 +56,19 @@
           '-moz-background-size': 'cover',
           '-o-background-size': 'cover',
           'background-size': 'cover',
-          'background-color': '#000',
+          'background-color': '#fff',
           // 'background-image': 'url("https://images.prismic.io/risidio-journal/59455bcb-a954-4713-9afd-cfe6130f0b26_Group+994.svg?auto=compress,format")',
           opacity: 1
         }
       }
-      const serviceData = {
-        stxAddress: 'ST-RPAY-ADDRESS'
+      const payment = {
+        amountFiat: 2.50,
+        currency: 'GBP',
+        method: 'bitcoin',
+        paymentCode: 'po-12323423324'
       }
-      const credits = {
-        amountFiatFixed: 0.10,
-        amountFiatPerCredit: 0,
-        precision: 1000,
-        fiatCurrency: 'EUR',
-        useCredits: false,
-        start: 0.05,
-        step: 0.01,
-        min: 0.01,
-        max: 1
-      }
-      window.risidioPaymentConfig = JSON.stringify({ mode: 'rpay-crowdfund', serviceKey: 'stacks-lightning-exchange', serviceData: serviceData, paymentOption: 'lightning', paymentOptions: { allowLightning: true, allowLSAT: false, allowEthereum: false, allowBitcoin: true, allowStacks: true }, paymentId: 'XqLKQxEAACQAYvsu', purchaseEndpoint: '/assets/buy-now', lookAndFeel: lookAndFeel, creditAttributes: credits})
+      window.risidioPaymentConfig = JSON.stringify({ paymentOption: 'lightning', paymentOptions: { allowLightning: true, allowLSAT: false, allowEthereum: false, allowBitcoin: true, allowStacks: true }, orderId: 'XqLKQxEAACQAYvsu', lookAndFeel: lookAndFeel, payment: payment})
     </script>
-    <rpay-entry msg="aint no sunshine!"></rpay-entry>
+    <div id="rpay-entry" msg="aint no sunshine!"></div>
   </body>
 </html>

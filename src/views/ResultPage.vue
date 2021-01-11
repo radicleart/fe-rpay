@@ -1,9 +1,9 @@
 <template>
 <b-card-group :style="cardStyle">
-  <b-card header-tag="header" footer-tag="footer" v-if="lookAndFeel" :style="background">
-    <template v-slot:header v-if="lookAndFeel.labels">
-      <h1 class="mb-2">{{lookAndFeel.labels.title}}</h1>
-      <h2 class="mb-0">{{lookAndFeel.labels.subtitle}}</h2>
+  <b-card header-tag="header" footer-tag="footer" v-if="$globalLookAndFeel" :style="background">
+    <template v-slot:header v-if="$globalLookAndFeel.labels">
+      <h1 class="mb-2">{{$globalLookAndFeel.labels.title}}</h1>
+      <h2 class="mb-0">{{$globalLookAndFeel.labels.subtitle}}</h2>
     </template>
     <b-card-text class="d-flex justify-content-center" v-if="result && result.opcode && result.opcode.startsWith('eth-')">
       <p v-html="result.message"></p>
@@ -36,7 +36,7 @@ export default {
   name: 'ResultPage',
   components: {
   },
-  props: ['lookAndFeel', 'result'],
+  props: ['result'],
   data () {
     return {
     }
@@ -50,10 +50,10 @@ export default {
       return EXPLORER + '/tx/' + this.result.txid
     },
     cardStyle () {
-      return (this.lookAndFeel) ? this.lookAndFeel.cardStyle : ''
+      return (this.$globalLookAndFeel) ? this.$globalLookAndFeel.cardStyle : ''
     },
     background () {
-      return (this.lookAndFeel) ? this.lookAndFeel.background : ''
+      return (this.$globalLookAndFeel) ? this.$globalLookAndFeel.background : ''
     }
   }
 }

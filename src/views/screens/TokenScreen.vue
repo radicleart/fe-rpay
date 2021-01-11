@@ -1,45 +1,40 @@
 <template>
 <div>
-  <order-info :lookAndFeel="lookAndFeel"/>
+  <order-info/>
   <div v-if="preimage">
     <div ref="payload" class="d-flex justify-content-center mt-5">
       <span class="ff-confirmed">Your payment is confirmed.</span>
     </div>
     <div class="d-flex justify-content-center mt-3">
-      <font-awesome-icon style="margin-top: 3px;padding: 3px; border-radius: 50%; border: 2pt solid #FFCE00; color: #FFCE00;" width="25px" height="25px" icon="check"/>
+      <b-icon style="margin-top: 3px;padding: 3px; border-radius: 50%; border: 2pt solid #FFCE00; color: #FFCE00;" width="25px" height="25px" icon="check"/>
     </div>
     <div class="p-3 mt-5">
-      <div class="d-flex justify-content-center mt-3"><a href="#" @click.prevent="reveal = !reveal" :style="lookAndFeel.text1Color">{{lookAndFeel.labels.successMsg}}</a></div>
+      <div class="d-flex justify-content-center mt-3"><a href="#" @click.prevent="reveal = !reveal" :style="$globalLookAndFeel.text1Color">{{$globalLookAndFeel.labels.successMsg}}</a></div>
         <div v-if="jokePayload">
           <div class="mt-3" v-for="(item, index) in payload()" :key="index">
             <div v-if="item && item">
               <div>{{item.tagline}}</div>
-              <div class="mt-2 text-danger" v-if="reveal" :style="lookAndFeel.text1Color">{{item.punchline}}</div>
+              <div class="mt-2 text-danger" v-if="reveal" :style="$globalLlookAndFeel.text1Color">{{item.punchline}}</div>
           </div>
         </div>
       </div>
     </div>
-    <div class="mt-3 d-flex justify-content-center" :style="lookAndFeel.text2Color">
+    <div class="mt-3 d-flex justify-content-center" :style="$globalLookAndFeel.text2Color">
       <b-button @click="prev()" variant="danger" class="text-white button1 bg-danger">Start Over</b-button>
     </div>
     <div class="d-flex justify-content-center mt-5 mx-3" ref="payload">
       <a class="copyAddress" href="#" @click.prevent="copyAddress($event)" style="text-decoration: underline;">
-        <span class="mr-2" :style="lookAndFeel.text1Color">Copy your receipt</span>
-      </a> <font-awesome-icon width="15px" height="15px" icon="copy" :style="lookAndFeel.text1Color"/>
+        <span class="mr-2" :style="$globalLookAndFeel.text1Color">Copy your receipt</span>
+      </a> <b-icon width="15px" height="15px" icon="copy" :style="$globalLookAndFeel.text1Color"/>
     </div>
   </div>
   <div v-else>
-    <div class="my-5 d-flex justify-content-center" :style="lookAndFeel.text2Color">
+    <div class="my-5 d-flex justify-content-center" :style="$globalLookAndFeel.text2Color">
       <b-button @click="prev()" variant="danger" class="text-white button1 bg-danger">Start Over</b-button>
     </div>
     <div class="d-flex justify-content-center mt-5">
-      <span class="ff-confirmed" :style="lookAndFeel.text1Color">Payment has not been received.</span>
+      <span class="ff-confirmed" :style="$globalLookAndFeel.text1Color">Payment has not been received.</span>
     </div>
-    <!--
-    <div class="d-flex justify-content-center mt-3">
-      <font-awesome-icon style="margin-top: 3px;padding: 3px; border-radius: 50%; border: 2pt solid #FF7272; color: #FF7272;" width="25px" height="25px" icon="times"/>
-    </div>
-    -->
   </div>
 </div>
 </template>
@@ -53,7 +48,6 @@ export default {
   components: {
     OrderInfo
   },
-  props: ['lookAndFeel'],
   data () {
     return {
       resource: null,
@@ -69,10 +63,10 @@ export default {
   },
   methods: {
     copyAddress () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
       var tempInput = document.createElement('input')
       tempInput.style = 'position: absolute; left: -1000px; top: -1000px'
-      tempInput.value = paymentChallenge.lsatInvoice.token
+      tempInput.value = paymentChallenge.data.uri
       document.body.appendChild(tempInput)
       tempInput.select()
       document.execCommand('copy')
@@ -100,11 +94,11 @@ export default {
   },
   computed: {
     token () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
       return (paymentChallenge) ? paymentChallenge.lsatInvoice.token : null
     },
     preimage () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
       return (paymentChallenge) ? paymentChallenge.lsatInvoice.preimage : null
     },
     jokePayload () {
@@ -118,10 +112,9 @@ export default {
 }
 </script>
 <style lang="scss">
-@import "@/assets/scss/customv2.scss";
 .flasher {
   font-size: 16px;
-  border: 2pt solid $warning;
+  border: 2pt solid yellow;
   border-radius: 10px;
 }
 .ff-confirmed {

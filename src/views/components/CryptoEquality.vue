@@ -2,7 +2,7 @@
 <b-card-text>
   <span class="mr-1 rd-text" v-html="currentSymbol"></span>
   <input readonly="true" class="rd-input" id="input-horizontal2" :value="currentAmount" placeholder="$$$"/>
-  <font-awesome-icon class="rd-text ml-2" width="15px" height="15px" icon="equals"/>
+  <b-icon class="rd-text ml-2" width="15px" height="15px" icon="equals"/>
   <input readonly="true" class="total-amount-fiat rd-input" id="input-horizontal3" :value="amountFiat" placeholder="$$$"/>
   <span class="rd-text ml-2">{{fiatCurrency}}</span>
 </b-card-text>
@@ -35,15 +35,15 @@ export default {
       }
     },
     amountFiat () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
       return (paymentChallenge.xchange) ? paymentChallenge.xchange.amountFiat : '0'
     },
     fiatCurrency () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
       return (paymentChallenge.xchange) ? paymentChallenge.xchange.fiatCurrency : '???'
     },
     currentAmount () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
       if (paymentChallenge.xchange) {
         if (this.paymentOption === 'ethereum') {
           return paymentChallenge.xchange.amountEth

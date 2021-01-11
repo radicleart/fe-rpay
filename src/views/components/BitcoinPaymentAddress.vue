@@ -12,7 +12,7 @@ paymentId<template>
     </b-input-group-prepend>
     <b-form-input readonly ref="paymentAmountBtc" style="height: 50px;" :value="paymentAmount" placeholder="Bitcoin amount"></b-form-input>
     <b-input-group-append>
-      <b-button class="bg-light" @click="copyAmount($event)"><font-awesome-icon width="15px" height="15px" icon="copy"/></b-button>
+      <b-button class="bg-light" @click="copyAmount($event)"><b-icon width="15px" height="15px" icon="copy"/></b-button>
     </b-input-group-append>
   </b-input-group>
   <b-input-group class="mb-3">
@@ -21,7 +21,7 @@ paymentId<template>
     </b-input-group-prepend>
     <b-form-input readonly ref="paymentAddressBtc" style="height: 50px;" :value="paymentAddress" placeholder="Bitcoin address"></b-form-input>
     <b-input-group-append>
-      <b-button class="bg-light" @click="copyAddress($event)"><font-awesome-icon width="15px" height="15px" icon="copy"/></b-button>
+      <b-button class="bg-light" @click="copyAddress($event)"><b-icon width="15px" height="15px" icon="copy"/></b-button>
     </b-input-group-append>
   </b-input-group>
 </div>
@@ -49,22 +49,19 @@ export default {
   },
   computed: {
     paymentAmount () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
-      return paymentChallenge.xchange.amountBtc
+      const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      return invoice.data.amount / 100000000
     },
     paymentAddress () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
-      return paymentChallenge.bitcoinInvoice.bitcoinAddress
+      const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      return invoice.data.address
     }
   },
 
   methods: {
     paymentUri () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
-      let uri = 'bitcoin:' + paymentChallenge.bitcoinInvoice.bitcoinAddress
-      uri += '?amount=' + paymentChallenge.xchange.amountBtc
-      uri += '&label=' + paymentChallenge.paymentId
-      return uri
+      const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      return invoice.data.uri
     },
     addQrCode () {
       var element = this.$refs.lndQrcode

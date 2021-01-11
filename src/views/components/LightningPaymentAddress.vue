@@ -11,12 +11,12 @@
       </div>
       <div class="d-flex justify-content-center">
         <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress($event)" style="text-decoration: underline;">
-          <span ref="myPaymentAddress" class="mr-2" :style="lookAndFeel.text1Color">Copy the address</span>
-        </a> <font-awesome-icon width="15px" height="15px" icon="copy" :style="lookAndFeel.text1Color"/>
+          <span ref="myPaymentAddress" class="mr-2" :style="$globalLookAndFeel.text1Color">Copy the address</span>
+        </a> <b-icon width="15px" height="15px" icon="file-earmark" :style="$globalLookAndFeel.text1Color"/>
       </div>
     </div>
     <div title="Open Channel" v-else>
-      <div class="text-info scan-text" :style="lookAndFeel.text1Color">
+      <div class="text-info scan-text" :style="$globalLookAndFeel.text1Color">
         For better connectivity you can open a lightning channel.
       </div>
       <div class="d-flex justify-content-center mb-3">
@@ -33,18 +33,15 @@
 <script>
 import QRCode from 'qrcode'
 import Vue from 'vue'
-import axios from 'axios'
 import { LSAT_CONSTANTS } from '@/lsat-constants'
 import CryptoCountdown from '@/views/components/CryptoCountdown'
 
-const API_PATH = process.env.VUE_APP_RADICLE_API
-// noinspection JSUnusedGlobalSymbols
 export default {
   name: 'LightningPaymentAddress2',
   components: {
     CryptoCountdown
   },
-  props: ['value', 'lookAndFeel'],
+  props: ['value'],
   data () {
     return {
       showChannel: false,
@@ -61,7 +58,6 @@ export default {
     Vue.nextTick(function () {
       this.addQrCode()
     }, this)
-    this.fetchInfo()
     this.peerAddress = '178.79.138.62:10011'
     if (location.href.indexOf('local') > -1) {
       this.peerAddress = '192.168.1.50:10011'
@@ -70,8 +66,8 @@ export default {
   methods: {
     addQrCode () {
       var element = this.$refs.lndQrcode
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
-      const paymentUri = 'lightning:' + paymentChallenge.lsatInvoice.paymentRequest
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      const paymentUri = paymentChallenge.data.uri
       QRCode.toCanvas(element, paymentUri, { errorCorrectionLevel: 'H' },
         function (error) {
           if (error) console.error(error)
@@ -91,25 +87,11 @@ export default {
           console.log('success!')
         })
     },
-    fetchInfo () {
-      const headers = this.$store.getters[LSAT_CONSTANTS.GET_HEADERS]
-      axios({
-        method: 'get',
-        url: API_PATH + '/lsat/v1/lightning/alice/getInfo',
-        headers: headers
-      }).then(response => {
-        this.info = response.data
-        this.addChannelQrCode()
-      })
-        .catch((error) => {
-          console.log(error)
-        })
-    },
     copyAddress () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
       var tempInput = document.createElement('input')
-      tempInput.style = 'position: absolute; left: -1000px; top: -1000px'
-      tempInput.value = paymentChallenge.lsatInvoice.paymentRequest
+      // tempInput.style = 'position: absolute; left: -1000px; top: -1000px'
+      tempInput.value = paymentChallenge.data.uri
       document.body.appendChild(tempInput)
       tempInput.select()
       document.execCommand('copy')
@@ -132,16 +114,16 @@ export default {
   },
   computed: {
     paymentRequest () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
-      return paymentChallenge.lsatInvoice.paymentRequest
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      return paymentChallenge.data.uri
     },
     paymentAmountSat () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
-      return paymentChallenge.xchange.amountSat
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      return paymentChallenge.data.amount
     },
     paymentAmountBtc () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
-      return paymentChallenge.xchange.amountBtc
+      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      return paymentChallenge.data.amount / 100000000
     }
   }
 }

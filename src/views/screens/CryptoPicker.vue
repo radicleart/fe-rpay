@@ -47,7 +47,7 @@ export default {
   name: 'CryptoPicker',
   components: {
   },
-  props: ['paymentOption', 'lookAndFeel'],
+  props: ['paymentOption'],
   data () {
     return {
       selected: null,
