@@ -1,39 +1,40 @@
-paymentId<template>
+<template>
 <div class="d-flex flex-column align-items-center">
   <div class="mb-3 mx-auto">
     <canvas ref="lndQrcode"></canvas>
   </div>
+  <div class="ff-countdown mb-3 d-flex justify-content-center">
+    <span class="mr-2">Code is valid for</span>
+    <crypto-countdown class="" v-on="$listeners" />
+  </div>
   <div class="rd-text mb-3 d-flex justify-content-center">
     <span><small>Send the indicated amount to the address below</small></span>
   </div>
-  <b-input-group class="mb-3">
-    <b-input-group-prepend>
-      <span class="input-group-text"><i class="fab fa-btc"></i></span>
-    </b-input-group-prepend>
-    <b-form-input readonly ref="paymentAmountBtc" style="height: 50px;" :value="paymentAmount" placeholder="Bitcoin amount"></b-form-input>
-    <b-input-group-append>
-      <b-button class="bg-light" @click="copyAmount($event)"><b-icon width="15px" height="15px" icon="copy"/></b-button>
-    </b-input-group-append>
-  </b-input-group>
-  <b-input-group class="mb-3">
-    <b-input-group-prepend>
-      <span class="input-group-text"><i class="fas fa-address-book"></i></span>
-    </b-input-group-prepend>
-    <b-form-input readonly ref="paymentAddressBtc" style="height: 50px;" :value="paymentAddress" placeholder="Bitcoin address"></b-form-input>
-    <b-input-group-append>
-      <b-button class="bg-light" @click="copyAddress($event)"><b-icon width="15px" height="15px" icon="copy"/></b-button>
-    </b-input-group-append>
-  </b-input-group>
+
+  <div class="d-flex justify-content-center">
+    <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress(paymentAmount)" style="text-decoration: underline;">
+      <span ref="myPaymentAddress" class="mr-2" :style="$globalLookAndFeel.text1Color">&#x0e3f; {{paymentAmount}}</span>
+      <b-icon width="15px" height="15px" icon="file-earmark" :style="$globalLookAndFeel.text1Color"/>
+    </a>
+  </div>
+  <div class="d-flex justify-content-center">
+    <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress(paymentAddress)" style="text-decoration: underline;">
+      <span ref="myPaymentAddress" class="mr-2" :style="$globalLookAndFeel.text1Color">{{paymentAddress}}</span>
+      <b-icon width="15px" height="15px" icon="file-earmark" :style="$globalLookAndFeel.text1Color"/>
+    </a>
+  </div>
 </div>
 </template>
 
 <script>
 import QRCode from 'qrcode'
 import { LSAT_CONSTANTS } from '@/lsat-constants'
+import CryptoCountdown from '@/views/components/CryptoCountdown'
 
 export default {
   name: 'BitcoinPaymentAddress',
   components: {
+    CryptoCountdown
   },
   data () {
     return {
@@ -61,7 +62,10 @@ export default {
   methods: {
     paymentUri () {
       const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
-      return invoice.data.uri
+      let uri = 'bitcoin:' + invoice.address
+      uri += '?amount=' + invoice.amount
+      uri += '&label=' + invoice.description
+      return uri
     },
     addQrCode () {
       var element = this.$refs.lndQrcode
@@ -76,7 +80,26 @@ export default {
       document.execCommand('copy')
       this.$notify({ type: 'success', title: 'Copied Address', text: 'Copied the address to clipboard: ' + copyText.value })
     },
-    copyAddress () {
+    copyAddress (value) {
+      // const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      var tempInput = document.createElement('input')
+      // tempInput.style = 'position: absolute; left: -1000px; top: -1000px'
+      tempInput.value = value // invoice.data.address
+      document.body.appendChild(tempInput)
+      tempInput.select()
+      document.execCommand('copy')
+      document.body.removeChild(tempInput)
+      // const flasher = document.getElementById('flash-me')
+      const flasher = this.$refs.lndQrcode
+      flasher.classList.add('flasher')
+      setTimeout(function () {
+        flasher.classList.remove('flasher')
+      }, 1000)
+      // copyText.select()
+      // document.execCommand('copy')
+    },
+
+    copyAddress2 () {
       var copyText = this.$refs.paymentAddressBtc
       copyText.select()
       document.execCommand('copy')

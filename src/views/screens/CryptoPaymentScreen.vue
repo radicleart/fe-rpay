@@ -22,9 +22,10 @@
   </div>
   <div class="" v-else>
     <div class="d-flex justify-content-center" :style="$globalLookAndFeel.text1Color">
-      <lightning-payment-address v-if="paymentOption === 'lightning'"/>
-      <bitcoin-payment-address v-if="paymentOption === 'bitcoin'"/>
-      <stacks-payment-address v-if="paymentOption === 'stacks'"/>
+      <lightning-payment-address v-on="$listeners" v-if="paymentOption === 'lightning'"/>
+      <bitcoin-payment-address v-on="$listeners" v-if="paymentOption === 'bitcoin'"/>
+      <stacks-payment-address v-on="$listeners" v-if="paymentOption === 'stacks'"/>
+      <ethereum-payment-address v-on="$listeners" v-if="paymentOption === 'ethereum'"/>
     </div>
   </div>
   <div class="mt-2 d-flex justify-content-center mt-5">
@@ -38,12 +39,14 @@ import { LSAT_CONSTANTS } from '@/lsat-constants'
 import LightningPaymentAddress from '@/views/components/LightningPaymentAddress'
 import BitcoinPaymentAddress from '@/views/components/BitcoinPaymentAddress'
 import StacksPaymentAddress from '@/views/components/StacksPaymentAddress'
+import EthereumPaymentAddress from '@/views/components/EthereumPaymentAddress'
 
 export default {
-  name: 'PaymentScreen',
+  name: 'CryptoPaymentScreen',
   components: {
     LightningPaymentAddress,
     BitcoinPaymentAddress,
+    EthereumPaymentAddress,
     StacksPaymentAddress
   },
   data () {
@@ -51,45 +54,22 @@ export default {
       expired: false,
       message: null,
       paying: false,
-      paymentOption: null,
       loading: true
     }
   },
   mounted () {
-    const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-    this.paymentOption = configuration.paymentOption
-    if (configuration.opcode === 'lsat-place-order') {
-      this.$store.commit('setDisplayCard', 0)
-    }
     this.loading = false
   },
   methods: {
-    paymentEvent: function (data) {
-      if (data.opcode === 'eth-payment-begun1') {
-        this.paying = true
-        this.message = 'Sending payment ... takes up to a minute.'
-      } else if (data.opcode === 'eth-payment-begun2') {
-        this.paying = true
-        this.message = 'Payment successful - starting...'
-      } else if (data.opcode === 'eth-payment-begun3') {
-        this.paying = false
-      } else {
-        this.paying = false
-        this.$emit('paymentEvent', data)
-      }
-    },
     prev () {
       this.$emit('prev')
-    },
-    evPaymentExpired () {
-      this.loading = true
-      this.expired = true
-      this.$store.dispatch('deleteExpiredPayment').then(() => {
-        this.loading = false
-      })
     }
   },
   computed: {
+    paymentOption () {
+      const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
+      return paymentOption
+    },
     timedOutOrExpired () {
       const expired = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE_EXPIRED]
       return expired

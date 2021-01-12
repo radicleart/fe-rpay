@@ -36,7 +36,7 @@
   </b-card-text>
   <b-card-text>
     <div class="mt-2 d-flex justify-content-around mt-5">
-      <div class="ff-cancel"><a href="#" @click="$emit('paymentEvent', { opcode: 'switch-method', method: 'bitcoin' })">Switch to Bitcoin</a></div>
+      <div class="ff-cancel"><a href="#" @click="$emit('paymentEvent', { opcode: 'switch-method', method: 'bitcoin' })">Switch to Crypto</a></div>
       <div v-if="testMode" class="ff-cancel"><a href="#" @click.prevent="showTestPayments = !showTestPayments">Test Numbers</a></div>
     </div>
   </b-card-text>

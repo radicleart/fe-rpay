@@ -62,12 +62,13 @@
         }
       }
       const payment = {
+        forceNew: false,
         amountFiat: 2.50,
         currency: 'GBP',
         method: 'bitcoin',
-        paymentCode: 'po-12323423324'
+        orderId: 'XqLKQxEAACQAYvsu'
       }
-      window.risidioPaymentConfig = JSON.stringify({ paymentOption: 'lightning', paymentOptions: { allowLightning: true, allowLSAT: false, allowEthereum: false, allowBitcoin: true, allowStacks: true }, orderId: 'XqLKQxEAACQAYvsu', lookAndFeel: lookAndFeel, payment: payment})
+      window.risidioPaymentConfig = JSON.stringify({ paymentOption: 'lightning', paymentOptions: [ { allowBitcoin: true }, {allowLightning: true}, {allowStacks: true}, {allowLSAT: false}, {allowEthereum: true} ], lookAndFeel: lookAndFeel, payment: payment})
     </script>
     <div id="rpay-entry" msg="aint no sunshine!"></div>
   </body>

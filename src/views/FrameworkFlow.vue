@@ -8,9 +8,10 @@
         </template>
 
         <order-info/>
+        <crypto-options v-if="method !== 'fiat'"/>
 
         <crypto-picker v-if="displayCard === 100" v-on="$listeners"/>
-        <bitcoin-payment-screen v-if="displayCard === 102 && method === 'bitcoin'" v-on="$listeners"/>
+        <crypto-payment-screen v-if="displayCard === 102 && method === 'bitcoin'" v-on="$listeners"/>
         <fiat-payment-screen :id="id" v-if="displayCard === 102 && method === 'fiat'" v-on="$listeners"/>
         <token-screen  v-if="displayCard === 104" v-on="$listeners"/>
 
@@ -28,19 +29,21 @@
 <script>
 import { LSAT_CONSTANTS } from '@/lsat-constants'
 import TokenScreen from './screens/TokenScreen'
-import BitcoinPaymentScreen from './screens/BitcoinPaymentScreen'
+import CryptoPaymentScreen from './screens/CryptoPaymentScreen'
 import CryptoPicker from './screens/CryptoPicker'
 import FiatPaymentScreen from '@/views/screens/FiatPaymentScreen'
+import CryptoOptions from '@/views/components/CryptoOptions'
 import OrderInfo from '@/views/components/OrderInfo'
 
 export default {
   name: 'FrameworkFlow',
   components: {
     TokenScreen,
-    BitcoinPaymentScreen,
+    CryptoPaymentScreen,
     CryptoPicker,
     FiatPaymentScreen,
-    OrderInfo
+    OrderInfo,
+    CryptoOptions
   },
   data () {
     return {

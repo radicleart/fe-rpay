@@ -90,7 +90,7 @@ export default {
         } else if (this.paymentOption === 'stacks') {
           return configuration.payment.amountStx
         } else {
-          return configuration.payment.amountBtc / 100000000
+          return configuration.payment.amountBtc
         }
       }
       return 0

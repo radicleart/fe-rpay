@@ -7,7 +7,8 @@
       </div>
       <!-- <input v-show="false" class="input2" readonly="true" ref="paymentAddressBtc"  @click="copyAddress($event)" :value="paymentRequest" placeholder="Lightning invoice"/> -->
       <div class="ff-countdown mb-3 d-flex justify-content-center">
-        <span class="mr-2">Code is valid for</span> <crypto-countdown class="" @evPaymentExpired="evPaymentExpired" />
+        <span class="mr-2">Code is valid for</span>
+        <crypto-countdown class="" v-on="$listeners" />
       </div>
       <div class="d-flex justify-content-center">
         <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress($event)" style="text-decoration: underline;">
@@ -66,16 +67,13 @@ export default {
   methods: {
     addQrCode () {
       var element = this.$refs.lndQrcode
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
-      const paymentUri = paymentChallenge.data.uri
+      const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      const paymentUri = invoice.data.uri
       QRCode.toCanvas(element, paymentUri, { errorCorrectionLevel: 'H' },
         function (error) {
           if (error) console.error(error)
           console.log('success!')
         })
-    },
-    evPaymentExpired () {
-      this.$emit('evPaymentExpired')
     },
     addChannelQrCode () {
       var element = this.$refs.lndChannel
@@ -88,10 +86,10 @@ export default {
         })
     },
     copyAddress () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
       var tempInput = document.createElement('input')
       // tempInput.style = 'position: absolute; left: -1000px; top: -1000px'
-      tempInput.value = paymentChallenge.data.uri
+      tempInput.value = invoice.data.uri
       document.body.appendChild(tempInput)
       tempInput.select()
       document.execCommand('copy')
@@ -114,16 +112,16 @@ export default {
   },
   computed: {
     paymentRequest () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
-      return paymentChallenge.data.uri
+      const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      return invoice.data.uri
     },
     paymentAmountSat () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
-      return paymentChallenge.data.amount
+      const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      return invoice.data.amount
     },
     paymentAmountBtc () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
-      return paymentChallenge.data.amount / 100000000
+      const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      return invoice.data.amount / 100000000
     }
   }
 }

@@ -1,107 +1,117 @@
 <template>
-<div class="d-flex flex-column align-items-center">
-  <div class="rd-text mt-3 mx-auto" v-if="!stacksSupported" style="height: 40vh;">
-    <h2 class="mt-0">Coming soon - stay tuned!</h2>
+<div>
+  <div>
+    <div title="Make Payment">
+      <div class="text-center">
+        <canvas ref="lndQrcode"></canvas>
+      </div>
+      <div class="ff-countdown mb-3 d-flex justify-content-center">
+        <span class="mr-2">Code is valid for</span>
+        <crypto-countdown class="" v-on="$listeners" />
+      </div>
+      <div class="mb-5 d-flex justify-content-center">
+        <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress()" style="text-decoration: underline;">
+          <span ref="myPaymentAddress" class="mr-2" :style="$globalLookAndFeel.text1Color">Copy the address</span>
+        </a>
+        <b-icon width="15px" height="15px" icon="file-earmark" :style="$globalLookAndFeel.text1Color"/>
+      </div>
+    </div>
+    <div class="flex-column align-items-center">
+      <b-button v-if="!profile.loggedIn" variant="info" class="mb-5" style="white-space: nowrap; width: 250px;" @click.prevent="doLogin()">Login to Connect</b-button>
+      <b-button v-else variant="info" class="mb-5" style="white-space: nowrap; width: 250px;" @click.prevent="sendPayment()">Donate with Stacks Connect</b-button>
+    </div>
+    <div class="flex-column align-items-center">
+      <span class="text-danger">{{errorMessage}}</span>
+    </div>
   </div>
-  <div class="mb-3 mx-auto" v-if="stacksSupported">
-    <canvas id="qrcode"></canvas>
-  </div>
-  <div class="rd-text my-5 d-flex justify-content-center" v-if="stacksSupported">
-    <span><small>Send the indicated amount to the address below</small></span>
-  </div>
-  <b-input-group class="mb-3" v-if="stacksSupported">
-    <b-input-group-prepend>
-      <span class="input-group-text"><i class="fab fa-btc"></i></span>
-    </b-input-group-prepend>
-    <b-form-input readonly id="payment-amount-btc" style="height: 50px;" :value="paymentAmount" placeholder="Bitcoin amount"></b-form-input>
-    <b-input-group-append>
-      <b-button class="bg-white text-dark" @click="copyAmount($event)"><b-icon width="15px" height="15px" icon="copy"/></b-button>
-    </b-input-group-append>
-  </b-input-group>
-  <b-input-group class="mb-3" v-if="stacksSupported">
-    <b-input-group-prepend>
-      <span class="input-group-text"><i class="fas fa-address-book"></i></span>
-    </b-input-group-prepend>
-    <b-form-input readonly id="payment-address-btc" style="height: 50px;" :value="paymentAddress" placeholder="Stacks address"></b-form-input>
-    <b-input-group-append>
-      <b-button class="bg-white text-dark" @click="copyAddress($event)"><b-icon width="15px" height="15px" icon="copy"/></b-button>
-    </b-input-group-append>
-  </b-input-group>
 </div>
 </template>
 
 <script>
 import QRCode from 'qrcode'
-import moment from 'moment'
 import { LSAT_CONSTANTS } from '@/lsat-constants'
+import CryptoCountdown from '@/views/components/CryptoCountdown'
+
+const STACKS_PAYMENT_ADDRESS = process.env.VUE_APP_STACKS_PAYMENT_ADDRESS
 
 // noinspection JSUnusedGlobalSymbols
 export default {
-  name: 'BitcoinPaymentAddress',
+  name: 'StacksPaymentAddress',
   components: {
+    CryptoCountdown
   },
   props: {
   },
   data () {
     return {
+      errorMessage: null,
+      waitingMessage: 'Open Connect Wallet to proceed (sending transactions to the stacks network takes a minute or so...)'
     }
   },
   watch: {
-    'paymentAmount' () {
-      this.addQrCode()
-    }
   },
   mounted () {
     this.addQrCode()
   },
-  computed: {
-    myProfile () {
-      const blockstackProfile = this.$store.getters['authStore/getMyProfile']
-      return blockstackProfile
-    },
-    currentTime () {
-      const serverTime = this.$store.getters.serverTime
-      return moment(serverTime).format('HH:mm:ss')
-    },
-    stacksSupported () {
-      return false
-    },
-    paymentAmount () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
-      return paymentChallenge.xchange.amountBtc
-    },
-    paymentAddress () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
-      return paymentChallenge.address
-    }
-  },
-
   methods: {
+    doLogin () {
+      this.$store.dispatch('stacksStore/startLogin').then((result) => {
+        this.errorMessage = 'Error found'
+        this.loading = false
+      })
+    },
+    sendPayment () {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      this.loading = true
+      this.waitingMessage = 'Processing Payment'
+      this.$store.dispatch('stacksStore/makeTransfer', { amountStx: configuration.payment.amountStx, paymentAddress: STACKS_PAYMENT_ADDRESS }).then((result) => {
+        const data = { status: 10, opcode: 'eth-payment-confirmed', txId: result.txId }
+        const paymentEvent = this.$store.getters[LSAT_CONSTANTS.KEY_RETURN_STATE](data)
+        // this.$emit('paymentEvent', { opcode: 'eth-payment-begun2' })
+        this.$emit('paymentEvent', paymentEvent)
+        this.$store.dispatch('receivePayment', paymentEvent).then((result) => {
+          this.waitingMessage = 'Processed Payment'
+          this.loading = false
+          // this.$emit('paymentEvent', paymentEvent)
+        })
+      }).catch((e) => {
+        this.errorMessage = 'Error found'
+        this.loading = false
+      })
+    },
     paymentUri () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
-      let uri = 'bitcoin:' + paymentChallenge.address
-      uri += '?amount=' + paymentChallenge.xchange.amountBtc
-      if (paymentChallenge.stacksInvoice) uri += '&label=' + paymentChallenge.stacksInvoice.memo
-      return uri
+      // const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      return STACKS_PAYMENT_ADDRESS
     },
     addQrCode () {
-      const $qrCode = document.getElementById('qrcode')
+      var element = this.$refs.lndQrcode
       const paymentUri = this.paymentUri()
       QRCode.toCanvas(
-        $qrCode, paymentUri, { errorCorrectionLevel: 'H' },
+        element, paymentUri, { errorCorrectionLevel: 'H' },
         function () {})
     },
-    copyAmount () {
-      var copyText = document.getElementById('payment-amount-btc')
-      copyText.select()
-      document.execCommand('copy')
-      this.$notify({ type: 'success', title: 'Copied Address', text: 'Copied the address to clipboard: ' + copyText.value })
-    },
     copyAddress () {
-      var copyText = document.getElementById('payment-address-btc')
-      copyText.select()
+      var tempInput = document.createElement('input')
+      tempInput.value = STACKS_PAYMENT_ADDRESS
+      document.body.appendChild(tempInput)
+      tempInput.select()
       document.execCommand('copy')
-      this.$notify({ type: 'success', title: 'Copied Address', text: 'Copied the address to clipboard: ' + copyText.value })
+      document.body.removeChild(tempInput)
+      // const flasher = document.getElementById('flash-me')
+      const flasher = this.$refs.lndQrcode
+      flasher.classList.add('flasher')
+      setTimeout(function () {
+        flasher.classList.remove('flasher')
+      }, 1000)
+    }
+  },
+  computed: {
+    profile () {
+      const profile = this.$store.getters[LSAT_CONSTANTS.KEY_PROFILE]
+      return profile
+    },
+    paymentAddress () {
+      return STACKS_PAYMENT_ADDRESS
     }
   }
 }

@@ -1,6 +1,8 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import lsatHelper from './lsatHelper'
+import ethereumStore from './ethereumStore'
+import stacksStore from './stacksStore'
 import axios from 'axios'
 import SockJS from 'sockjs-client'
 import Stomp from '@stomp/stompjs'
@@ -10,47 +12,38 @@ let socket = null
 let stompClient = null
 const MESH_API = process.env.VUE_APP_RADICLE_API + '/mesh'
 const precision = 100000000
-const getAmountSat = function (amountBtc) {
+const setAmounts = function (tickerRates, configuration) {
   try {
-    if (typeof amountBtc === 'string') {
-      amountBtc = Number(amountBtc)
-    }
-    return Math.round(amountBtc * precision)
+    const rate = tickerRates.find((o) => o.currency === configuration.payment.currency)
+    const amountBtc = configuration.payment.amountFiat / rate.last
+    configuration.payment.amountBtc = amountBtc
+    configuration.payment.amountBtc = Math.round(amountBtc * precision) / precision
+    configuration.payment.amountSat = Math.round(amountBtc * precision)
+    configuration.payment.amountEth = Math.round((configuration.payment.amountFiat / rate.ethPrice) * precision) / precision
+    configuration.payment.amountStx = Math.round((configuration.payment.amountFiat / rate.stxPrice) * precision) / precision
   } catch {
     return 0
   }
 }
-
-const options = [{ text: 'Risidio LSAT', value: 'lsat' }, { text: 'Lightning', value: 'lightning' }, { text: 'Bitcoin', value: 'bitcoin' }, { text: 'Ether', value: 'ethereum' }, { text: 'Stacks', value: 'stacks' }]
 const getPaymentOptions = function (configuration) {
   const allowedOptions = []
+  const options = configuration.paymentOptions
   options.forEach(function (option) {
-    if (option.value === 'lightning') {
-      if (!configuration.paymentOptions || configuration.paymentOptions.allowLightning) {
-        allowedOptions.push({ text: 'Lightning', value: 'lightning' })
-      }
-    } else if (option.value === 'bitcoin') {
-      if (!configuration.paymentOptions || configuration.paymentOptions.allowBitcoin) {
-        allowedOptions.push({ text: 'Bitcoin', value: 'bitcoin' })
-      }
-    } else if (option.value === 'lsat') {
-      if (!configuration.paymentOptions || configuration.paymentOptions.allowLSAT) {
-        allowedOptions.push({ text: 'Risidio LSAT', value: 'lsat' })
-      }
-    } else if (option.value === 'ethereum') {
-      if (!configuration.paymentOptions || configuration.paymentOptions.allowEthereum) {
-        allowedOptions.push({ text: 'Ether', value: 'ethereum' })
-      }
-    } else if (option.value === 'stacks') {
-      if (!configuration.paymentOptions || configuration.paymentOptions.allowStacks) {
-        allowedOptions.push({ text: 'Stacks', value: 'stacks' })
-      }
+    if (option.allowLightning) {
+      allowedOptions.push({ text: 'Lightning', value: 'lightning', mainOption: configuration.paymentOption === 'lightning' })
+    } else if (option.allowBitcoin) {
+      allowedOptions.push({ text: 'Bitcoin', value: 'bitcoin', mainOption: configuration.paymentOption === 'bitcoin' })
+    } else if (option.allowLSAT) {
+      allowedOptions.push({ text: 'Risidio LSAT', value: 'lsat', mainOption: configuration.paymentOption === 'lsat' })
+    } else if (option.allowEthereum) {
+      allowedOptions.push({ text: 'Ether', value: 'ethereum', mainOption: configuration.paymentOption === 'ethereum' })
+    } else if (option.allowStacks) {
+      allowedOptions.push({ text: 'Stacks', value: 'stacks', mainOption: configuration.paymentOption === 'stacks' })
     }
   })
   return allowedOptions
 }
 const subscribeApiNews = function (commit, paymentId) {
-  checkPayment(commit, paymentId)
   socket = new SockJS(MESH_API + '/api-news')
   stompClient = Stomp.over(socket)
   stompClient.connect({}, function () {
@@ -59,8 +52,8 @@ const subscribeApiNews = function (commit, paymentId) {
       commit('setMiningNews', news)
     })
     stompClient.subscribe('/queue/rates-news', function (response) {
-      const news = JSON.parse(response.body)
-      commit('setRatesNews', news)
+      const rates = JSON.parse(response.body)
+      commit('setTickerRates', rates.tickerRates)
     })
   },
   function (error) {
@@ -68,18 +61,34 @@ const subscribeApiNews = function (commit, paymentId) {
   })
 }
 
-const checkPayment = function (commit, paymentId) {
-  axios.post(MESH_API + '/v2/checkPayment/' + paymentId).then(response => {
-    commit('setResponse', response.data)
-  }).catch((error) => {
-    console.log(error)
-  })
+const checkPayment = function (state, commit, paymentId) {
+  if (state.timer) {
+    clearInterval(state.timer)
+  }
+  state.timer = setInterval(function () {
+    axios.post(MESH_API + '/v2/checkPayment/' + paymentId).then(response => {
+      // window.eventBus.$emit('paymentEvent', { opcode: 'crypto-payment-success' })
+      const invoice = response.data
+      if (invoice.data.status === 'paid' || invoice.data.status === 'processing') {
+        clearInterval(state.timer)
+        localStorage.setItem('OP_INVOICE', JSON.stringify(invoice))
+        commit('setInvoice', invoice)
+        invoice.opcode = 'crypto-payment-success'
+        window.eventBus.$emit('paymentEvent', invoice)
+      }
+    }).catch((error) => {
+      console.log(error)
+    })
+  }, 3000)
 }
 
 export default new Vuex.Store({
   modules: {
+    ethereumStore: ethereumStore,
+    stacksStore: stacksStore
   },
   state: {
+    timer: null,
     xgeRates: null,
     ratesNews: null,
     configuration: null,
@@ -139,6 +148,9 @@ export default new Vuex.Store({
     setPaymentMethod (state, method) {
       state.configuration.payment.method = method
     },
+    setCurrentCryptoPaymentOption (state, o) {
+      state.configuration.paymentOption = o
+    },
     addPaymentOption (state, o) {
       state.configuration.paymentOption = o
     },
@@ -151,8 +163,8 @@ export default new Vuex.Store({
     setInvoice (state, invoice) {
       state.invoice = invoice
     },
-    setRatesNews (state, ratesNews) {
-      state.ratesNews = ratesNews
+    setTickerRates (state, tickerRates) {
+      state.tickerRates = tickerRates
     },
     setXgeRates (state, xgeRates) {
       state.xgeRates = xgeRates
@@ -161,31 +173,44 @@ export default new Vuex.Store({
   actions: {
     initialiseApp ({ state, commit }, configuration) {
       return new Promise((resolve) => {
-        axios.get(MESH_API + '/v1/rates-news').then(response => {
-          commit('setRatesNews', response.data)
+        axios.get(MESH_API + '/v1/rates/ticker').then(response => {
+          commit('setTickerRates', response.data)
+          setAmounts(state.tickerRates, configuration)
           commit('addConfiguration', configuration)
           commit('addPaymentOptions')
+          if (configuration.payment.forceNew) {
+            localStorage.removeItem('OP_INVOICE')
+          }
           if (localStorage.getItem('OP_INVOICE')) {
             const savedInvoice = JSON.parse(localStorage.getItem('OP_INVOICE'))
+            if (savedInvoice) {
+              if (savedInvoice.data.status === 'paid' || savedInvoice.data.status === 'processing') {
+                commit('setInvoice', savedInvoice)
+                commit('addConfiguration', configuration)
+                savedInvoice.opcode = 'crypto-payment-success'
+                window.eventBus.$emit('paymentEvent', savedInvoice)
+                resolve(savedInvoice)
+                return
+              }
+            }
             if (!lsatHelper.lsatExpired(savedInvoice)) {
               commit('setInvoice', savedInvoice)
               subscribeApiNews(commit, savedInvoice.data.id)
-              configuration.payment.amountBtc = savedInvoice.data.amount
+              checkPayment(state, commit, savedInvoice.data.id)
               commit('addConfiguration', configuration)
               resolve(savedInvoice)
               return
             }
           }
-          const rate = state.ratesNews.tickerRates.find((o) => o.currency === configuration.payment.currency)
           const data = {
-            amount: getAmountSat((configuration.payment.amountFiat / rate.last)),
+            amount: configuration.payment.amountSat,
             description: (configuration.payment.description) ? configuration.payment.description : 'Donation to project'
           }
           axios.post(MESH_API + '/v2/fetchPayment', data).then(response => {
             const invoice = response.data
             localStorage.setItem('OP_INVOICE', JSON.stringify(invoice))
-            configuration.payment.amountBtc = invoice.data.amount
             subscribeApiNews(commit, invoice.data.id)
+            checkPayment(state, commit, invoice.data.id)
             commit('addConfiguration', configuration)
             commit('setInvoice', invoice)
             resolve(invoice)

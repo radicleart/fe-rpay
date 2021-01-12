@@ -31,37 +31,21 @@ export default {
     this.timeout = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE_DURATION]
     this.expired = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE_EXPIRED]
     if (this.expired) {
-      this.$emit('evPaymentExpired')
+      this.$emit('paymentEvent', { opcode: 'crypto-payment-expired' })
     }
     this.startCountdown()
-  },
-  computed: {
-    currentCountdown () {
-      if (!this.countdown && this.timeout) {
-        var hrs = this.timeout.hours
-        var min = this.timeout.minutes
-        var sec = this.timeout.seconds
-        if (hrs < 10 && hrs.length !== 2) hrs = '0' + hrs
-        if (min < 10 && min.length !== 2) min = '0' + min
-        if (sec < 10 && sec.length !== 2) sec = '0' + sec
-        if (this.timeout.hours > 0) {
-          return hrs + ':' + min + ':' + sec
-        } else {
-          return min + ':' + sec
-        }
-      } else {
-        return this.countdown
-      }
-    }
   },
   methods: {
     expires () {
       return this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE_EXPIRES]
     },
+    evPaymentExpired () {
+      this.$emit('paymentEvent', { opcode: 'crypto-payment-expired' })
+    },
     clockReset () {
       this.$store.dispatch('fetchRates')
       this.expired = true
-      this.$emit('evPaymentExpired')
+      this.$emit('paymentEvent', { opcode: 'crypto-payment-expired' })
     },
     startCountdown () {
       var duration = moment.duration(this.timeout)
@@ -87,9 +71,25 @@ export default {
           duration = moment.duration($self.timeout)
         }
       }, 1000)
-    },
-    evPaymentExpired () {
-      this.$emit('evPaymentExpired')
+    }
+  },
+  computed: {
+    currentCountdown () {
+      if (!this.countdown && this.timeout) {
+        var hrs = this.timeout.hours
+        var min = this.timeout.minutes
+        var sec = this.timeout.seconds
+        if (hrs < 10 && hrs.length !== 2) hrs = '0' + hrs
+        if (min < 10 && min.length !== 2) min = '0' + min
+        if (sec < 10 && sec.length !== 2) sec = '0' + sec
+        if (this.timeout.hours > 0) {
+          return hrs + ':' + min + ':' + sec
+        } else {
+          return min + ':' + sec
+        }
+      } else {
+        return this.countdown
+      }
     }
   }
 }

@@ -1,9 +1,12 @@
 <template>
 <div v-if="loaded">
-  <div class="" v-if="page === 'result'" >
-    <result-page :result="result" />
+  <div class="" v-if="!page" >
+    loading
   </div>
-  <div v-else>
+  <div class="" v-else-if="page === 'result'" >
+    <result-page/>
+  </div>
+  <div v-else :key="componentKey">
     <framework-flow @paymentEvent="paymentEvent($event)"/>
   </div>
   <notifications position="top right" width="30%" />
@@ -24,7 +27,7 @@ export default {
   props: ['paymentConfig'],
   data () {
     return {
-      result: null,
+      page: null,
       loaded: false,
       componentKey: 0,
       message: 'Loading invoice data - please wait...'
@@ -32,8 +35,21 @@ export default {
   },
   mounted () {
     const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-    this.$store.dispatch('initialiseApp', configuration).then(() => {
+    this.$store.dispatch('initialiseApp', configuration).then((invoice) => {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      if (invoice.data.status === 'paid' || invoice.data.status === 'processing') {
+        this.page = 'result'
+      } else {
+        this.page = configuration.payment.method
+      }
       this.loaded = true
+    })
+    const $self = this
+    window.eventBus.$on('paymentEvent', function (data) {
+      if (data.opcode === 'crypto-payment-success' || data.opcode === 'fiat-payment-success') {
+        $self.page = 'result'
+      }
+      $self.componentKey += 1
     })
   },
   beforeDestroy () {
@@ -54,14 +70,13 @@ export default {
       return paymentConfig
     },
     paymentEvent: function (data) {
-      if (data.opcode === 'lsat-payment-expired') {
+      if (data.opcode === 'crypto-payment-expired') {
+        this.paymentExpired()
+      } else if (data.opcode === 'payment-restart') {
         this.paymentExpired()
       } else if (data.opcode === 'switch-method') {
         this.$store.commit('setPaymentMethod', data.method)
-      } else {
-        this.result = data
       }
-      // this.$emit('paymentEvent', data)
       window.eventBus.$emit('paymentEvent', data)
     },
     prev () {
@@ -78,14 +93,14 @@ export default {
       this.$store.commit('setDisplayCard', displayCard)
     },
     paymentExpired () {
-      this.$store.dispatch('fetchRates')
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      this.$store.dispatch('initialiseApp', configuration).then(() => {
+        this.componentKey += 1
+        this.loaded = true
+      })
     }
   },
   computed: {
-    page () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      return configuration.payment.method
-    }
   }
 }
 </script>

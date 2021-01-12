@@ -1,40 +1,28 @@
 <template>
-<b-card-group :style="cardStyle">
-  <b-card header-tag="header" footer-tag="footer" v-if="$globalLookAndFeel" :style="background">
-    <template v-slot:header v-if="$globalLookAndFeel.labels">
-      <h1 class="mb-2">{{$globalLookAndFeel.labels.title}}</h1>
-      <h2 class="mb-0">{{$globalLookAndFeel.labels.subtitle}}</h2>
-    </template>
-    <b-card-text class="d-flex justify-content-center" v-if="result && result.opcode && result.opcode.startsWith('eth-')">
-      <p v-html="result.message"></p>
-      <p v-if="result.opcode === 'eth-payment-confirmed'"><a :href="etherScanUrl">view transaction on etherscan.</a></p>
-    </b-card-text>
-    <template v-slot:footer>
-      <div class="text-center d-flex justify-content-end">
-        <button class="">Back</button>
-      </div>
-    </template>
-  </b-card>
-  <b-card header-tag="header" footer-tag="footer" v-else>
-    <b-card-text class="d-flex justify-content-center" v-if="result && result.opcode && result.opcode.startsWith('eth-')">
-      <p v-html="result.message"></p>
-      <p v-if="result.opcode === 'eth-payment-confirmed'"><a :href="etherScanUrl">view transaction on etherscan.</a></p>
-    </b-card-text>
-    <template v-slot:footer>
-      <div class="text-center d-flex justify-content-end">
-        <button class="">Back</button>
-      </div>
-    </template>
-  </b-card>
-</b-card-group>
+<div class="d-flex justify-content-center">
+  <div class="mx-auto">
+    <b-card-group :style="$globalLookAndFeel.cardStyle">
+      <b-card header-tag="header" footer-tag="footer" :style="background">
+        <template v-slot:header class="">
+          <div class="d-flex justify-content-center"><span class="ff-title" :style="$globalLookAndFeel.text1Color">{{$globalLookAndFeel.labels.title}}</span>&nbsp;<span class="ff-subtitle" :style="$globalLookAndFeel.text2Color">{{$globalLookAndFeel.labels.subtitle}}</span></div>
+        </template>
+
+        <order-info/>
+        Payment: {{invoiceStatus}}
+      </b-card>
+    </b-card-group>
+  </div>
+</div>
 </template>
 
 <script>
-const EXPLORER = process.env.VUE_APP_ETHERSCAN
+import { LSAT_CONSTANTS } from '@/lsat-constants'
+import OrderInfo from '@/views/components/OrderInfo'
 
 export default {
   name: 'ResultPage',
   components: {
+    OrderInfo
   },
   props: ['result'],
   data () {
@@ -46,8 +34,9 @@ export default {
   methods: {
   },
   computed: {
-    etherScanUrl () {
-      return EXPLORER + '/tx/' + this.result.txid
+    invoiceStatus () {
+      const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      return invoice.data.status
     },
     cardStyle () {
       return (this.$globalLookAndFeel) ? this.$globalLookAndFeel.cardStyle : ''
