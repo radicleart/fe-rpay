@@ -74,9 +74,10 @@ export default {
       }
     },
     currentSymbol () {
-      if (this.paymentOption === 'ethereum') {
+      const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
+      if (paymentOption === 'ethereum') {
         return 'Ξ'
-      } else if (this.paymentOption === 'stacks') {
+      } else if (paymentOption === 'stacks') {
         return '&#931;'
       } else {
         return '&#x0e3f;' // '&#x20BF;' // '&#8383;'
@@ -84,13 +85,14 @@ export default {
     },
     currentAmount () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
       if (configuration && configuration.payment.amountBtc) {
-        if (this.paymentOption === 'ethereum') {
-          return configuration.payment.amountEth
-        } else if (this.paymentOption === 'stacks') {
-          return configuration.payment.amountStx
+        if (paymentOption === 'ethereum') {
+          return configuration.payment.amountEth + ' ETH'
+        } else if (paymentOption === 'stacks') {
+          return configuration.payment.amountStx + ' STX'
         } else {
-          return configuration.payment.amountBtc
+          return configuration.payment.amountBtc + ' BTC'
         }
       }
       return 0
