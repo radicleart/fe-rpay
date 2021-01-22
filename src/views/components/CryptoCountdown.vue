@@ -43,7 +43,6 @@ export default {
       this.$emit('paymentEvent', { opcode: 'crypto-payment-expired' })
     },
     clockReset () {
-      this.$store.dispatch('fetchRates')
       this.expired = true
       this.$emit('paymentEvent', { opcode: 'crypto-payment-expired' })
     },

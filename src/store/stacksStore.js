@@ -1,10 +1,17 @@
-import { showConnect, authenticate, openSTXTransfer } from '@stacks/connect'
-import { UserSession, AppConfig } from '@stacks/auth'
+import { AppConfig, UserSession, showConnect, authenticate, openSTXTransfer } from '@stacks/connect'
+import { StacksMainnet, StacksTestnet } from '@stacks/network'
 import store from '@/store'
 
-const appConfig = new AppConfig()
-const userSession = new UserSession({ appConfig })
+const NETWORK = process.env.VUE_APP_NETWORK
 const BLOCKSTACK_LOGIN = 1
+const appConfig = new AppConfig(['store_write', 'publish_data'])
+const userSession = new UserSession({ appConfig })
+
+let network = new StacksTestnet()
+if (NETWORK === 'mainnet') {
+  network = new StacksMainnet()
+}
+
 const authFinished = function (o) {
   store.commit('stacksStore/setAuthResponse', o)
   store.dispatch('stacksStore/fetchMyAccount')
@@ -155,7 +162,8 @@ const stacksStore = {
       return new Promise((resolve, reject) => {
         openSTXTransfer({
           recipient: data.paymentAddress,
-          amount: data.amountStx,
+          amount: Math.round(data.amountStx * 1000000),
+          network: network,
           memo: 'Payment for ' + data.memo,
           appDetails: {
             name: state.appName,
