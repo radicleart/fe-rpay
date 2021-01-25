@@ -89,7 +89,7 @@ export default {
       const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
       var tempInput = document.createElement('input')
       // tempInput.style = 'position: absolute; left: -1000px; top: -1000px'
-      tempInput.value = invoice.data.uri
+      tempInput.value = invoice.data.lightning_invoice.payreq
       document.body.appendChild(tempInput)
       tempInput.select()
       document.execCommand('copy')
