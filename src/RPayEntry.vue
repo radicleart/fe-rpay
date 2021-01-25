@@ -75,6 +75,7 @@ export default {
       } else if (data.opcode === 'payment-restart') {
         this.paymentExpired()
       } else if (data.opcode === 'switch-method') {
+        this.$store.commit(LSAT_CONSTANTS.SET_PAYMENT_OPTION_VALUE, 'lightning')
         this.$store.commit('setPaymentMethod', data.method)
       }
       window.eventBus.$emit('paymentEvent', data)

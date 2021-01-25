@@ -7,7 +7,7 @@
     "lint": "vue-cli-service lint",
     "build-app": "vue-cli-service build --mode development",
     "build-app-stag": "vue-cli-service build --mode staging",
-    "build-app-prod": "vue-cli-service build --mode production --name rpay-entry ./src/RPayEntry.vue --inline-vue",
+    "build-app-prod": "vue-cli-service build --mode production",
     "build": "vue-cli-service build --mode development  --target wc --name rpay-entry ./src/RPayEntry.vue --inline-vue",
     "build-stag": "vue-cli-service build --mode staging --target wc --name rpay-entry ./src/RPayEntry.vue --inline-vue",
     "build-prod": "vue-cli-service build --mode production --target wc --name rpay-entry ./src/RPayEntry.vue --inline-vue",
