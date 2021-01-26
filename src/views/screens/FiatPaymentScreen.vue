@@ -8,7 +8,8 @@
       -->
     </div>
   </b-card-text>
-  <b-card-text>
+  <b-card-text class="loading-container">
+    <div id="spiner" class="loading"><b-icon icon="arrow-clockwise" animation="spin"></b-icon></div>
     <form id="nonce-form" novalidate :action="submitUrl" method="post">
       <div class="errorbox">
         <div class="error" v-for="(error, index) in errors" :key="index">
@@ -213,6 +214,7 @@ export default {
            */
         paymentFormLoaded: function () {
           // console.log('paymentFormLoaded')
+          document.getElementById('spiner').classList.add('loaded')
         }
       }
     })
@@ -272,11 +274,31 @@ export default {
     testMode () {
       return APPLICATION_ID.indexOf('sandbox') > -1
     }
+  },
+  created () {
   }
 }
 </script>
 
 <style>
+.loading-container {
+  position: relative;
+}
+.loading {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  background-color: #ffffff;
+}
+.loading svg {
+  font-size: 40px;
+  margin: auto;
+  color: #0277bd;
+}
+.loaded {
+  display: none;
+}
 .sq-input {
   height: 30px;
   background-color: #fff;
