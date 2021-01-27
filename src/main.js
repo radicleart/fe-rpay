@@ -5,7 +5,7 @@ import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 import '@/assets/scss/custom.scss'
-// import '@/assets/mysqpaymentform.css'
+import '@/assets/mysqpaymentform.css'
 import Notifications from 'vue-notification'
 
 Vue.use(BootstrapVue)

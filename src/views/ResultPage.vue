@@ -9,7 +9,7 @@
 
         <order-info/>
         <div class="mt-5 text-info text-center">Payment detected with thanks!</div>
-        <div class="mt-5 text-light">Status: {{invoiceStatus}}</div>
+        <!-- <div class="mt-5 text-light">Status: {{invoiceStatus}}</div> -->
       </b-card>
     </b-card-group>
   </div>
