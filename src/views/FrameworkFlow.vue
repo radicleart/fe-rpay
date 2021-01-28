@@ -8,7 +8,6 @@
         </template>
 
         <order-info/>
-        <div class="Message_if_on_Testnet" v-if="network == 'testnet' && method != 'fiat'">Careful, you are using a Testnet network.</div><br/>
         <crypto-options v-if="method !== 'fiat'"/>
 
         <crypto-picker v-if="displayCard === 100" v-on="$listeners"/>
@@ -116,9 +115,5 @@ export default {
   background-color: #fff !important;
   border: none;
   border-radius: 25px;
-}
-.Message_if_on_Testnet{
-  color: red;
-  font-style: italic;
 }
 </style>
