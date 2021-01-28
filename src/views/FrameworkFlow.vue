@@ -8,6 +8,7 @@
         </template>
 
         <order-info/>
+        <div class="Message_if_on_Testnet" v-if="return_network == 'testnet' && method != 'fiat'">Careful, you are using a Testnet network.</div><br/>
         <crypto-options v-if="method !== 'fiat'"/>
 
         <crypto-picker v-if="displayCard === 100" v-on="$listeners"/>
@@ -49,7 +50,8 @@ export default {
     return {
       message: null,
       paying: false,
-      loading: true
+      loading: true,
+      network: process.env.VUE_APP_NETWORK
     }
   },
   mounted () {
@@ -67,6 +69,10 @@ export default {
     }
   },
   computed: {
+    return_network () {
+      console.log(this.network)
+      return (this.network)
+    },
     background () {
       return (this.$globalLookAndFeel) ? this.$globalLookAndFeel.background : ''
     },
@@ -114,5 +120,9 @@ export default {
   background-color: #fff !important;
   border: none;
   border-radius: 25px;
+}
+.Message_if_on_Testnet{
+  color: red;
+  font-style: italic;
 }
 </style>
