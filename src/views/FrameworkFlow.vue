@@ -49,7 +49,8 @@ export default {
     return {
       message: null,
       paying: false,
-      loading: true
+      loading: true,
+      network: process.env.VUE_APP_NETWORK
     }
   },
   mounted () {

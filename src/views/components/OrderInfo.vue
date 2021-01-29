@@ -8,9 +8,10 @@
     <h1 class="" :style="$globalLookAndFeel.text1Color"><span class="" v-html="currentSymbol"></span> {{currentAmount}}</h1>
     <div class="mb-2" :style="$globalLookAndFeel.text1Color">[ <span class="" v-html="fiatSymbol"></span> {{formattedFiat}} ]</div>
   </div>
-  <div class="my-2 d-flex justify-content-center border-bottom pb-4 mb-4">
+  <div class="my-2 d-flex justify-content-center ">
     <div class="text-info mb-2" :style="$globalLookAndFeel.text2Color">Thank you for your support!</div>
   </div>
+  <div class="text-center border-bottom pb-4 mb-4 text-danger" v-if="network == 'testnet'">testnet</div>
 </b-card-text>
 </template>
 
@@ -24,6 +25,7 @@ export default {
   data () {
     return {
       value: 0,
+      network: process.env.VUE_APP_NETWORK,
       componentKey: 0,
       numbCredits: 2,
       updatingCredits: false,
@@ -114,5 +116,9 @@ export default {
 }
 .tokens {
   font-weight: bold;
+}
+.message-if-on-testnet {
+  color: red;
+  font-style: italic;
 }
 </style>
