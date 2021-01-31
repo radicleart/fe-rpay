@@ -2,7 +2,6 @@ export const LSAT_CONSTANTS = {
   GET_HEADERS: 'getHeaders',
   KEY_PROFILE: 'stacksStore/getMyProfile',
   KEY_CONFIGURATION: 'getConfiguration',
-  KEY_RETURN_STATE: 'getReturnState',
   KEY_PAYMENT_OPTION_VALUE: 'getCurrentPaymentOption',
   SET_PAYMENT_OPTION_VALUE: 'setCurrentCryptoPaymentOption',
   KEY_PAYMENT_OPTIONS: 'getPaymentOptions',

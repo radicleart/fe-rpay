@@ -68,15 +68,10 @@ export default {
       this.loading = true
       this.waitingMessage = 'Processing Payment'
       this.$store.dispatch('stacksStore/makeTransfer', { amountStx: configuration.payment.amountStx, paymentAddress: STACKS_PAYMENT_ADDRESS }).then((result) => {
-        const data = { status: 10, opcode: 'eth-payment-confirmed', txId: result.txId }
-        const paymentEvent = this.$store.getters[LSAT_CONSTANTS.KEY_RETURN_STATE](data)
-        // this.$emit('paymentEvent', { opcode: 'eth-payment-begun2' })
-        this.$emit('paymentEvent', paymentEvent)
-        this.$store.dispatch('receivePayment', paymentEvent).then((result) => {
-          this.waitingMessage = 'Processed Payment'
-          this.loading = false
-          // this.$emit('paymentEvent', paymentEvent)
-        })
+        const data = { status: 10, opcode: 'stx-crypto-payment-success', txId: result.txId }
+        this.waitingMessage = 'Processed Payment'
+        this.loading = false
+        this.$emit('paymentEvent', data)
       }).catch((e) => {
         this.errorMessage = 'Error found'
         this.loading = false

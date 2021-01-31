@@ -3,23 +3,24 @@
   <div class="mx-auto">
     <b-card-group :style="$globalLookAndFeel.cardStyle">
       <b-card header-tag="header" footer-tag="footer" :style="background">
+        <div class="d-flex justify-content-center">
+          <img class="sq-logo" :src="logo()"/>
+        </div>
+        <!--
         <template v-slot:header class="">
           <div class="d-flex justify-content-center"><span class="ff-title" :style="$globalLookAndFeel.text1Color">{{$globalLookAndFeel.labels.title}}</span>&nbsp;<span class="ff-subtitle" :style="$globalLookAndFeel.text2Color">{{$globalLookAndFeel.labels.subtitle}}</span></div>
         </template>
-
-        <order-info/>
-        <crypto-options v-if="method !== 'fiat'"/>
-
-        <crypto-picker v-if="displayCard === 100" v-on="$listeners"/>
-        <crypto-payment-screen v-if="displayCard === 102 && method === 'bitcoin'" v-on="$listeners"/>
-        <fiat-payment-screen :id="id" v-if="displayCard === 102 && method === 'fiat'" v-on="$listeners"/>
-        <token-screen  v-if="displayCard === 104" v-on="$listeners"/>
-
-        <!--
-        <template v-slot:footer>
-          <footer-view :$globalLookAndFeel="$globalLookAndFeel" :rangeValue="displayCard" @rangeEvent="rangeEvent"/>
-        </template>
         -->
+
+        <!-- <order-info/>
+        <crypto-picker v-if="displayCard === 100" v-on="$listeners"/>
+         -->
+        <div class="mt-5 d-flex flex-column align-items-center">
+          <crypto-options class="mt-5"/>
+          <crypto-payment-screen v-if="displayCard === 102" v-on="$listeners" stye="position: relative; top: 500px;"/>
+        </div>
+        <token-screen v-if="displayCard === 104" v-on="$listeners"/>
+
       </b-card>
     </b-card-group>
   </div>
@@ -30,23 +31,23 @@
 import { LSAT_CONSTANTS } from '@/lsat-constants'
 import TokenScreen from './screens/TokenScreen'
 import CryptoPaymentScreen from './screens/CryptoPaymentScreen'
-import CryptoPicker from './screens/CryptoPicker'
-import FiatPaymentScreen from '@/views/screens/FiatPaymentScreen'
+// import CryptoPicker from './screens/CryptoPicker'
 import CryptoOptions from '@/views/components/CryptoOptions'
-import OrderInfo from '@/views/components/OrderInfo'
+// import OrderInfo from '@/views/components/OrderInfo'
 
 export default {
   name: 'FrameworkFlow',
   components: {
     TokenScreen,
     CryptoPaymentScreen,
-    CryptoPicker,
-    FiatPaymentScreen,
-    OrderInfo,
+    // CryptoPicker,
+    // OrderInfo,
     CryptoOptions
   },
   data () {
     return {
+      // logo1: require('@/assets/img/sq-logo.png'),
+      // logo2: require('@/assets/img/btc1.jpeg'),
       message: null,
       paying: false,
       loading: true,
@@ -63,8 +64,17 @@ export default {
     this.loading = false
   },
   methods: {
-    rangeEvent (screen) {
-      this.$store.commit('setDisplayCard', screen)
+    logo () {
+      let logo = 'sq-logo.png'
+      const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
+      if (paymentOption !== 'fiat') {
+        logo = 'btc1.jpeg'
+      }
+      if (this.network === 'testnet') {
+        return 'https://trpay.risidio.com/img/' + logo
+      } else {
+        return 'https://trpay.risidio.com/img/' + logo
+      }
     }
   },
   computed: {
@@ -75,10 +85,6 @@ export default {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
       return configuration.payment.paymentCode
     },
-    method () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      return configuration.payment.method
-    },
     displayCard () {
       const displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
       return displayCard
@@ -87,33 +93,10 @@ export default {
 }
 </script>
 <style lang="scss">
-.ff-title {
-  font-weight: 300;
-  font-size: 14px;
-  letter-spacing: 0px;
-  margin-right: 5px;
-}
-.ff-subtitle {
-  font-weight: 500;
-  font-size: 14px;
-  letter-spacing: 0px;
-}
-.card-group {
-  margin: 10px 10px 10px 10px;
-  border: none;
-  font-family: 'Montserat', sans-serif;
-  min-width: 350px;
-  min-height: 500px;
-}
-.card-header {
-  background-color: #fff;
-}
-.card-footer {
-  background-color: #fff;
-}
-.card {
-  background-color: #fff !important;
-  border: none;
-  border-radius: 25px;
+.sq-logo {
+  width: 200px;
+  margin-top: 20px;
+  padding-bottom: 10px;
+  border-radius: 20px;
 }
 </style>

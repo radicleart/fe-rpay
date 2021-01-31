@@ -24,20 +24,19 @@
       </div>
 
       <input type="hidden" id="card-nonce" name="nonce">
-      <div class="mt-5" id="sq-walletbox">
+      <div class="mt-4" id="sq-walletbox">
         <button v-show=applePay :id="id+'-sq-apple-pay'" class="button-apple-pay"></button>
         <button v-show=masterpass :id="id+'-sq-masterpass'" class="button-masterpass"></button>
       </div>
     </form>
   </b-card-text>
   <b-card-text>
-    <div class="mt-2 d-flex justify-content-center mt-5">
+    <div class="mt-2 d-flex justify-content-center">
       <b-button variant="info" @click="requestCardNonce($event)" class='productPurchase payButton'>Send <span class="" v-html="fiatSymbol"></span> {{formattedFiat}}</b-button>
     </div>
   </b-card-text>
   <b-card-text>
     <div class="mt-2 d-flex justify-content-around mt-5">
-      <div class="ff-cancel"><a href="#" @click="$emit('paymentEvent', { opcode: 'switch-method', method: 'bitcoin' })">Switch to Crypto</a></div>
       <div v-if="testMode" class="ff-cancel"><a href="#" @click.prevent="showTestPayments = !showTestPayments">Test Numbers</a></div>
     </div>
   </b-card-text>
@@ -52,6 +51,7 @@ import TestPayments from '@/views/components/TestPayments'
 const MESH_API = process.env.VUE_APP_RADICLE_API + '/mesh'
 const APPLICATION_ID = process.env.VUE_APP_SQUARE_APPLICATION_ID
 const LOCATION_ID = process.env.VUE_APP_SQUARE_LOCATION_ID
+const MAINNET = process.env.VUE_APP_NETWORK
 
 export default {
   name: 'paymentForm',
@@ -81,11 +81,14 @@ export default {
     }
   },
   mounted: function () {
-    this.internalId = this.id
+    this.internalId = this.id // + '_' + Math.floor(Math.random() * Math.floor(1000000))
     const idempotencyKey = this.uuidv4()
     const locationId = LOCATION_ID
     const applicationId = APPLICATION_ID // 'sq0idp-gbQhcOCpmb2X4W1588Ky7A'
     const that = this
+    if (MAINNET === 'mainnet') {
+
+    }
     // eslint-disable-next-line no-undef
     this.paymentForm = new SqPaymentForm({
       autoBuild: false,
@@ -115,7 +118,7 @@ export default {
       // Initialize the credit card placeholders
       cardNumber: {
         elementId: that.id + '-sq-card-number',
-        placeholder: 'Card number'
+        placeholder: 'XXXX XXXX XXXX XXXX'
       },
       cvv: {
         elementId: that.id + '-sq-cvv',
@@ -236,17 +239,6 @@ export default {
 
       // Request a nonce from the SqPaymentForm object
       this.paymentForm.requestCardNonce()
-    },
-    testNumbers: function (event) {
-      // cross origin security restricted!
-      const iframe = document.getElementById(this.internalId + '-sq-card-number')
-      iframe.contentWindow.document.getElementsByTagName('input')[0].value = '4111'
-      iframe.contentWindow.document.getElementsByTagName('input')[1].value = '1111'
-      iframe.contentWindow.document.getElementsByTagName('input')[2].value = '1111'
-      iframe.contentWindow.document.getElementsByTagName('input')[3].value = '1111'
-      document.getElementById(this.internalId + '-sq-expiration-date').value = '12/2022'
-      document.getElementById(this.internalId + '-sq-cvv').value = '111'
-      document.getElementById(this.internalId + '-sq-postal-code').value = 'BN1 TRY'
     }
   },
   computed: {
@@ -300,12 +292,12 @@ export default {
   display: none;
 }
 .sq-input {
-  height: 30px;
+  height: 35px;
   background-color: #fff;
   border: 2px solid rgb(223, 223, 223);
   margin-bottom: 15px;
   display: block;
-  padding: 5px;
+  padding: 8px;
   line-height: 18px;
   font-size: 16px;
   margin: 0 0px 0px 0px;
@@ -315,7 +307,7 @@ export default {
   margin-bottom: 15px;
 }
 .sq-input:nth-child(2) {
-  width: 31% !important;
+  width: 32% !important;
   margin-right: 2%;
 }
 .sq-input:nth-child(3) {
@@ -364,16 +356,13 @@ export default {
 .card-number {
   width: 100%;
 }
-.modal .payButton {
-  margin-left: 0px;
-  position: absolute;
-  bottom: 0px;
-  width: 400px;
+.payButton {
+  width: 100%;
 }
 /* Customize the "{{Wallet}} not enabled" message */
 .wallet-not-enabled {
   min-width: 200px;
-  min-height: 40px;
+  min-height: 20px;
   max-height: 64px;
   padding: 0;
   margin: 10px;
@@ -439,6 +428,7 @@ export default {
   display: inline-block;
 }
 #card-tainer {
+  width: 40vw;
   min-height: 100px;
   text-align: left;
   margin-top: 8px;
@@ -446,14 +436,5 @@ export default {
   height: 80px;
   padding: 10px 12px;
   border-radius: 4px;
-  border-top-left-radius: 4px;
-  border-top-right-radius: 4px;
-  border-bottom-right-radius: 4px;
-  border-bottom-left-radius: 4px;
-  border: 1px solid transparent;
-  box-shadow: 0 1px 3px 0 #e6ebf1;
-  -webkit-transition: box-shadow 150ms ease;
-  transition: box-shadow 150ms ease;
-  box-sizing: border-box;
 }
 </style>

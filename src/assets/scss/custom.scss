@@ -3,7 +3,7 @@
 @import 'node_modules/bootstrap-vue/src/index.scss';
 
 $font-dir: "/fonts/";
-
+/**
 @font-face {
   font-family: "Montserrat";
   src: url("/fonts/Montserrat-Black.ttf") format("truetype");
@@ -112,10 +112,10 @@ $font-dir: "/fonts/";
   font-style: italic;
   font-weight: 100;
 }
-
+**/
 body {
   margin: 0;
-  font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+  font-family: 'Archivo Black', Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   height: 100%;

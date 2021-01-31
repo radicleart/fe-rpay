@@ -31,6 +31,8 @@ const getPaymentOptions = function (configuration) {
   options.forEach(function (option) {
     if (option.allowLightning) {
       allowedOptions.push({ text: 'Lightning', value: 'lightning', mainOption: configuration.paymentOption === 'lightning' })
+    } else if (option.allowFiat) {
+      allowedOptions.push({ text: 'Fiat', value: 'fiat', mainOption: configuration.paymentOption === 'fiat' })
     } else if (option.allowBitcoin) {
       allowedOptions.push({ text: 'Bitcoin', value: 'bitcoin', mainOption: configuration.paymentOption === 'bitcoin' })
     } else if (option.allowLSAT) {
@@ -67,13 +69,13 @@ const checkPayment = function (state, commit, paymentId) {
   }
   state.timer = setInterval(function () {
     axios.post(MESH_API + '/v2/checkPayment/' + paymentId).then(response => {
-      // window.eventBus.$emit('paymentEvent', { opcode: 'crypto-payment-success' })
       const invoice = response.data
+      if (!invoice.data) return
       if (invoice.data.status === 'paid' || invoice.data.status === 'processing') {
         clearInterval(state.timer)
         localStorage.setItem('OP_INVOICE', JSON.stringify(invoice))
         commit('setInvoice', invoice)
-        invoice.opcode = 'crypto-payment-success'
+        invoice.opcode = 'btc-crypto-payment-success'
         window.eventBus.$emit('paymentEvent', invoice)
       }
     }).catch((error) => {
@@ -145,9 +147,6 @@ export default new Vuex.Store({
     addConfiguration (state, configuration) {
       state.configuration = configuration
     },
-    setPaymentMethod (state, method) {
-      state.configuration.payment.method = method
-    },
     setCurrentCryptoPaymentOption (state, o) {
       state.configuration.paymentOption = o
     },
@@ -187,7 +186,7 @@ export default new Vuex.Store({
               if (savedInvoice.data.status === 'paid' || savedInvoice.data.status === 'processing') {
                 commit('setInvoice', savedInvoice)
                 commit('addConfiguration', configuration)
-                savedInvoice.opcode = 'crypto-payment-success'
+                savedInvoice.opcode = 'btc-crypto-payment-success'
                 window.eventBus.$emit('paymentEvent', savedInvoice)
                 resolve(savedInvoice)
                 return

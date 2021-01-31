@@ -5,7 +5,7 @@ import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 import '@/assets/scss/custom.scss'
-import '@/assets/mysqpaymentform.css'
+// import '@/assets/mysqpaymentform.css'
 import Notifications from 'vue-notification'
 
 Vue.use(BootstrapVue)
@@ -58,33 +58,35 @@ new Vue({
           stepper: true
         },
         cardStyle: {
-          margin: '0',
+          margin: '20px',
+          'min-width': '40vw',
           'border-radius': '20px'
         },
         text1Color: {
           color: '#000'
         },
         text2Color: {
-          color: '#F9B807'
+          color: '#0277bd'
         },
         text3Color: {
           color: '#fff'
         },
         background: {
+          margin: '0px 0 0 0',
           padding: '0px 0 0 0',
-          height: 'auto',
-          'max-width': '500px',
-          position: 'relative',
-          top: '0px',
+          'min-height': '91vh',
+          'max-height': '91vh',
+          'min-width': '56vw',
+          'max-width': '56vw',
           'background-repeat': 'no-repeat',
-          'background-position': 'center center',
           '-webkit-background-size': 'cover',
           '-moz-background-size': 'cover',
           '-o-background-size': 'cover',
           'background-size': 'cover',
           'background-color': '#fff',
           // 'background-image': 'url("https://images.prismic.io/risidio-journal/59455bcb-a954-4713-9afd-cfe6130f0b26_Group+994.svg?auto=compress,format")',
-          opacity: 1
+          opacity: 1,
+          'background-image': 'url("https://trpay.risidio.com/img/payment-bg.png")'
         }
       }
     }

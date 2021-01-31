@@ -6,8 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">    
     <!-- link to the SqPaymentForm library -->
-    <script type="text/javascript" src="https://js.squareupsandbox.com/v2/paymentform"></script>
+    <script type="text/javascript" src="https://js.<%= VUE_APP_SQUARE_URL %>.com/v2/paymentform"></script>
     <!-- link to the local custom styles for SqPaymentForm -->
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
     <title><%= htmlWebpackPlugin.options.title %></title>
   </head>
   <body class="bg-dark">
@@ -18,7 +20,7 @@
           orderMsg: 'Place order for \'STX to Lightning\' select number required and pay.',
           successMsg: 'Your order has been received with thanks.',
           title: 'The People\'s',
-          subtitle: 'Republic of Movies',
+          subtitle: ' Republic of Movies',
           card1Label: 'Select amount to send',
           card2Label1: 'How many STX tokens do you need?',
           card2Label2: 'Select operation',
@@ -32,7 +34,8 @@
           stepper: true
         },
         cardStyle: {
-          margin: '0',
+          margin: '20px',
+          'min-width': '40vw',
           'border-radius': '20px',
         },
         text1Color: {
@@ -47,28 +50,39 @@
         background: {
           padding: '0px 0 0 0',
           height: 'auto',
-          'max-width': '500px',
-          position: 'relative',
-          top: '0px',
+          width: 'auto',
+          'min-height': '95vh',
+          'max-height': '80vw',
+          'min-width': '60vw',
           'background-repeat': 'no-repeat',
-          'background-position': 'center center',
           '-webkit-background-size': 'cover',
           '-moz-background-size': 'cover',
           '-o-background-size': 'cover',
           'background-size': 'cover',
           'background-color': '#fff',
           // 'background-image': 'url("https://images.prismic.io/risidio-journal/59455bcb-a954-4713-9afd-cfe6130f0b26_Group+994.svg?auto=compress,format")',
-          opacity: 1
+          opacity: 1,
+          'background-image': 'url("https://trpay.risidio.com/img/payment-bg.png")' 
         }
       }
       const payment = {
         forceNew: false,
         amountFiat: 2.50,
         currency: 'GBP',
-        method: 'bitcoin',
-        orderId: 'XqLKQxEAACQAYvsu'
+        paymentCode: 'po-12324'
       }
-      window.risidioPaymentConfig = JSON.stringify({ paymentOption: 'bitcoin', paymentOptions: [ { allowBitcoin: true }, {allowLightning: true}, {allowStacks: false}, {allowLSAT: false}, {allowEthereum: true} ], lookAndFeel: lookAndFeel, payment: payment})
+      window.risidioPaymentConfig = JSON.stringify({ 
+        paymentOption: 'fiat', 
+        paymentOptions: [ 
+          { allowFiat: true },
+          { allowBitcoin: true }, 
+          {allowLightning: true}, 
+          {allowStacks: false}, 
+          {allowLSAT: false}, 
+          {allowEthereum: false}
+        ], 
+        payment: payment
+      })
     </script>
     <div id="rpay-entry" msg="aint no sunshine!"></div>
   </body>

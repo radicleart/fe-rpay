@@ -1,5 +1,5 @@
 <template>
-<b-card-text class="text-center">
+<b-card-text class="mt-5 text-center">
   <b-form-group v-slot="{ ariaDescribedby }">
     <b-form-radio-group
       id="radio-group-1"

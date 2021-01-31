@@ -36,17 +36,16 @@ export default {
   mounted () {
     const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
     this.$store.dispatch('initialiseApp', configuration).then((invoice) => {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
       if (invoice.data.status === 'paid' || invoice.data.status === 'processing') {
         this.page = 'result'
       } else {
-        this.page = configuration.payment.method
+        this.page = 'payment-page'
       }
       this.loaded = true
     })
     const $self = this
     window.eventBus.$on('paymentEvent', function (data) {
-      if (data.opcode === 'crypto-payment-success' || data.opcode === 'fiat-payment-success') {
+      if (data.opcode.indexOf('-payment-success') > -1) {
         $self.page = 'result'
       }
       $self.componentKey += 1
@@ -74,9 +73,9 @@ export default {
         this.paymentExpired()
       } else if (data.opcode === 'payment-restart') {
         this.paymentExpired()
-      } else if (data.opcode === 'switch-method') {
-        this.$store.commit(LSAT_CONSTANTS.SET_PAYMENT_OPTION_VALUE, 'lightning')
-        this.$store.commit('setPaymentMethod', data.method)
+      }
+      if (data.opcode.indexOf('-payment-success') > -1) {
+        this.page = 'result'
       }
       window.eventBus.$emit('paymentEvent', data)
     },
@@ -84,7 +83,7 @@ export default {
       let displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
       if (displayCard === 102) {
         displayCard = 100
-        this.$emit('paymentEvent', { action: 'cancelled' })
+        window.eventBus.$emit('paymentEvent', 'payment-cancelled')
       } else if (displayCard === 104) {
         displayCard = 102
       } else {
@@ -106,5 +105,4 @@ export default {
 }
 </script>
 <style lang="scss">
-@import "@/assets/scss/custom.scss";
 </style>

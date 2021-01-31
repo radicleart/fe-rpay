@@ -13,7 +13,7 @@
 
   <div class="d-flex justify-content-center">
     <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress(paymentAmount)" style="text-decoration: underline;">
-      <span ref="myPaymentAddress" class="mr-2" :style="$globalLookAndFeel.text1Color">&#x0e3f; {{paymentAmount}}</span>
+      <span ref="myPaymentAddress" class="mr-2" :style="$globalLookAndFeel.text1Color">&#8383; {{paymentAmount}}</span>
       <b-icon width="15px" height="15px" icon="file-earmark" :style="$globalLookAndFeel.text1Color"/>
     </a>
   </div>

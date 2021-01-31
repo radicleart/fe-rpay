@@ -112,7 +112,7 @@ export default {
       } else if (this.paymentOption === 'stacks') {
         return '&#931;'
       } else {
-        return '&#x0e3f;' // '&#x20BF;' // '&#8383;'
+        return '&#8383;' // '&#x20BF;' // '&#8383;'
       }
     },
     formattedFiat () {
