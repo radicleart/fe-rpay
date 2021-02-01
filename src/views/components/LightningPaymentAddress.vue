@@ -2,18 +2,18 @@
 <div>
   <div>
     <div title="Make Payment" v-if="payment">
-      <div class="mb-1">
-        <canvas ref="lndQrcode"></canvas>
-      </div>
-      <!-- <input v-show="false" class="input2" readonly="true" ref="paymentAddressBtc"  @click="copyAddress($event)" :value="paymentRequest" placeholder="Lightning invoice"/> -->
       <div class="ff-countdown mb-3 d-flex justify-content-center">
         <span class="mr-2">Code is valid for</span>
         <crypto-countdown class="" v-on="$listeners" />
       </div>
+      <div class="mb-1">
+        <canvas ref="lndQrcode"></canvas>
+      </div>
+      <!-- <input v-show="false" class="input2" readonly="true" ref="paymentAddressBtc"  @click="copyAddress($event)" :value="paymentRequest" placeholder="Lightning invoice"/> -->
       <div class="d-flex justify-content-center">
         <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress($event)" style="text-decoration: underline;">
           <span ref="myPaymentAddress" class="mr-2" :style="$globalLookAndFeel.text1Color">Copy the address</span>
-        </a> <b-icon width="15px" height="15px" icon="file-earmark" :style="$globalLookAndFeel.text1Color"/>
+        </a>
       </div>
     </div>
     <div title="Open Channel" v-else>
@@ -126,7 +126,7 @@ export default {
   }
 }
 </script>
-<style >
+<style lang="scss" >
 .ff-countdown {
   position: relative;
   top: -5px;
@@ -144,9 +144,8 @@ export default {
 }
 .copyAddress {
   text-align: left;
-  text-decoration: underline;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0px;
   color: #000000;
   opacity: 1;

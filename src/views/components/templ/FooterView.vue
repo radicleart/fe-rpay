@@ -29,8 +29,7 @@ export default {
   }
 }
 </script>
-<style lang="scss" >
-@import "@/assets/scss/custom.scss";
+<style lang="scss" scoped>
 
 input[type=range] {
   -webkit-appearance: none; /* Hides the slider so that custom slider can be made */
@@ -71,7 +70,7 @@ input[type=range]::-webkit-slider-runnable-track {
   height: 18px;
   width: 18px;
   border-radius: 50%;
-  background-color: $warning;
+  background-color: orange;
   margin-top: -7px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
 }
 .click-effect {

@@ -111,7 +111,7 @@ export default {
   }
 }
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 .flasher {
   font-size: 16px;
   border: 2pt solid yellow;

@@ -15,9 +15,11 @@
         <!-- <order-info/>
         <crypto-picker v-if="displayCard === 100" v-on="$listeners"/>
          -->
+        <div :style="offsetTop()">
         <div class="mt-5 d-flex flex-column align-items-center">
           <crypto-options class="mt-5"/>
           <crypto-payment-screen v-if="displayCard === 102" v-on="$listeners" stye="position: relative; top: 500px;"/>
+        </div>
         </div>
         <token-screen v-if="displayCard === 104" v-on="$listeners"/>
 
@@ -68,13 +70,20 @@ export default {
       let logo = 'sq-logo.png'
       const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
       if (paymentOption !== 'fiat') {
-        logo = 'btc1.jpeg'
+        logo = 'opennode.png'
       }
       if (this.network === 'testnet') {
         return 'https://trpay.risidio.com/img/' + logo
       } else {
         return 'https://trpay.risidio.com/img/' + logo
       }
+    },
+    offsetTop () {
+      const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
+      if (paymentOption !== 'fiat') {
+        return 'position:relative; top: 52px;'
+      }
+      return 'position:relative; top: -60px;'
     }
   },
   computed: {
@@ -92,11 +101,11 @@ export default {
   }
 }
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 .sq-logo {
   width: 200px;
   margin-top: 20px;
   padding-bottom: 10px;
-  border-radius: 20px;
+  border-radius: 0px;
 }
 </style>

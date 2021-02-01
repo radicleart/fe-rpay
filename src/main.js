@@ -2,15 +2,14 @@ import Vue from 'vue'
 import RPayEntry from './RPayEntry.vue'
 import store from './store'
 import { BootstrapVue, IconsPlugin } from 'bootstrap-vue'
-import 'bootstrap/dist/css/bootstrap.css'
-import 'bootstrap-vue/dist/bootstrap-vue.css'
-import '@/assets/scss/custom.scss'
+// import 'bootstrap/dist/css/bootstrap.css'
+// import 'bootstrap-vue/dist/bootstrap-vue.css'
 // import '@/assets/mysqpaymentform.css'
-import Notifications from 'vue-notification'
+// import Notifications from 'vue-notification'
 
 Vue.use(BootstrapVue)
 Vue.use(IconsPlugin)
-Vue.use(Notifications, { closeOnClick: true, duration: 6000 })
+// Vue.use(Notifications, { closeOnClick: true, duration: 6000 })
 Vue.config.productionTip = false
 
 window.eventBus = new Vue()
@@ -21,6 +20,9 @@ new Vue({
   created: function () {
     const configuration = this.parseConfiguration()
     const lf = (configuration.lookAndFeel) ? configuration.lookAndFeel : this.defLF()
+    if (window.innerWidth < 500) {
+      lf.background['background-image'] = null
+    }
     Vue.prototype.$globalLookAndFeel = lf
     this.$store.commit('addConfiguration', configuration)
   },
@@ -72,21 +74,16 @@ new Vue({
           color: '#fff'
         },
         background: {
-          margin: '0px 0 0 0',
-          padding: '0px 0 0 0',
           'min-height': '91vh',
           'max-height': '91vh',
-          'min-width': '56vw',
-          'max-width': '56vw',
+          'min-width': '47vw',
+          'max-width': '97vw',
           'background-repeat': 'no-repeat',
-          '-webkit-background-size': 'cover',
-          '-moz-background-size': 'cover',
-          '-o-background-size': 'cover',
-          'background-size': 'cover',
-          'background-color': '#fff',
-          // 'background-image': 'url("https://images.prismic.io/risidio-journal/59455bcb-a954-4713-9afd-cfe6130f0b26_Group+994.svg?auto=compress,format")',
-          opacity: 1,
-          'background-image': 'url("https://trpay.risidio.com/img/payment-bg.png")'
+          '-webkit-background-size': 'contain',
+          '-moz-background-size': 'contain',
+          '-o-background-size': 'contain',
+          'background-size': 'contain',
+          'background-image': 'url("https://trpay.risidio.com/img/payment-bg2.png")'
         }
       }
     }

@@ -1,12 +1,12 @@
 <template>
 <b-card-text class="mb-3">
-  <div class="d-flex justify-content-center mb-4">
-    <div class="mt-5 d-flex justify-content-center" v-if="paymentOption === 'bitcoin'">
+  <div class="d-flex justify-content-center">
+    <div class="mt-5 d-flex justify-content-center" v-if="paymentOption === 'bitcoin1'">
       <span class="ff-scanner mr-3" :style="$globalLookAndFeel.text1Color">Scan the QR Code with <br/> your <b>Bitcoin Wallet</b></span>
       <b-icon :style="$globalLookAndFeel.text2Color" style="margin-top: 5px;" width="25px" height="25px" icon="phone"/>
       <!-- <span class="ff-scanner mr-3" :style="$globalLookAndFeel.text1Color" @click="paymentOption = 'lightning'">Use Lightning</span> -->
     </div>
-    <div class="mt-5 d-flex justify-content-center" v-else-if="paymentOption === 'lightning'">
+    <div class="mt-5 d-flex justify-content-center" v-else-if="paymentOption === 'lightning1'">
       <span class="ff-scanner mr-3" :style="$globalLookAndFeel.text1Color">Scan the QR Code with <br/> your <b>Lightning Wallet</b></span>
       <b-icon :style="$globalLookAndFeel.text2Color" style="margin-top: 5px;" width="25px" height="25px" icon="phone"/>
       <!-- <span class="ff-scanner mr-3" :style="$globalLookAndFeel.text1Color" @click="paymentOption = 'bitcoin'">Use to Bitcoin</span> -->

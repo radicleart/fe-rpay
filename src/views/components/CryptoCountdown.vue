@@ -93,7 +93,7 @@ export default {
   }
 }
 </script>
-<style scoped>
+<style lang="scss" scoped>
 .tab-content {
   padding-top: 0px;
 }

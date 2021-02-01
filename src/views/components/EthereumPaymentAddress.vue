@@ -6,21 +6,29 @@
     :on-cancel="onCancel"
     :is-full-page="fullPage"></loading>
     -->
+  <div class="text-center">
+    <canvas ref="lndQrcode"></canvas>
+  </div>
 
   <div class="mt-3 rd-text d-flex flex-column align-items-center" style="" v-if="loading">
      <span class="text-danger" v-html="waitingMessage"></span>
   </div>
   <div class="rd-text mt-3 d-flex flex-column align-items-center" v-else>
-    <b-button variant="info" class="mb-5" style="white-space: nowrap; width: 200px;" @click.prevent="sendPayment()">Donate with Meta Mask</b-button>
+    <b-button variant="info" class="mb-5" style="white-space: nowrap; width: 200px;" @click.prevent="sendPayment()">Connect with Ethereum</b-button>
     <span class="text-danger">{{errorMessage}}</span>
+  </div>
+  <div class="text-center">
+    <span class="text-danger">> <a target="_blank" href="https://metamask.io/download.html">Meta Mask</a></span>
   </div>
 </div>
 </template>
 
 <script>
 import { LSAT_CONSTANTS } from '@/lsat-constants'
+import QRCode from 'qrcode'
 
 const NETWORK = process.env.VUE_APP_NETWORK
+const ETH_PAYMENT_ADDRESS = process.env.VUE_APP_OWNER_ADDRESS
 
 export default {
   name: 'EthereumPaymentAddress',
@@ -34,17 +42,29 @@ export default {
       fullPage: true,
       errorMessage: null,
       waitingMessage: 'Open Meta Mask to proceed (sending transactions to the ethereum network takes a minute or so...)',
-      processingMessage: '<h4>Processing payments</h4><p>Processing payments on the Ethereum takes a few minutes - please sit tight!</p>'
+      processingMessage: '<div class="mx-5 text-center"><h6>Processing payments</h6><p>Processing payments on the Ethereum takes a few minutes - please sit tight!</p></div>'
     }
   },
   watch: {
   },
   mounted () {
+    this.addQrCode()
   },
   computed: {
   },
 
   methods: {
+    paymentUri () {
+      // const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      return ETH_PAYMENT_ADDRESS
+    },
+    addQrCode () {
+      var element = this.$refs.lndQrcode
+      const paymentUri = this.paymentUri()
+      QRCode.toCanvas(
+        element, paymentUri, { errorCorrectionLevel: 'H' },
+        function () {})
+    },
     sendPayment () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
       this.loading = true
@@ -55,7 +75,10 @@ export default {
         this.loading = false
         this.$emit('paymentEvent', data)
       }).catch((e) => {
-        this.errorMessage = 'Please ensure you are logged into your meta mask account on the ' + NETWORK + ' network'
+        if (e.message.indexOf('cancelled') === -1) {
+          this.errorMessage = 'Please ensure you are logged into your meta mask account on the ' + NETWORK + ' network'
+        }
+        this.waitingMessage = ''
         this.loading = false
       })
     },
@@ -65,7 +88,7 @@ export default {
   }
 }
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 .tab-content {
   padding-top: 0px;
 }

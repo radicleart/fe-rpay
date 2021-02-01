@@ -1,26 +1,26 @@
 <template>
 <div class="d-flex flex-column align-items-center">
-  <div class="mb-3 mx-auto">
-    <canvas ref="lndQrcode"></canvas>
-  </div>
   <div class="ff-countdown mb-3 d-flex justify-content-center">
     <span class="mr-2">Code is valid for</span>
     <crypto-countdown class="" v-on="$listeners" />
   </div>
+  <div class="mb-3 mx-auto">
+    <canvas ref="lndQrcode"></canvas>
+  </div>
+  <!--
   <div class="rd-text mb-3 d-flex justify-content-center">
     <span><small>Send the indicated amount to the address below</small></span>
   </div>
+  -->
 
   <div class="d-flex justify-content-center">
-    <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress(paymentAmount)" style="text-decoration: underline;">
+    <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress(paymentAmount)">
       <span ref="myPaymentAddress" class="mr-2" :style="$globalLookAndFeel.text1Color">&#8383; {{paymentAmount}}</span>
-      <b-icon width="15px" height="15px" icon="file-earmark" :style="$globalLookAndFeel.text1Color"/>
     </a>
   </div>
   <div class="d-flex justify-content-center">
-    <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress(paymentAddress)" style="text-decoration: underline;">
+    <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress(paymentAddress)">
       <span ref="myPaymentAddress" class="mr-2" :style="$globalLookAndFeel.text1Color">{{paymentAddress}}</span>
-      <b-icon width="15px" height="15px" icon="file-earmark" :style="$globalLookAndFeel.text1Color"/>
     </a>
   </div>
 </div>
@@ -108,7 +108,7 @@ export default {
   }
 }
 </script>
-<style scoped>
+<style lang="scss" scoped>
 .tab-content {
   padding-top: 0px;
 }

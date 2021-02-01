@@ -16,15 +16,15 @@
         <b-icon width="15px" height="15px" icon="file-earmark" :style="$globalLookAndFeel.text1Color"/>
       </div>
     </div>
-    <div class="flex-column align-items-center">
+    <div class="text-center">
       <b-button v-if="!profile.loggedIn" variant="info" class="mb-5" style="white-space: nowrap; width: 250px;" @click.prevent="doLogin()">Connect to Stacks Network</b-button>
       <b-button v-else variant="info" class="mb-5" style="white-space: nowrap; width: 250px;" @click.prevent="sendPayment()">Donate with Stacks Connect</b-button>
     </div>
-    <div class="flex-column align-items-center">
+    <div class="text-center">
       <span class="text-danger">{{errorMessage}}</span>
     </div>
-    <div class="flex-column align-items-center">
-      <span class="text-danger">Try (alpha) <a target="_blank" href="https://www.hiro.so/wallet/install-web">Stacks Wallet Browser Extension</a></span>
+    <div class="text-center">
+      <span class="text-danger">> <a target="_blank" href="https://www.hiro.so/wallet/install-web">Stacks Wallet</a></span>
     </div>
   </div>
 </div>
@@ -114,7 +114,7 @@ export default {
   }
 }
 </script>
-<style scoped>
+<style lang="scss" scoped>
 .tab-content {
   padding-top: 0px;
 }

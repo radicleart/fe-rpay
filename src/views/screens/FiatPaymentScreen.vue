@@ -272,7 +272,7 @@ export default {
 }
 </script>
 
-<style>
+<style lang="scss">
 .loading-container {
   position: relative;
 }
@@ -428,7 +428,7 @@ export default {
   display: inline-block;
 }
 #card-tainer {
-  width: 40vw;
+  max-width: 70vw;
   min-height: 100px;
   text-align: left;
   margin-top: 8px;

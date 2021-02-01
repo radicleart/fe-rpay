@@ -9,7 +9,6 @@
   <div v-else :key="componentKey">
     <framework-flow @paymentEvent="paymentEvent($event)"/>
   </div>
-  <notifications position="top right" width="30%" />
 </div>
 </template>
 
@@ -104,5 +103,5 @@ export default {
   }
 }
 </script>
-<style lang="scss">
+<style lang="scss" scoped>
 </style>
