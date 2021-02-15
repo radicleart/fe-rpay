@@ -66,7 +66,7 @@ const getProfile = function () {
       const loggedIn = true
       myProfile = {
         loggedIn: loggedIn,
-        stxAddress: account.profile.stxAddress,
+        stxAddress: (NETWORK === 'mainnet') ? account.profile.stxAddress.mainnet : account.profile.stxAddress.testnet,
         senderKey: account.privateKey,
         showAdmin: showAdmin,
         superAdmin: uname === 'radicle_art.id.blockstack',
