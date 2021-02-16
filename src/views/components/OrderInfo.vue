@@ -1,15 +1,15 @@
 <template>
 <b-card-text>
   <div v-if="method === 'fiat' || 'bitcoin'" class="d-column align-items-center text-center">
-    <h1 class="mb-2" :style="$globalLookAndFeel.text1Color"><span class="" v-html="fiatSymbol"></span> {{formattedFiat}}</h1>
-    <div class="" :style="$globalLookAndFeel.text1Color">[ <span class="" v-html="currentSymbol"></span> {{currentAmount}} ]</div>
+    <h4 class="mb-2 rpay-text-one">{{numbUnits}} @ <span class="" v-html="fiatSymbol"></span> {{formattedFiat}} per unit</h4>
+    <div class="rpay-text-one">[ <span class="" v-html="currentSymbol"></span> {{currentAmount}} ]</div>
   </div>
   <div v-else class="d-column align-items-center text-center">
-    <h1 class="" :style="$globalLookAndFeel.text1Color"><span class="" v-html="currentSymbol"></span> {{currentAmount}}</h1>
-    <div class="mb-2" :style="$globalLookAndFeel.text1Color">[ <span class="" v-html="fiatSymbol"></span> {{formattedFiat}} ]</div>
+    <h1 class="rpay-text-one"><span class="" v-html="currentSymbol"></span> {{currentAmount}}</h1>
+    <div class="mb-3 rpay-text-one">[ <span class="" v-html="fiatSymbol"></span> {{formattedFiat}} ]</div>
   </div>
   <div class="my-2 d-flex justify-content-center ">
-    <div class="text-info mb-2" :style="$globalLookAndFeel.text2Color">Thank you for your support!</div>
+    <b-button variant="danger" @click.prevent="backToCredits()"><b-icon icon="b-icon-arrow-left"/> Back</b-button>
   </div>
   <div class="text-center border-bottom pb-4 mb-4 text-danger" v-if="network == 'testnet'">testnet</div>
 </b-card-text>
@@ -43,16 +43,23 @@ export default {
     const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
     this.paymentOption = configuration.paymentOption
     if (configuration.opcode === 'lsat-place-order') {
-      this.$store.commit('setDisplayCard', 0)
+      this.$store.commit('rpayStore/setDisplayCard', 0)
     }
     this.loading = false
   },
   methods: {
+    backToCredits () {
+      this.$store.commit('rpayStore/setDisplayCard', 100)
+    }
   },
   computed: {
+    numbUnits () {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      return configuration.creditAttributes.start
+    },
     method () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      return configuration.payment.method
+      return configuration.paymentOption
     },
     formattedFiat () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
@@ -103,22 +110,4 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-.ff-symbol {
-  font-weight: 700;
-}
-.ff-placed {
-  text-align: left;
-  font-weight: 200;
-  font-size: 10px;
-  letter-spacing: 0px;
-  color: #000000;
-  opacity: 1;
-}
-.tokens {
-  font-weight: bold;
-}
-.message-if-on-testnet {
-  color: red;
-  font-style: italic;
-}
 </style>

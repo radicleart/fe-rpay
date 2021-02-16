@@ -1,6 +1,6 @@
 import { AppConfig, UserSession, showConnect, authenticate, openSTXTransfer } from '@stacks/connect'
 import { StacksMainnet, StacksTestnet } from '@stacks/network'
-import store from '@/store'
+import rpayStore from '@/store/rpayStore'
 
 const NETWORK = process.env.VUE_APP_NETWORK
 const BLOCKSTACK_LOGIN = 1
@@ -13,8 +13,8 @@ if (NETWORK === 'mainnet') {
 }
 
 const authFinished = function (o) {
-  store.commit('stacksStore/setAuthResponse', o)
-  store.dispatch('stacksStore/fetchMyAccount')
+  rpayStore.commit('rpayStacksStore/setAuthResponse', o)
+  rpayStore.dispatch('rpayStacksStore/fetchMyAccount')
 }
 const authOptions = {
   sendToSignIn: false,
@@ -84,7 +84,7 @@ const getProfile = function () {
   }
 }
 
-const stacksStore = {
+const rpayStacksStore = {
   namespaced: true,
   state: {
     authResponse: null,
@@ -180,4 +180,4 @@ const stacksStore = {
     }
   }
 }
-export default stacksStore
+export default rpayStacksStore

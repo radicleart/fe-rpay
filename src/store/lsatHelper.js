@@ -1,19 +1,18 @@
-import store from '@/store'
+import rpayStore from '@/store/rpayStore'
 import moment from 'moment'
 import SockJS from 'sockjs-client'
 import Stomp from '@stomp/stompjs'
 
-const API_PATH = process.env.VUE_APP_RADICLE_API
 let socket = null
 let stompClient = null
 const lsatHelper = {
   startListening (paymentId) {
-    socket = new SockJS(API_PATH + '/lsat/ws1/mynews')
+    socket = new SockJS('API_PATH' + '/lsat/ws1/mynews')
     stompClient = Stomp.over(socket)
     stompClient.connect({}, function () {
       stompClient.subscribe('/queue/mynews-' + paymentId, function (response) {
         const invoice = JSON.parse(response.body)
-        store.commit('addPaymentChallenge', invoice)
+        rpayStore.commit('addPaymentChallenge', invoice)
       })
     },
     function (error) {

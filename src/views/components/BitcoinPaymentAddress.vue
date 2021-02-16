@@ -1,6 +1,6 @@
 <template>
 <div class="d-flex flex-column align-items-center">
-  <div class="ff-countdown mb-3 d-flex justify-content-center">
+  <div class="rpay-countdown mb-3 d-flex justify-content-center">
     <span class="mr-2">Code is valid for</span>
     <crypto-countdown class="" v-on="$listeners" />
   </div>

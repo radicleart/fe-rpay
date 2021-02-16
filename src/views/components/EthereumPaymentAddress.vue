@@ -69,7 +69,7 @@ export default {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
       this.loading = true
       this.waitingMessage = this.processingMessage
-      this.$store.dispatch('ethereumStore/transact', { opcode: 'send-payment', amount: configuration.payment.amountEth }).then((result) => {
+      this.$store.dispatch('rpayEthereumStore/transact', { opcode: 'send-payment', amount: configuration.payment.amountEth }).then((result) => {
         const data = { status: 10, opcode: 'eth-crypto-payment-success', txId: result.txId }
         this.waitingMessage = 'Processed Payment'
         this.loading = false

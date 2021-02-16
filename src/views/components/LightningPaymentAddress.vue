@@ -2,12 +2,12 @@
 <div>
   <div>
     <div title="Make Payment" v-if="payment">
-      <div class="ff-countdown mb-3 d-flex justify-content-center">
+      <div class="rpay-countdown mb-3 d-flex justify-content-center">
         <span class="mr-2">Code is valid for</span>
         <crypto-countdown class="" v-on="$listeners" />
       </div>
       <div class="mb-1">
-        <canvas ref="lndQrcode"></canvas>
+        <canvas class="qr-canvas" ref="lndQrcode"></canvas>
       </div>
       <!-- <input v-show="false" class="input2" readonly="true" ref="paymentAddressBtc"  @click="copyAddress($event)" :value="paymentRequest" placeholder="Lightning invoice"/> -->
       <div class="d-flex justify-content-center">
@@ -127,16 +127,6 @@ export default {
 }
 </script>
 <style lang="scss" >
-.ff-countdown {
-  position: relative;
-  top: -5px;
-  text-align: left;
-  font-size: 10px;
-  font-weight: 200;
-  letter-spacing: 0px;
-  color: #000000;
-  opacity: 1;
-}
 .flasher {
   font-size: 16px;
   border: 2pt solid #FFCE00;
@@ -147,13 +137,12 @@ export default {
   font-size: 11px;
   font-weight: 400;
   letter-spacing: 0px;
-  color: #000000;
-  opacity: 1;
+  opacity: 1
 }
 .copyAddress a {
   text-decoration: none;
 }
-canvas {
+.qr-canvas {
   max-width: 272px;
   max-height: 242px;
 }

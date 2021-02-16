@@ -1,136 +1,210 @@
 <template>
-<b-card-text>
-  <div class="mb-2">
-    <b-form inline class="d-flex justify-content-between w-100">
-      <a href="#" v-if="amountSend && amountSend > 0" class="text-info" @click="showTable = !showTable">Change Amount</a>
-      <a href="#" v-else class="text-info" @click="showTable = !showTable">Select Amount to Send</a>
-      <b-form-select v-model="currency" :options="currencies"></b-form-select>
-    </b-form>
-  </div>
-  <div class="mb-2 d-flex justify-content-between w-100" v-if="amountSend">
-    <div class="text-info">{{symbol}} {{amountSend}} {{currency}}</div>
-    <div class="text-info">
-      <div>{{amountBtc}} BTC</div>
-      <div>{{amountStx}} STX</div>
+    <div class="mt-5" :style="$globalLookAndFeel.text1Color">
+      <p class="text-white d-flex justify-content-center">{{$globalLookAndFeel.labels.card2Label1}}</p>
+      <div class="mt-5 text-white d-flex justify-content-center" style="margin-top: 20px; text-align: center; width: 100%;">
+        <span @click.prevent="countDown" class="stepper" :style="(fadeMin) ? 'opacity: 0.3;' : ''">
+          <b-icon class="text-info" width="35px" height="35px" icon="chevron-double-down"/>
+        </span>
+        <input class="mx-3 input1" @input="updateCredits($event)" id="input-horizontal1" v-model="localCredits" placeholder="$$$"/>
+        <span @click.prevent="countUp" class="stepper" :style="(fadeMax) ? 'opacity: 0.3;' : ''">
+          <b-icon class="text-info" width="35px" height="35px" icon="chevron-double-up"/>
+        </span>
+      </div>
+      <div v-if="loading" class="mt-5 d-flex justify-content-center">
+        <waiting-view/>
+      </div>
+      <div v-else class="mt-5 text-white d-flex justify-content-center">
+        <div>
+          <p>Total</p>
+          <div>
+            <span class="symbol" v-html="fiatSymbol"></span> <span>{{formattedFiat}} {{config.payment.currency}}</span>
+          </div>
+          <div style="margin-bottom: 20px; margin-top: 20px;">
+            <span class="symbol" v-html="currentSymbol"></span> <span>{{currentAmount}} BTC</span>
+          </div>
+        </div>
+      </div>
+      <div class="text-center mt-5">
+        <b-button variant="danger" @click.prevent="continueToPayment()">Continue <b-icon icon="b-icon-arrow-right"/></b-button>
+      </div>
     </div>
-  </div>
-  <div class="box container">
-    <div class="row text-center" v-if="showTable">
-      <div class="col-3 cell bg-info text-white" v-for="(j, index) in fibs" :key="index"><a href="#" class="text-white" @click.prevent="setAmount(fibs[index])">{{fibs[index]}}</a></div>
-    </div>
-    <div class="row text-center" v-if="showTable">
-      <b-form class="d-flex justify-content-between w-100">
-        <b-form-input
-          type="number"
-          id="amountSend"
-          placeholder="Enter amount"
-          v-model="amountSend"
-          ></b-form-input>
-      </b-form>
-    </div>
-  </div>
-  <div v-if="amountSend > 0">
-    <p>Send Method</p>
-    <div v-for="(option, index) in options" :key="index">
-      <p><b-button variant="warning" class="d-flex justify-content-between w-100" @click.prevent="sendPayment(option.value)" :class="(paymentOption === option.value) ? 'chosen' : ''">{{option.text}} <b-icon icon="arrow-right"></b-icon></b-button></p>
-    </div>
-  </div>
-</b-card-text>
 </template>
 
 <script>
 import { LSAT_CONSTANTS } from '@/lsat-constants'
-
-const precision = 100000000
+import WaitingView from '@/views/components/WaitingView'
 
 export default {
-  name: 'CryptoPicker',
+  name: 'CryptoStepper',
   components: {
+    WaitingView
   },
   props: ['paymentOption'],
   data () {
     return {
-      selected: null,
-      options: null,
-      amountSend: null,
-      amountBtc: null,
-      amountStx: null,
-      currency: 'EUR',
-      showTable: true,
-      fibs: [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597]
-    }
-  },
-  watch: {
-    'paymentOption' () {
-      this.selected = this.paymentOption
+      localCredits: 0,
+      loading: false
     }
   },
   mounted () {
-    const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-    this.selected = configuration.paymentOption
-    this.options = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTIONS]
+    const config = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+    this.localCredits = config.creditAttributes.start
   },
   methods: {
-    sendPayment (value) {
-      const payment = {
-        opcode: 'cfd-payment-1',
-        value: value,
-        currency: this.currency,
-        amountFiat: this.amountSend,
-        amountBtc: this.amountBtc,
-        amountStx: this.amountStx
-      }
-      this.$emit('paymentEvent', payment)
+    continueToPayment () {
+      const config = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      this.$store.dispatch('rpayStore/initialiseApp', config).then(() => {
+        this.$store.commit('rpayStore/setDisplayCard', 102)
+      })
     },
-    setAmount (amount) {
-      this.showTable = false
-      this.amountSend = amount
-      const rates = this.$store.getters[LSAT_CONSTANTS.KEY_EXCHANGE_RATES]
-      const rateObject = rates.find(item => item.currency === this.currency)
-      let amountBtc = this.amountSend / rateObject.last
-      amountBtc = Math.round(amountBtc * precision) / precision
-      this.amountBtc = amountBtc
-      const amountStx = Math.round(this.amountSend * rateObject.stxPrice * 1000000) / 1000000
-      this.amountStx = amountStx
+    countDown () {
+      const config = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      if (this.localCredits <= config.creditAttributes.min) {
+        return
+      }
+      if (this.localCredits < config.creditAttributes.min + config.creditAttributes.step) {
+        this.localCredits = config.creditAttributes.min
+      } else {
+        this.localCredits -= config.creditAttributes.step
+      }
+      this.updateCredits()
+    },
+    countUp () {
+      const config = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      if (this.localCredits >= config.creditAttributes.max) {
+        return
+      }
+      this.localCredits += config.creditAttributes.step
+      this.updateCredits()
+    },
+    updateCredits (evt) {
+      const config = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      let numbC = 0
+      try {
+        if (this.localCredits.length === 0) {
+          return
+        }
+        if (isNaN(this.localCredits)) {
+          // this.$notify({ type: 'warn', title: 'Number of Credits', text: 'Credits must be a number between ' + config.creditAttributes.min + ' and ' + config.creditAttributes.max + '!' })
+          this.localCredits = config.creditAttributes.start
+          return
+        }
+        numbC = Number(this.localCredits)
+        if (numbC < config.creditAttributes.min || numbC > config.creditAttributes.max) {
+          // this.$notify({ type: 'warn', title: 'Number of Credits', text: 'Credits must be a number between ' + config.creditAttributes.min + ' and ' + config.creditAttributes.max + '!' })
+          this.localCredits = config.creditAttributes.start
+        }
+      } catch (e) {
+        // this.$notify({ type: 'warn', title: 'Number of Credits', text: 'Credits must be a number between ' + config.creditAttributes.min + ' and ' + config.creditAttributes.max + '!' })
+        this.localCredits = config.creditAttributes.start
+      }
+      this.$store.dispatch('rpayStore/updateAmount', { numbCredits: this.localCredits })
     }
   },
   computed: {
-    currencies () {
-      const rates = this.$store.getters[LSAT_CONSTANTS.KEY_EXCHANGE_RATES]
-      if (rates) {
-        return rates.map(function (a) { return { value: a.currency, text: a.currency } })
+    quantityLabel () {
+      let ql = 'Spins'
+      if (this.$globalLookAndFeel.labels && this.$globalLookAndFeel.labels.quantityLabel) {
+        ql = this.$globalLookAndFeel.labels.quantityLabel
       }
-      return []
+      return ql
     },
-    symbol () {
-      const rates = this.$store.getters[LSAT_CONSTANTS.KEY_EXCHANGE_RATES]
-      const rateObject = rates.find(item => item.currency === this.currency)
-      if (rateObject) {
-        return rateObject.symbol
+    config () {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      return configuration
+    },
+    fadeMin () {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      return this.localCredits === configuration.creditAttributes.min
+    },
+    fadeMax () {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      return this.localCredits === configuration.creditAttributes.max
+    },
+    currentSymbol () {
+      if (this.paymentOption === 'ethereum') {
+        return 'Ξ'
+      } else if (this.paymentOption === 'stacks') {
+        return '&#931;'
+      } else {
+        return '&#8383;' // '&#x20BF;' // '&#8383;'
       }
-      return '-'
+    },
+    formattedFiat () {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const amount = configuration.payment.amountFiat * configuration.creditAttributes.start
+      const formatter = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'EUR'
+      })
+      const ffiat = formatter.formatToParts(amount) /* $2,500.00 */
+      return ffiat[1].value + '.' + ffiat[3].value
+    },
+    fiatSymbol () {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const fc = configuration.payment.currency
+      if (fc === 'EUR') {
+        return '&euro;'
+      } else if (fc === 'GBP') {
+        return '&pound;'
+      } else {
+        return '&dollar;'
+      }
+    },
+    amountFiat () {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const amount = configuration.payment.amountFiat * configuration.creditAttributes.start
+      return amount
+    },
+    fiatCurrency () {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      return configuration.payment.currency
+    },
+    currentAmount () {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const precision = 100000000
+      return Math.round(configuration.payment.amountBtc * configuration.creditAttributes.start * precision) / precision
     }
   }
 }
 </script>
 <style lang="scss" scoped>
-.box {
-  position: relative;
-  top: 0px;
-  z-index: 2;
-  margin: 20px;
+.ff-label {
+  text-align: left;
+  font-weight: 400;
+  font-size: 10px;
+  letter-spacing: 0px;
+  color: #000000;
+  opacity: 1;
 }
-.cell {
-  border: 1pt solid #fff;
-  min-height: 20px;
-  max-width: 20px;
-  padding: 10px;
-  cursor: pointer;
-  color: #fff;
+p.ff-total {
+  text-align: left;
   font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0px;
+  color: #000000;
+  opacity: 1;
+  margin-bottom: 10px;
 }
-.chosen {
-  background: #F9B807 0% 0% no-repeat padding-box;
+.input1 {
+  width: 48px;
+  height: 45px;
+  text-align: center;
+  background: #FFFFFF 0% 0% no-repeat padding-box;
+  box-shadow: 0px 3px 6px #00000029;
+  border-radius: 5px;
+  border: none;
+  opacity: 1;
 }
-
+.symbol {
+  width: 13px;
+  height: 13px;
+  opacity: 1;
+}
+.stepper {
+  padding: 5px;
+  cursor: pointer;
+  position: relative;
+  top: 7px;
+}
 </style>

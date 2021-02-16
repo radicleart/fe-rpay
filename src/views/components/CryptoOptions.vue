@@ -43,18 +43,4 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-.ff-symbol {
-  font-weight: 700;
-}
-.ff-placed {
-  text-align: left;
-  font-weight: 200;
-  font-size: 10px;
-  letter-spacing: 0px;
-  color: #000000;
-  opacity: 1;
-}
-.tokens {
-  font-weight: bold;
-}
 </style>

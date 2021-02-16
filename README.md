@@ -18,6 +18,21 @@ npm run serve
 npm run build
 ```
 
+### Builds for npm library
+
+Increment the version number in package.json
+
+```bash
+npm run build:npm
+npm publish
+```
+
+and in parent application
+
+```bash
+npm update risidio-rpay
+```
+
 ### Run your tests
 
 ```bash

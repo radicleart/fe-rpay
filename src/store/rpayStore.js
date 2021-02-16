@@ -1,28 +1,31 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
+// import Vue from 'vue'
+// import Vuex from 'vuex'
 import lsatHelper from './lsatHelper'
-import ethereumStore from './ethereumStore'
-import stacksStore from './stacksStore'
 import axios from 'axios'
 import SockJS from 'sockjs-client'
 import Stomp from '@stomp/stompjs'
 
-Vue.use(Vuex)
+// Vue.use(Vuex)
+
 let socket = null
 let stompClient = null
-const MESH_API = process.env.VUE_APP_RADICLE_API + '/mesh'
 const precision = 100000000
 const setAmounts = function (tickerRates, configuration) {
   try {
+    let amountFiat = configuration.payment.amountFiat
+    if (configuration.payment.allowMultiples) {
+      amountFiat = configuration.payment.amountFiat * configuration.creditAttributes.start
+    }
     const rate = tickerRates.find((o) => o.currency === configuration.payment.currency)
-    const amountBtc = configuration.payment.amountFiat / rate.last
+    const amountBtc = amountFiat / rate.last
     configuration.payment.amountBtc = amountBtc
     configuration.payment.amountBtc = Math.round(amountBtc * precision) / precision
     configuration.payment.amountSat = Math.round(amountBtc * precision)
-    configuration.payment.amountEth = Math.round((configuration.payment.amountFiat / rate.ethPrice) * precision) / precision
-    configuration.payment.amountStx = Math.round((configuration.payment.amountFiat / rate.stxPrice) * precision) / precision
+    configuration.payment.amountEth = Math.round((amountFiat / rate.ethPrice) * precision) / precision
+    configuration.payment.amountStx = Math.round((amountFiat / rate.stxPrice) * precision) / precision
+    return configuration
   } catch {
-    return 0
+    return configuration
   }
 }
 const getPaymentOptions = function (configuration) {
@@ -45,8 +48,8 @@ const getPaymentOptions = function (configuration) {
   })
   return allowedOptions
 }
-const subscribeApiNews = function (commit, paymentId) {
-  socket = new SockJS(MESH_API + '/api-news')
+const subscribeApiNews = function (commit, gatewayUrl, paymentId) {
+  socket = new SockJS(gatewayUrl + '/api-news')
   stompClient = Stomp.over(socket)
   stompClient.connect({}, function () {
     stompClient.subscribe('/queue/payment-news-' + paymentId, function (response) {
@@ -68,7 +71,7 @@ const checkPayment = function (state, commit, paymentId) {
     clearInterval(state.timer)
   }
   state.timer = setInterval(function () {
-    axios.post(MESH_API + '/v2/checkPayment/' + paymentId).then(response => {
+    axios.post(state.configuration.gatewayUrl + '/v2/checkPayment/' + paymentId).then(response => {
       const invoice = response.data
       if (!invoice.data) return
       if (invoice.data.status === 'paid' || invoice.data.status === 'processing') {
@@ -84,11 +87,13 @@ const checkPayment = function (state, commit, paymentId) {
   }, 3000)
 }
 
-export default new Vuex.Store({
-  modules: {
-    ethereumStore: ethereumStore,
-    stacksStore: stacksStore
-  },
+const rpayStore = {
+  namespaced: true,
+  // export default new Vuex.Store({
+  // modules: {
+  // rpayEthereumStore: rpayEthereumStore,
+  // rpayStacksStore: rpayStacksStore
+  // },
   state: {
     timer: null,
     xgeRates: null,
@@ -97,7 +102,7 @@ export default new Vuex.Store({
     settledInvoice: null,
     invoice: null,
     headers: null,
-    displayCard: 0,
+    displayCard: 100,
     paymentOption: null,
     paymentOptions: []
   },
@@ -145,6 +150,16 @@ export default new Vuex.Store({
       state.displayCard = val
     },
     addConfiguration (state, configuration) {
+      if (configuration.payment.allowMultiples) {
+        if (!configuration.creditAttributes) {
+          configuration.creditAttributes = {
+            start: 1,
+            min: 1,
+            max: 10,
+            step: 1
+          }
+        }
+      }
       state.configuration = configuration
     },
     setCurrentCryptoPaymentOption (state, o) {
@@ -172,7 +187,7 @@ export default new Vuex.Store({
   actions: {
     initialiseApp ({ state, commit }, configuration) {
       return new Promise((resolve) => {
-        axios.get(MESH_API + '/v1/rates/ticker').then(response => {
+        axios.get(state.configuration.gatewayUrl + '/v1/rates/ticker').then(response => {
           commit('setTickerRates', response.data)
           setAmounts(state.tickerRates, configuration)
           commit('addConfiguration', configuration)
@@ -194,7 +209,11 @@ export default new Vuex.Store({
             }
             if (!lsatHelper.lsatExpired(savedInvoice)) {
               commit('setInvoice', savedInvoice)
-              subscribeApiNews(commit, savedInvoice.data.id)
+              try {
+                subscribeApiNews(commit, configuration.gatewayUrl, savedInvoice.data.id)
+              } catch (err) {
+                console.log(err)
+              }
               checkPayment(state, commit, savedInvoice.data.id)
               commit('addConfiguration', configuration)
               resolve(savedInvoice)
@@ -205,10 +224,14 @@ export default new Vuex.Store({
             amount: configuration.payment.amountSat,
             description: (configuration.payment.description) ? configuration.payment.description : 'Donation to project'
           }
-          axios.post(MESH_API + '/v2/fetchPayment', data).then(response => {
+          axios.post(state.configuration.gatewayUrl + '/v2/fetchPayment', data).then(response => {
             const invoice = response.data
             localStorage.setItem('OP_INVOICE', JSON.stringify(invoice))
-            subscribeApiNews(commit, invoice.data.id)
+            try {
+              subscribeApiNews(commit, configuration.gatewayUrl, invoice.data.id)
+            } catch (err) {
+              console.log(err)
+            }
             checkPayment(state, commit, invoice.data.id)
             commit('addConfiguration', configuration)
             commit('setInvoice', invoice)
@@ -222,8 +245,17 @@ export default new Vuex.Store({
         })
       })
     },
+    updateAmount ({ state, commit }, data) {
+      localStorage.removeItem('OP_INVOICE')
+      let config = state.configuration
+      config.creditAttributes.start = data.numbCredits
+      config = setAmounts(state.tickerRates, config)
+      commit('addConfiguration', config)
+      // return this.dispatch('initialiseApp', state.configuration)
+    },
     stopListening ({ commit }) {
       if (stompClient) stompClient.disconnect()
     }
   }
-})
+}
+export default rpayStore

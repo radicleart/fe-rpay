@@ -195,7 +195,7 @@ const makeWithdrawal = function (web3, data, account, resolve, reject) {
   })
 }
 
-const ethereumStore = {
+const rpayEthereumStore = {
   namespaced: true,
   state: {
   },
@@ -245,4 +245,4 @@ const ethereumStore = {
     }
   }
 }
-export default ethereumStore
+export default rpayEthereumStore

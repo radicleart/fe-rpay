@@ -13,11 +13,68 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
     
     <!-- link to the SqPaymentForm library -->
-    <script type="text/javascript" src="https://js.<%= VUE_APP_SQUARE_URL %>.com/v2/paymentform"></script>
+    <script type="text/javascript" src="https://js.squareupsandbox.com/v2/paymentform"></script>
     <!-- link to the local custom styles for SqPaymentForm -->
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
     <title><%= htmlWebpackPlugin.options.title %></title>
+    <style>
+      #rpay-pay-card .custom-control-label {
+        color: #fff;
+        font-weight: 200;
+      }
+      #rpay-pay-card a {
+        color: #fff;
+        font-weight: 200;
+      }
+      .rpay-text-one {
+        color: #fff !important;
+        font-size: 12px;
+      }
+      .rpay-text-secondary {
+        color: #000 !important;
+        font-size: 12px;
+      }
+      .rpay-card-group {
+        max-width: 450px;
+        min-width: 450px;
+        min-height: 90vh;
+      }
+      .rpay-sq-logo {
+        padding: 20px;
+        max-width: 250px;
+        background-color: #fff;
+        border-radius: 5px;
+      }
+      .rpay-sq-payment-box {
+        background-color: #fff;
+        border-radius: 5px;
+        padding: 20px;
+        min-width: 400px;
+        max-width: 400px;
+      }
+      .rpay-countdown {
+        position: relative;
+        top: 0px;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 200;
+        letter-spacing: 0px;
+        color: #fff;
+        opacity: 1;
+      }
+      .rpay-background {
+        padding: '0';
+        margin: '0';
+        background-repeat: 'no-repeat';
+        -webkit-background-size: 'cover';
+        -moz-background-size: 'cover';
+        -o-background-size: 'cover';
+        background-size: 'cover';
+        opacity: 0.9;
+        background-image: url('https://risidio-journal.cdn.prismic.io/risidio-journal/59455bcb-a954-4713-9afd-cfe6130f0b26_Group+994.svg');
+      }
+    </style>
   </head>
   <body class="bg-dark">
     <noscript>You need javascript.</noscript>
@@ -29,65 +86,42 @@
           title: 'The People\'s',
           subtitle: ' Republic of Movies',
           card1Label: 'Select amount to send',
-          card2Label1: 'How many STX tokens do you need?',
+          card2Label1: 'Number Required?',
           card2Label2: 'Select operation',
           card2Label3: 'Make Payment',
           card2Label4: 'Open Channel',
           button1Label: 'Back',
           button2Label: 'Next',
           quantityLabel: 'Tokens'
-        },
-        sections: {
-          stepper: true
-        },
-        cardStyle: {
-          margin: '20px',
-          'min-width': '40vw',
-          'border-radius': '20px',
-        },
-        text1Color: {
-          'color': '#000'
-        },
-        text2Color: {
-          'color': '#0277bd'
-        },
-        text3Color: {
-          'color': '#fff'
-        },
-        background: {
-          padding: '0px 0 0 0',
-          'min-height': '95vh',
-          'max-height': '95vh',
-          'min-width': '40vw',
-          'background-repeat': 'no-repeat',
-          '-webkit-background-size': 'contain',
-          '-moz-background-size': 'contain',
-          '-o-background-size': 'contain',
-          'background-size': '200px 150px',
-          // 'background-image': 'url("https://images.prismic.io/risidio-journal/59455bcb-a954-4713-9afd-cfe6130f0b26_Group+994.svg?auto=compress,format")',
-          opacity: 1,
-          'background-image': 'url("https://trpay.risidio.com/img/payment-bg.png")' 
         }
       }
       const payment = {
         forceNew: false,
         amountFiat: 2.50,
         currency: 'GBP',
-        paymentCode: 'po-12324'
+        paymentCode: 'po-12324',
+        allowMultiples: true
       }
       window.risidioPaymentConfig = JSON.stringify({ 
-        paymentOption: 'fiat', 
+        paymentOption: 'fiat',
+        gatewayUrl: 'https://tapi.risidio.com/mesh',
         paymentOptions: [ 
           { allowFiat: true },
           { allowBitcoin: true }, 
-          {allowLightning: true}, 
-          {allowStacks: true}, 
-          {allowLSAT: false}, 
-          {allowEthereum: true}
+          { allowLightning: true }, 
+          { allowStacks: true }, 
+          { allowLSAT: false }, 
+          { allowEthereum: true }
         ], 
-        payment: payment
+        payment: payment,
+        squarePay: {
+          applicationId: 'sandbox-sq0idb-B8CL6u-_2GdwAvkgg6M7WA',
+          locationId: 'LA14YJ0CQM53A',
+          squareUrl: 'squareupsandbox'
+        },
+        lookAndFeel: lookAndFeel
       })
     </script>
-    <div id="rpay-entry" msg="aint no sunshine!"></div>
+    <div id="risidio-pay" msg="aint no sunshine!"></div>
   </body>
 </html>

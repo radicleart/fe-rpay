@@ -1,5 +1,5 @@
 <template>
-<div>
+<div class="rpay-sq-payment-box">
   <b-card-text>
     <div id="sq-ccbox">
       <!--
@@ -37,7 +37,7 @@
   </b-card-text>
   <b-card-text>
     <div class="mt-2 d-flex justify-content-around mt-5">
-      <div v-if="testMode" class="ff-cancel"><a href="#" @click.prevent="showTestPayments = !showTestPayments">Test Numbers</a></div>
+      <div v-if="testMode" ><a href="#" class="rpay-text-secondary" @click.prevent="showTestPayments = !showTestPayments">Test Numbers</a></div>
     </div>
   </b-card-text>
   <test-payments v-if="showTestPayments" />
@@ -48,9 +48,6 @@
 import { LSAT_CONSTANTS } from '@/lsat-constants'
 import TestPayments from '@/views/components/TestPayments'
 
-const MESH_API = process.env.VUE_APP_RADICLE_API + '/mesh'
-const APPLICATION_ID = process.env.VUE_APP_SQUARE_APPLICATION_ID
-const LOCATION_ID = process.env.VUE_APP_SQUARE_LOCATION_ID
 const MAINNET = process.env.VUE_APP_NETWORK
 
 export default {
@@ -68,7 +65,7 @@ export default {
       showTestPayments: false,
       applePay: false,
       masterpass: false,
-      submitUrl: MESH_API + '/v1/square/charge',
+      submitUrl: '/v1/square/charge',
       internalId: null
     }
   },
@@ -81,10 +78,11 @@ export default {
     }
   },
   mounted: function () {
+    const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
     this.internalId = this.id // + '_' + Math.floor(Math.random() * Math.floor(1000000))
     const idempotencyKey = this.uuidv4()
-    const locationId = LOCATION_ID
-    const applicationId = APPLICATION_ID // 'sq0idp-gbQhcOCpmb2X4W1588Ky7A'
+    const locationId = configuration.squarePay.locationId
+    const applicationId = configuration.squarePay.applicationId // 'sq0idp-gbQhcOCpmb2X4W1588Ky7A'
     const that = this
     if (MAINNET === 'mainnet') {
 
@@ -177,7 +175,8 @@ export default {
           // POST the nonce form to the payment processing page
           // document.getElementById('nonce-form').submit()
           const configuration = that.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-          fetch(that.submitUrl, {
+          const amountFiat = configuration.payment.amountFiat * configuration.creditAttributes.start * 100
+          fetch(configuration.gatewayUrl + that.submitUrl, {
             method: 'POST',
             headers: {
               Accept: 'application/json',
@@ -187,8 +186,8 @@ export default {
               nonce: nonce,
               idempotencyKey: idempotencyKey,
               currency: configuration.payment.currency,
-              amountFiat: configuration.payment.amountFiat * 100, // amounts are in smallest denomination (cents, pence, etc)
-              locationId: LOCATION_ID
+              amountFiat: amountFiat, // amounts are in smallest denomination (cents, pence, etc)
+              locationId: configuration.squarePay.locationId
             })
           }).catch(err => {
             alert('Network error: ' + err)
@@ -201,6 +200,8 @@ export default {
           }).then(data => {
             // console.log(data)
             data.opcode = 'fiat-payment-success'
+            data.numbCredits = configuration.creditAttributes.start
+            data.status = 4
             that.$emit('paymentEvent', data)
           }).catch(err => {
             // console.error(err)
@@ -244,7 +245,8 @@ export default {
   computed: {
     formattedFiat () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      const amountFiat = (configuration.payment) ? configuration.payment.amountFiat : '0'
+      // const amountFiat = (configuration.payment) ? configuration.payment.amountFiat : '0'
+      const amountFiat = configuration.payment.amountFiat * configuration.creditAttributes.start
       const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'EUR'
@@ -264,7 +266,8 @@ export default {
       }
     },
     testMode () {
-      return APPLICATION_ID.indexOf('sandbox') > -1
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      return configuration.squarePay.applicationId.indexOf('sandbox') > -1
     }
   },
   created () {

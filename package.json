@@ -1,16 +1,27 @@
 {
   "name": "risidio-pay",
-  "version": "0.0.1",
+  "version": "0.0.21",
   "private": false,
+  "files": [
+    "dist"
+  ],
+  "main": "dist/risidio-pay.umd.js",
+  "unpkg": "dist/risidio-pay.umd.min.js",
+  "module": "dist/risidio-pay.esm.js",
+  "browser": {
+    "./sfc": "src/risidio-pay.vue"
+  },
   "scripts": {
+    "build": "vue-cli-service build",
+    "build:npm": "vue-cli-service build --target lib --name risidio-pay src/RisidioPay.vue",
     "serve": "vue-cli-service serve",
     "lint": "vue-cli-service lint",
     "build-app": "vue-cli-service build --mode development",
     "build-app-stag": "vue-cli-service build --mode staging",
     "build-app-prod": "vue-cli-service build --mode production",
-    "build": "vue-cli-service build --mode development  --target wc --name rpay-entry ./src/RPayEntry.vue --inline-vue",
-    "build-stag": "vue-cli-service build --mode staging --target wc --name rpay-entry ./src/RPayEntry.vue --inline-vue",
-    "build-prod": "vue-cli-service build --mode production --target wc --name rpay-entry ./src/RPayEntry.vue --inline-vue",
+    "build-wc": "vue-cli-service build --mode development  --target wc --name rpay-entry ./src/RPayEntry.vue --inline-vue",
+    "build-stag-wc": "vue-cli-service build --mode staging --target wc --name rpay-entry ./src/RPayEntry.vue --inline-vue",
+    "build-prod-wc": "vue-cli-service build --mode production --target wc --name rpay-entry ./src/RPayEntry.vue --inline-vue",
     "test:e2e": "vue-cli-service test:e2e",
     "test:unit": "vue-cli-service test:unit"
   },

@@ -5,7 +5,7 @@
       <div class="text-center">
         <canvas ref="lndQrcode"></canvas>
       </div>
-      <div class="ff-countdown mb-3 d-flex justify-content-center">
+      <div class="rpay-countdown mb-3 d-flex justify-content-center">
         <span class="mr-2">Code is valid for</span>
         <crypto-countdown class="" v-on="$listeners" />
       </div>
@@ -58,7 +58,7 @@ export default {
   },
   methods: {
     doLogin () {
-      this.$store.dispatch('stacksStore/startLogin').then((result) => {
+      this.$store.dispatch('rpayStacksStore/startLogin').then((result) => {
         this.errorMessage = 'Error found'
         this.loading = false
       })
@@ -67,7 +67,7 @@ export default {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
       this.loading = true
       this.waitingMessage = 'Processing Payment'
-      this.$store.dispatch('stacksStore/makeTransfer', { amountStx: configuration.payment.amountStx, paymentAddress: STACKS_PAYMENT_ADDRESS }).then((result) => {
+      this.$store.dispatch('rpayStacksStore/makeTransfer', { amountStx: configuration.payment.amountStx, paymentAddress: STACKS_PAYMENT_ADDRESS }).then((result) => {
         const data = { status: 10, opcode: 'stx-crypto-payment-success', txId: result.txId }
         this.waitingMessage = 'Processed Payment'
         this.loading = false
