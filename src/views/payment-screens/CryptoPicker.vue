@@ -1,43 +1,48 @@
 <template>
     <div class="mt-5" :style="$globalLookAndFeel.text1Color">
-      <p class="text-white d-flex justify-content-center">{{$globalLookAndFeel.labels.card2Label1}}</p>
-      <div class="mt-5 text-white d-flex justify-content-center" style="margin-top: 20px; text-align: center; width: 100%;">
-        <span @click.prevent="countDown" class="stepper" :style="(fadeMin) ? 'opacity: 0.3;' : ''">
-          <b-icon class="text-info" width="35px" height="35px" icon="chevron-double-down"/>
+      <h1 class="d-flex justify-content-center">{{$globalLookAndFeel.labels.numberUnits}}</h1>
+      <div class="mt-5 d-flex justify-content-center" style="margin-top: 20px; text-align: center; width: 100%;">
+        <span @click.prevent="countDown">
+          <b-icon v-if="fadeMin" class="cp-stepper" icon="caret-down"/>
+          <b-icon v-else class="cp-stepper" icon="caret-down-fill"/>
         </span>
-        <input class="mx-3 input1" @input="updateCredits($event)" id="input-horizontal1" v-model="localCredits" placeholder="$$$"/>
-        <span @click.prevent="countUp" class="stepper" :style="(fadeMax) ? 'opacity: 0.3;' : ''">
-          <b-icon class="text-info" width="35px" height="35px" icon="chevron-double-up"/>
+        <input class="mx-3 picker-input" @input="updateCredits($event)" id="input-horizontal1" v-model="localCredits" placeholder="$$$"/>
+        <span @click.prevent="countUp">
+          <b-icon v-if="fadeMax" class="cp-stepper" icon="caret-up"/>
+          <b-icon v-else class="cp-stepper" icon="caret-up-fill"/>
         </span>
       </div>
-      <div v-if="loading" class="mt-5 d-flex justify-content-center">
-        <waiting-view/>
+      <div class="mt-3 text-center text-bold">
+        Select the amount
       </div>
-      <div v-else class="mt-5 text-white d-flex justify-content-center">
-        <div>
-          <p>Total</p>
+      <div class="cp-totals-outer">
+        <div class="cp-totals">
           <div>
-            <span class="symbol" v-html="fiatSymbol"></span> <span>{{formattedFiat}} {{config.payment.currency}}</span>
-          </div>
-          <div style="margin-bottom: 20px; margin-top: 20px;">
-            <span class="symbol" v-html="currentSymbol"></span> <span>{{currentAmount}} BTC</span>
+            <p class="text-bold">Your total</p>
+            <div>
+              <span class="text-warning text-bold symbol" v-html="fiatSymbol"></span> <span class="text-bold">{{formattedFiat}}</span>
+            </div>
+            <div class="mt-1">
+              <span class="text-warning text-bold symbol" v-html="currentSymbol"></span> <span class="text-bold">{{currentAmount}}</span>
+            </div>
           </div>
         </div>
+        <div class="mt-0 text-left">
+          <a class="text-small" href="#" @click.prevent="$emit('rpay-cancel')"><b-icon class="text-dark" icon="chevron-left"/> Back</a>
+        </div>
       </div>
-      <div class="text-center mt-5">
-        <b-button variant="danger" @click.prevent="continueToPayment()">Continue <b-icon icon="b-icon-arrow-right"/></b-button>
+      <div class="text-center mx-auto border-radius w-75">
+        <b-button class="cp-btn-order" style="width: 100%;" variant="warning" @click.prevent="continueToPayment()">Place Your Order</b-button>
       </div>
     </div>
 </template>
 
 <script>
 import { LSAT_CONSTANTS } from '@/lsat-constants'
-import WaitingView from '@/views/components/WaitingView'
 
 export default {
   name: 'CryptoStepper',
   components: {
-    WaitingView
   },
   props: ['paymentOption'],
   data () {
@@ -48,7 +53,7 @@ export default {
   },
   mounted () {
     const config = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-    this.localCredits = config.creditAttributes.start
+    this.localCredits = config.payment.creditAttributes.start
   },
   methods: {
     continueToPayment () {
@@ -59,22 +64,22 @@ export default {
     },
     countDown () {
       const config = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      if (this.localCredits <= config.creditAttributes.min) {
+      if (this.localCredits <= config.payment.creditAttributes.min) {
         return
       }
-      if (this.localCredits < config.creditAttributes.min + config.creditAttributes.step) {
-        this.localCredits = config.creditAttributes.min
+      if (this.localCredits < config.payment.creditAttributes.min + config.payment.creditAttributes.step) {
+        this.localCredits = config.payment.creditAttributes.min
       } else {
-        this.localCredits -= config.creditAttributes.step
+        this.localCredits -= config.payment.creditAttributes.step
       }
       this.updateCredits()
     },
     countUp () {
       const config = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      if (this.localCredits >= config.creditAttributes.max) {
+      if (this.localCredits >= config.payment.creditAttributes.max) {
         return
       }
-      this.localCredits += config.creditAttributes.step
+      this.localCredits += config.payment.creditAttributes.step
       this.updateCredits()
     },
     updateCredits (evt) {
@@ -85,18 +90,18 @@ export default {
           return
         }
         if (isNaN(this.localCredits)) {
-          // this.$notify({ type: 'warn', title: 'Number of Credits', text: 'Credits must be a number between ' + config.creditAttributes.min + ' and ' + config.creditAttributes.max + '!' })
-          this.localCredits = config.creditAttributes.start
+          // this.$notify({ type: 'warn', title: 'Number of Credits', text: 'Credits must be a number between ' + config.payment.creditAttributes.min + ' and ' + config.payment.creditAttributes.max + '!' })
+          this.localCredits = config.payment.creditAttributes.start
           return
         }
         numbC = Number(this.localCredits)
-        if (numbC < config.creditAttributes.min || numbC > config.creditAttributes.max) {
-          // this.$notify({ type: 'warn', title: 'Number of Credits', text: 'Credits must be a number between ' + config.creditAttributes.min + ' and ' + config.creditAttributes.max + '!' })
-          this.localCredits = config.creditAttributes.start
+        if (numbC < config.payment.creditAttributes.min || numbC > config.payment.creditAttributes.max) {
+          // this.$notify({ type: 'warn', title: 'Number of Credits', text: 'Credits must be a number between ' + config.payment.creditAttributes.min + ' and ' + config.payment.creditAttributes.max + '!' })
+          this.localCredits = config.payment.creditAttributes.start
         }
       } catch (e) {
-        // this.$notify({ type: 'warn', title: 'Number of Credits', text: 'Credits must be a number between ' + config.creditAttributes.min + ' and ' + config.creditAttributes.max + '!' })
-        this.localCredits = config.creditAttributes.start
+        // this.$notify({ type: 'warn', title: 'Number of Credits', text: 'Credits must be a number between ' + config.payment.creditAttributes.min + ' and ' + config.payment.creditAttributes.max + '!' })
+        this.localCredits = config.payment.creditAttributes.start
       }
       this.$store.dispatch('rpayStore/updateAmount', { numbCredits: this.localCredits })
     }
@@ -115,11 +120,11 @@ export default {
     },
     fadeMin () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      return this.localCredits === configuration.creditAttributes.min
+      return this.localCredits === configuration.payment.creditAttributes.min
     },
     fadeMax () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      return this.localCredits === configuration.creditAttributes.max
+      return this.localCredits === configuration.payment.creditAttributes.max
     },
     currentSymbol () {
       if (this.paymentOption === 'ethereum') {
@@ -132,7 +137,7 @@ export default {
     },
     formattedFiat () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      const amount = configuration.payment.amountFiat * configuration.creditAttributes.start
+      const amount = configuration.payment.amountFiat * configuration.payment.creditAttributes.start
       const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'EUR'
@@ -153,7 +158,7 @@ export default {
     },
     amountFiat () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      const amount = configuration.payment.amountFiat * configuration.creditAttributes.start
+      const amount = configuration.payment.amountFiat * configuration.payment.creditAttributes.start
       return amount
     },
     fiatCurrency () {
@@ -163,7 +168,7 @@ export default {
     currentAmount () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
       const precision = 100000000
-      return Math.round(configuration.payment.amountBtc * configuration.creditAttributes.start * precision) / precision
+      return Math.round(configuration.payment.amountBtc * configuration.payment.creditAttributes.start * precision) / precision
     }
   }
 }
@@ -186,25 +191,7 @@ p.ff-total {
   opacity: 1;
   margin-bottom: 10px;
 }
-.input1 {
-  width: 48px;
-  height: 45px;
-  text-align: center;
-  background: #FFFFFF 0% 0% no-repeat padding-box;
-  box-shadow: 0px 3px 6px #00000029;
-  border-radius: 5px;
-  border: none;
-  opacity: 1;
-}
 .symbol {
-  width: 13px;
-  height: 13px;
-  opacity: 1;
-}
-.stepper {
-  padding: 5px;
-  cursor: pointer;
-  position: relative;
-  top: 7px;
+  font-size: 24px;
 }
 </style>

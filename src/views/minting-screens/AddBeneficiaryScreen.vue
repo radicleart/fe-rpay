@@ -1,0 +1,182 @@
+<template>
+<b-card-group class="">
+  <b-card header-tag="header" footer-tag="footer" class="rpay-card">
+    <b-card-text class="m-4">
+      <b-form>
+        <p class="">Add Beneficiary</p>
+        <div class="row">
+          <div class="col-md-12">
+            <div class="mb-3" role="group">
+              <label class="text2" for="chain-address">{{preferredNetwork}} Address</label>
+              <b-form-input
+                id="chain-address"
+                v-model="beneficiary.chainAddress"
+                :state="chainAddressState"
+                aria-describedby="chain-address-help chain-address-feedback"
+                placeholder="Enter wallet address"
+                trim
+              ></b-form-input>
+              <b-form-invalid-feedback id="chain-address-feedback">
+                Enter at least 3 letters
+              </b-form-invalid-feedback>
+              <b-form-text id="chain-address-help">Royalties on sale will be sent to this address</b-form-text>
+            </div>
+
+            <div class="mb-4">
+              <div class="text-left d-flex justify-content-between">
+                <div class="w-50">Desired royalties</div>
+                <div class="w-50">
+                  <div class="mb-3" role="group">
+                    <b-input-group size="sm" append="%">
+                      <b-form-input
+                        type="number"
+                        id="royalty"
+                        :state="royaltyState"
+                        aria-describedby="royalty-help royalty-feedback"
+                        placeholder="Enter royalty"
+                        trim
+                        v-model.number="beneficiary.royalty">
+                      </b-form-input>
+                    </b-input-group>
+                    <b-form-invalid-feedback id="royalty-feedback">
+                      Between 0 and 50
+                    </b-form-invalid-feedback>
+                    <b-form-text id="royalty-help">To recieve on sale of each edition.</b-form-text>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3" role="group">
+              <label class="text2" for="username">Username</label>
+              <b-form-input
+                id="username"
+                v-model="beneficiary.username"
+                aria-describedby="username-help username-feedback"
+                placeholder="Enter username"
+                trim
+              ></b-form-input>
+              <b-form-invalid-feedback id="username-feedback">
+                Enter at least 3 letters
+              </b-form-invalid-feedback>
+              <b-form-text id="username-help">Username this person</b-form-text>
+            </div>
+
+            <div class="mb-3" role="group">
+              <label class="text2" for="email">Email</label>
+              <b-form-input
+                id="email"
+                v-model="beneficiary.email"
+                aria-describedby="email-help email-feedback"
+                placeholder="Enter email"
+                trim
+              ></b-form-input>
+              <b-form-invalid-feedback id="email-feedback">
+                Enter at least 3 letters
+              </b-form-invalid-feedback>
+              <b-form-text id="email-help">Email for this person</b-form-text>
+            </div>
+
+            <div class="mb-3" role="group">
+              <label class="text2" for="role">Role</label>
+              <b-form-input
+                id="role"
+                v-model="beneficiary.role"
+                aria-describedby="role-help role-feedback"
+                placeholder="Enter role"
+                trim
+              ></b-form-input>
+              <b-form-invalid-feedback id="role-feedback">
+                Enter at least 3 letters
+              </b-form-invalid-feedback>
+              <b-form-text id="role-help">Role in relationship to this item</b-form-text>
+            </div>
+
+            <div class="d-flex justify-content-between">
+              <b-button variant="danger" @click.prevent="cancel()">Cancel</b-button>
+              <b-button variant="info" @click.prevent="addBeneficiary()">Add Beneficiary</b-button>
+            </div>
+          </div>
+        </div>
+      </b-form>
+    </b-card-text>
+  </b-card>
+</b-card-group>
+</template>
+
+<script>
+import { LSAT_CONSTANTS } from '@/lsat-constants'
+
+export default {
+  name: 'AddBeneficiaryScreen',
+  components: {
+  },
+  data () {
+    return {
+      formSubmitted: false,
+      savedChainAddress: null,
+      beneficiary: {
+        royalty: null,
+        chainAddress: '',
+        role: '',
+        username: '',
+        email: ''
+      }
+    }
+  },
+  mounted () {
+    const benef = this.$store.getters[LSAT_CONSTANTS.KEY_EDIT_BENEFICIARY]
+    if (benef) {
+      this.beneficiary = benef
+      this.savedChainAddress = benef.chainAddress
+    }
+  },
+  methods: {
+    cancel: function () {
+      this.$store.commit('rpayStore/setDisplayCard', 100)
+    },
+    isValid: function (param) {
+      if (param === 'chainAddress') {
+        return (this.beneficiary.chainAddress.length > 10)
+      } else if (param === 'royalty') {
+        return typeof this.beneficiary.royalty === 'number' && this.beneficiary.royalty > 0 && this.beneficiary.royalty <= 50
+      }
+      this.$store.commit('rpayStore/setDisplayCard', 100)
+    },
+    addBeneficiary: function () {
+      this.formSubmitted = true
+      if (!this.isValid('chainAddress') | !this.isValid('royalty')) return
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const index = configuration.minter.beneficiaries.indexOf((obj) => obj.chainAddress === this.savedChainAddress)
+      if (index > -1) {
+        configuration.minter.beneficiaries.splice(index, 1, this.beneficiary)
+      } else {
+        configuration.minter.beneficiaries.push(this.beneficiary)
+      }
+      this.$store.commit('rpayStore/addConfiguration', configuration)
+      configuration.opcode = 'save-mint-data'
+      window.eventBus.$emit('mintEvent', configuration)
+      this.$store.commit('rpayStore/setDisplayCard', 100)
+    }
+  },
+  computed: {
+    chainAddressState () {
+      if (!this.formSubmitted && !this.beneficiary.chainAddress) return null
+      return this.isValid('chainAddress')
+    },
+    royaltyState () {
+      if (!this.formSubmitted && !this.beneficiary.royalty) return null
+      return this.isValid('royalty')
+    },
+    preferredNetwork () {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      return configuration.minter.preferredNetwork
+    }
+  }
+}
+</script>
+<style lang="scss" scoped>
+.text2 {
+  text-transform: capitalize;
+}
+</style>

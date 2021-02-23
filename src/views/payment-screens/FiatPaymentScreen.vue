@@ -1,15 +1,15 @@
 <template>
 <div class="rpay-sq-payment-box">
-  <b-card-text>
+  <div>
     <div id="sq-ccbox">
       <!--
         You should replace the action attribute of the form with the path of
         the URL you want to POST the nonce to (for example, "/process-card")
       -->
     </div>
-  </b-card-text>
-  <b-card-text class="loading-container">
-    <div id="spiner" class="loading"><b-icon icon="arrow-clockwise" animation="spin"></b-icon></div>
+  </div>
+  <div class="cp-totals loading-container">
+    <div id="spiner" class="loading"><b-icon icon="arrow-clockwise" animation="spin" font-scale="4"></b-icon></div>
     <form id="nonce-form" novalidate :action="submitUrl" method="post">
       <div class="errorbox">
         <div class="error" v-for="(error, index) in errors" :key="index">
@@ -24,17 +24,15 @@
       </div>
 
       <input type="hidden" id="card-nonce" name="nonce">
-      <div class="mt-4" id="sq-walletbox">
+      <div class="mt-0" id="sq-walletbox">
         <button v-show=applePay :id="id+'-sq-apple-pay'" class="button-apple-pay"></button>
         <button v-show=masterpass :id="id+'-sq-masterpass'" class="button-masterpass"></button>
       </div>
     </form>
-  </b-card-text>
-  <b-card-text>
-    <div class="mt-2 d-flex justify-content-center">
-      <b-button variant="info" @click="requestCardNonce($event)" class='productPurchase payButton'>Send <span class="" v-html="fiatSymbol"></span> {{formattedFiat}}</b-button>
+    <div class="text-center mx-auto border-radius w-100">
+      <b-button class="sq-btn-order" style="width: 80%;" variant="warning" @click.prevent="requestCardNonce($event)">Send <span class="" v-html="fiatSymbol"></span> {{formattedFiat}}</b-button>
     </div>
-  </b-card-text>
+  </div>
   <b-card-text>
     <div class="mt-2 d-flex justify-content-around mt-5">
       <div v-if="testMode" ><a href="#" class="rpay-text-secondary" @click.prevent="showTestPayments = !showTestPayments">Test Numbers</a></div>
@@ -65,7 +63,7 @@ export default {
       showTestPayments: false,
       applePay: false,
       masterpass: false,
-      submitUrl: '/v1/square/charge',
+      submitUrl: '/mesh/v1/square/charge',
       internalId: null
     }
   },
@@ -81,8 +79,8 @@ export default {
     const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
     this.internalId = this.id // + '_' + Math.floor(Math.random() * Math.floor(1000000))
     const idempotencyKey = this.uuidv4()
-    const locationId = configuration.squarePay.locationId
-    const applicationId = configuration.squarePay.applicationId // 'sq0idp-gbQhcOCpmb2X4W1588Ky7A'
+    const locationId = configuration.payment.squarePay.locationId
+    const applicationId = configuration.payment.squarePay.applicationId // 'sq0idp-gbQhcOCpmb2X4W1588Ky7A'
     const that = this
     if (MAINNET === 'mainnet') {
 
@@ -175,8 +173,8 @@ export default {
           // POST the nonce form to the payment processing page
           // document.getElementById('nonce-form').submit()
           const configuration = that.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-          const amountFiat = configuration.payment.amountFiat * configuration.creditAttributes.start * 100
-          fetch(configuration.gatewayUrl + that.submitUrl, {
+          const amountFiat = configuration.payment.amountFiat * configuration.payment.creditAttributes.start * 100
+          fetch(configuration.risidioBaseApi + that.submitUrl, {
             method: 'POST',
             headers: {
               Accept: 'application/json',
@@ -187,7 +185,7 @@ export default {
               idempotencyKey: idempotencyKey,
               currency: configuration.payment.currency,
               amountFiat: amountFiat, // amounts are in smallest denomination (cents, pence, etc)
-              locationId: configuration.squarePay.locationId
+              locationId: configuration.payment.squarePay.locationId
             })
           }).catch(err => {
             alert('Network error: ' + err)
@@ -200,8 +198,9 @@ export default {
           }).then(data => {
             // console.log(data)
             data.opcode = 'fiat-payment-success'
-            data.numbCredits = configuration.creditAttributes.start
-            data.status = 4
+            data.numbCredits = configuration.payment.creditAttributes.start
+            data.status = 'paid'
+            that.$store.commit('rpayStore/setInvoice', data)
             that.$emit('paymentEvent', data)
           }).catch(err => {
             // console.error(err)
@@ -246,7 +245,7 @@ export default {
     formattedFiat () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
       // const amountFiat = (configuration.payment) ? configuration.payment.amountFiat : '0'
-      const amountFiat = configuration.payment.amountFiat * configuration.creditAttributes.start
+      const amountFiat = configuration.payment.amountFiat * configuration.payment.creditAttributes.start
       const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'EUR'
@@ -267,7 +266,7 @@ export default {
     },
     testMode () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      return configuration.squarePay.applicationId.indexOf('sandbox') > -1
+      return configuration.payment.squarePay.applicationId.indexOf('sandbox') > -1
     }
   },
   created () {
@@ -281,8 +280,8 @@ export default {
 }
 .loading {
   position: absolute;
-  height: 100%;
-  width: 100%;
+  height: 82%;
+  width: 90%;
   display: flex;
   background-color: #ffffff;
 }
@@ -294,6 +293,9 @@ export default {
 .loaded {
   display: none;
 }
+.sq-input--error {
+  border-radius: 18px;
+}
 .sq-input {
   height: 35px;
   background-color: #fff;
@@ -304,6 +306,7 @@ export default {
   line-height: 18px;
   font-size: 16px;
   margin: 0 0px 0px 0px;
+  border-radius: 18px;
 }
 .sq-input:first-child {
   width: 100% !important;
@@ -432,12 +435,8 @@ export default {
 }
 #card-tainer {
   max-width: 70vw;
-  min-height: 100px;
+  min-height: 80px;
   text-align: left;
   margin-top: 8px;
-  background-color: white;
-  height: 80px;
-  padding: 10px 12px;
-  border-radius: 4px;
 }
 </style>

@@ -10,15 +10,20 @@
     <canvas ref="lndQrcode"></canvas>
   </div>
 
-  <div class="mt-3 rd-text d-flex flex-column align-items-center" style="" v-if="loading">
+  <div class="mb-2 text-center" style="" v-if="loading">
      <span class="text-danger" v-html="waitingMessage"></span>
   </div>
-  <div class="rd-text mt-3 d-flex flex-column align-items-center" v-else>
-    <b-button variant="info" class="mb-5" style="white-space: nowrap; width: 200px;" @click.prevent="sendPayment()">Connect with Ethereum</b-button>
+  <div class="mb-2 text-center text-small">
+    or
+  </div>
+  <div class="mb-3 text-center">
+    <b-button class="cp-btn-order" variant="warning" @click.prevent="sendPayment()">Connect via Meta Mask</b-button>
+  </div>
+  <div class="mb-3 text-center">
     <span class="text-danger">{{errorMessage}}</span>
   </div>
   <div class="text-center">
-    <span class="text-danger">> <a target="_blank" href="https://metamask.io/download.html">Meta Mask</a></span>
+    <span><a class="text-small text-info" target="_blank" href="https://metamask.io/download.html">Install Meta Mask</a></span>
   </div>
 </div>
 </template>
@@ -28,7 +33,6 @@ import { LSAT_CONSTANTS } from '@/lsat-constants'
 import QRCode from 'qrcode'
 
 const NETWORK = process.env.VUE_APP_NETWORK
-const ETH_PAYMENT_ADDRESS = process.env.VUE_APP_OWNER_ADDRESS
 
 export default {
   name: 'EthereumPaymentAddress',
@@ -56,7 +60,8 @@ export default {
   methods: {
     paymentUri () {
       // const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      return ETH_PAYMENT_ADDRESS
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      return configuration.payment.ethPaymentAddress
     },
     addQrCode () {
       var element = this.$refs.lndQrcode
@@ -69,7 +74,7 @@ export default {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
       this.loading = true
       this.waitingMessage = this.processingMessage
-      this.$store.dispatch('rpayEthereumStore/transact', { opcode: 'send-payment', amount: configuration.payment.amountEth }).then((result) => {
+      this.$store.dispatch('rpayEthereumStore/transact', { opcode: 'send-payment', ethPaymentAddress: configuration.payment.ethPaymentAddress, amount: configuration.payment.amountEth }).then((result) => {
         const data = { status: 10, opcode: 'eth-crypto-payment-success', txId: result.txId }
         this.waitingMessage = 'Processed Payment'
         this.loading = false

@@ -6,7 +6,7 @@ import SockJS from 'sockjs-client'
 import Stomp from '@stomp/stompjs'
 
 // Vue.use(Vuex)
-
+let MESH_API = null
 let socket = null
 let stompClient = null
 const precision = 100000000
@@ -14,7 +14,7 @@ const setAmounts = function (tickerRates, configuration) {
   try {
     let amountFiat = configuration.payment.amountFiat
     if (configuration.payment.allowMultiples) {
-      amountFiat = configuration.payment.amountFiat * configuration.creditAttributes.start
+      amountFiat = configuration.payment.amountFiat * configuration.payment.creditAttributes.start
     }
     const rate = tickerRates.find((o) => o.currency === configuration.payment.currency)
     const amountBtc = amountFiat / rate.last
@@ -30,26 +30,27 @@ const setAmounts = function (tickerRates, configuration) {
 }
 const getPaymentOptions = function (configuration) {
   const allowedOptions = []
-  const options = configuration.paymentOptions
+  const options = configuration.payment.paymentOptions
+  const mainOption = configuration.payment.paymentOption
   options.forEach(function (option) {
     if (option.allowLightning) {
-      allowedOptions.push({ text: 'Lightning', value: 'lightning', mainOption: configuration.paymentOption === 'lightning' })
+      allowedOptions.push({ text: 'Lightning', value: 'lightning', mainOption: mainOption === 'lightning' })
     } else if (option.allowFiat) {
-      allowedOptions.push({ text: 'Fiat', value: 'fiat', mainOption: configuration.paymentOption === 'fiat' })
+      allowedOptions.push({ text: 'Fiat', value: 'fiat', mainOption: mainOption === 'fiat' })
     } else if (option.allowBitcoin) {
-      allowedOptions.push({ text: 'Bitcoin', value: 'bitcoin', mainOption: configuration.paymentOption === 'bitcoin' })
+      allowedOptions.push({ text: 'Bitcoin', value: 'bitcoin', mainOption: mainOption === 'bitcoin' })
     } else if (option.allowLSAT) {
-      allowedOptions.push({ text: 'Risidio LSAT', value: 'lsat', mainOption: configuration.paymentOption === 'lsat' })
+      allowedOptions.push({ text: 'Risidio LSAT', value: 'lsat', mainOption: mainOption === 'lsat' })
     } else if (option.allowEthereum) {
-      allowedOptions.push({ text: 'Ether', value: 'ethereum', mainOption: configuration.paymentOption === 'ethereum' })
+      allowedOptions.push({ text: 'Ether', value: 'ethereum', mainOption: mainOption === 'ethereum' })
     } else if (option.allowStacks) {
-      allowedOptions.push({ text: 'Stacks', value: 'stacks', mainOption: configuration.paymentOption === 'stacks' })
+      allowedOptions.push({ text: 'Stacks', value: 'stacks', mainOption: mainOption === 'stacks' })
     }
   })
   return allowedOptions
 }
-const subscribeApiNews = function (commit, gatewayUrl, paymentId) {
-  socket = new SockJS(gatewayUrl + '/api-news')
+const subscribeApiNews = function (commit, paymentId) {
+  socket = new SockJS(MESH_API + '/api-news')
   stompClient = Stomp.over(socket)
   stompClient.connect({}, function () {
     stompClient.subscribe('/queue/payment-news-' + paymentId, function (response) {
@@ -66,25 +67,26 @@ const subscribeApiNews = function (commit, gatewayUrl, paymentId) {
   })
 }
 
-const checkPayment = function (state, commit, paymentId) {
-  if (state.timer) {
-    clearInterval(state.timer)
-  }
-  state.timer = setInterval(function () {
-    axios.post(state.configuration.gatewayUrl + '/v2/checkPayment/' + paymentId).then(response => {
-      const invoice = response.data
-      if (!invoice.data) return
-      if (invoice.data.status === 'paid' || invoice.data.status === 'processing') {
-        clearInterval(state.timer)
-        localStorage.setItem('OP_INVOICE', JSON.stringify(invoice))
-        commit('setInvoice', invoice)
-        invoice.opcode = 'btc-crypto-payment-success'
-        window.eventBus.$emit('paymentEvent', invoice)
-      }
-    }).catch((error) => {
-      console.log(error)
-    })
-  }, 3000)
+const checkPayment = function (resolve, reject, state, commit, paymentId) {
+  // if (state.timer) {
+  //  clearInterval(state.timer)
+  // }
+  axios.post(MESH_API + '/v2/checkPayment/' + paymentId).then(response => {
+    const invoice = response.data
+    if (!invoice.data) return
+    if (invoice.data.status === 'paid' || invoice.data.status === 'processing') {
+      // clearInterval(state.timer)
+      localStorage.setItem('OP_INVOICE', JSON.stringify(invoice))
+      commit('setInvoice', invoice)
+      invoice.opcode = 'btc-crypto-payment-success'
+      window.eventBus.$emit('paymentEvent', invoice)
+      resolve(invoice)
+    }
+  }).catch((error) => {
+    console.log(error)
+  })
+  // state.timer = setInterval(function () {
+  // }, 30000)
 }
 
 const rpayStore = {
@@ -103,6 +105,7 @@ const rpayStore = {
     invoice: null,
     headers: null,
     displayCard: 100,
+    beneficiary: null,
     paymentOption: null,
     paymentOptions: []
   },
@@ -110,8 +113,11 @@ const rpayStore = {
     getDisplayCard: (state) => {
       return state.displayCard
     },
+    getEditBeneficiary: (state) => {
+      return state.beneficiary
+    },
     getCurrentPaymentOption: (state) => {
-      return state.configuration.paymentOption
+      return state.configuration.payment.paymentOption
     },
     getPaymentOptions: state => {
       const paymentOptions = getPaymentOptions(state.configuration)
@@ -147,31 +153,47 @@ const rpayStore = {
   },
   mutations: {
     setDisplayCard (state, val) {
+      if (val !== 100 && val !== 102 && val !== 104) {
+        val = 100
+      }
+      if (val === 100) {
+        if (!state.configuration.payment.allowMultiples) {
+          val = 102
+        }
+      }
       state.displayCard = val
     },
+    setEditBeneficiary (state, beneficiary) {
+      state.beneficiary = beneficiary
+    },
     addConfiguration (state, configuration) {
-      if (configuration.payment.allowMultiples) {
-        if (!configuration.creditAttributes) {
-          configuration.creditAttributes = {
-            start: 1,
-            min: 1,
-            max: 10,
-            step: 1
+      if (configuration.risidioCardMode === 'payment-flow') {
+        if (configuration.payment.allowMultiples) {
+          if (!configuration.payment.creditAttributes) {
+            configuration.payment.creditAttributes = {
+              start: 1,
+              min: 1,
+              max: 10,
+              step: 1
+            }
           }
         }
       }
       state.configuration = configuration
     },
+    setPreferredNetwork (state, o) {
+      state.configuration.minter.preferredNetwork = o
+    },
     setCurrentCryptoPaymentOption (state, o) {
-      state.configuration.paymentOption = o
+      state.configuration.payment.paymentOption = o
     },
     addPaymentOption (state, o) {
-      state.configuration.paymentOption = o
+      state.configuration.payment.paymentOption = o
     },
     addPaymentOptions (state, o) {
       state.paymentOptions = getPaymentOptions(state.configuration)
-      if (!state.configuration.paymentOption) {
-        state.configuration.paymentOption = state.paymentOptions[0].value
+      if (!state.configuration.payment.paymentOption) {
+        state.configuration.payment.paymentOption = state.payment.paymentOptions[0].value
       }
     },
     setInvoice (state, invoice) {
@@ -186,21 +208,23 @@ const rpayStore = {
   },
   actions: {
     initialiseApp ({ state, commit }, configuration) {
-      return new Promise((resolve) => {
-        axios.get(state.configuration.gatewayUrl + '/v1/rates/ticker').then(response => {
+      return new Promise((resolve, reject) => {
+        MESH_API = configuration.risidioBaseApi + '/mesh'
+        axios.get(MESH_API + '/v1/rates/ticker').then(response => {
           commit('setTickerRates', response.data)
           setAmounts(state.tickerRates, configuration)
           commit('addConfiguration', configuration)
+          this.dispatch('rpayStacksStore/fetchMacsWalletInfo', { root: true })
           commit('addPaymentOptions')
           if (configuration.payment.forceNew) {
             localStorage.removeItem('OP_INVOICE')
           }
+          commit('addConfiguration', configuration)
           if (localStorage.getItem('OP_INVOICE')) {
             const savedInvoice = JSON.parse(localStorage.getItem('OP_INVOICE'))
             if (savedInvoice) {
               if (savedInvoice.data.status === 'paid' || savedInvoice.data.status === 'processing') {
                 commit('setInvoice', savedInvoice)
-                commit('addConfiguration', configuration)
                 savedInvoice.opcode = 'btc-crypto-payment-success'
                 window.eventBus.$emit('paymentEvent', savedInvoice)
                 resolve(savedInvoice)
@@ -210,45 +234,82 @@ const rpayStore = {
             if (!lsatHelper.lsatExpired(savedInvoice)) {
               commit('setInvoice', savedInvoice)
               try {
-                subscribeApiNews(commit, configuration.gatewayUrl, savedInvoice.data.id)
+                subscribeApiNews(commit, MESH_API, savedInvoice.data.id)
               } catch (err) {
                 console.log(err)
               }
-              checkPayment(state, commit, savedInvoice.data.id)
+              checkPayment(resolve, reject, state, commit, savedInvoice.data.id)
               commit('addConfiguration', configuration)
               resolve(savedInvoice)
               return
             }
           }
+          let allowed = configuration.payment.paymentOptions[1].allowBitcoin
+          allowed = allowed || configuration.payment.paymentOptions[2].allowLightning
+          if (!allowed) {
+            resolve({ data: { status: 'unpaid' } })
+            return
+          }
           const data = {
             amount: configuration.payment.amountSat,
             description: (configuration.payment.description) ? configuration.payment.description : 'Donation to project'
           }
-          axios.post(state.configuration.gatewayUrl + '/v2/fetchPayment', data).then(response => {
+          axios.post(MESH_API + '/v2/fetchPayment', data).then(response => {
             const invoice = response.data
             localStorage.setItem('OP_INVOICE', JSON.stringify(invoice))
             try {
-              subscribeApiNews(commit, configuration.gatewayUrl, invoice.data.id)
+              subscribeApiNews(commit, MESH_API, invoice.data.id)
             } catch (err) {
               console.log(err)
             }
-            checkPayment(state, commit, invoice.data.id)
+            checkPayment(resolve, reject, state, commit, invoice.data.id)
             commit('addConfiguration', configuration)
             commit('setInvoice', invoice)
             resolve(invoice)
           }).catch((error) => {
             console.log(error)
-            resolve()
+            configuration.payment.paymentOptions[1].allowBitcoin = false
+            configuration.payment.paymentOptions[2].allowLightning = false
+            commit('addConfiguration', configuration)
+            resolve({ data: { status: 'unpaid' } })
           })
         }).catch((error) => {
           console.log(error)
+          configuration.payment.paymentOptions[1].allowBitcoin = false
+          configuration.payment.paymentOptions[2].allowLightning = false
+          commit('addConfiguration', configuration)
+          commit('addConfiguration', configuration)
+          resolve({ data: { status: 'unpaid' } })
         })
       })
+    },
+    checkPayment ({ state, commit }) {
+      return new Promise((resolve, reject) => {
+        if (localStorage.getItem('OP_INVOICE')) {
+          const savedInvoice = JSON.parse(localStorage.getItem('OP_INVOICE'))
+          if (savedInvoice) {
+            if (savedInvoice.data.status !== 'paid' || savedInvoice.data.status !== 'processing') {
+              checkPayment(resolve, reject, state, commit, savedInvoice.data.id)
+            } else {
+              resolve()
+            }
+          } else {
+            resolve()
+          }
+        } else {
+          resolve()
+        }
+      })
+    },
+    stopCheckPayment ({ state }) {
+      if (state.timer) {
+        clearInterval(state.timer)
+      }
     },
     updateAmount ({ state, commit }, data) {
       localStorage.removeItem('OP_INVOICE')
       let config = state.configuration
-      config.creditAttributes.start = data.numbCredits
+      config.payment.creditAttributes.start = data.numbCredits
       config = setAmounts(state.tickerRates, config)
       commit('addConfiguration', config)
       // return this.dispatch('initialiseApp', state.configuration)

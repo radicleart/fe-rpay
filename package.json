@@ -1,6 +1,6 @@
 {
   "name": "risidio-pay",
-  "version": "0.0.21",
+  "version": "0.0.41",
   "private": false,
   "files": [
     "dist"
@@ -13,7 +13,8 @@
   },
   "scripts": {
     "build": "vue-cli-service build",
-    "build:npm": "vue-cli-service build --target lib --name risidio-pay src/RisidioPay.vue",
+    "build-stag": "vue-cli-service build --mode staging",
+    "build:npm": "vue-cli-service build --mode staging --target lib --name risidio-pay src/RisidioPay.vue",
     "serve": "vue-cli-service serve",
     "lint": "vue-cli-service lint",
     "build-app": "vue-cli-service build --mode development",
@@ -27,8 +28,9 @@
   },
   "dependencies": {
     "@stacks/auth": "^1.0.1",
-    "@stacks/connect": "^4.3.16-alpha.e6be09b.0",
-    "@stacks/connect-ui": "^2.17.17-alpha.e6be09b.0",
+    "@stacks/connect": "^4.3.15",
+    "@stacks/storage": "^1.1.1-alpha.0",
+    "@stacks/transactions": "^1.1.1-alpha.0",
     "@stacks/network": "^1.0.1",
     "@stomp/stompjs": "^4.0.6",
     "axios": "^0.19.2",

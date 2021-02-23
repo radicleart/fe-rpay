@@ -2,9 +2,8 @@ import Web3 from 'web3'
 import _ from 'lodash'
 import abiContract from './LoopbombX.json'
 
-const NFT_CONTRACT_ADDRESS = process.env.VUE_APP_NFT_CONTRACT_ADDRESS
+let NFT_CONTRACT_ADDRESS = null
 const NETWORK = process.env.VUE_APP_NETWORK
-const OWNER_ADDRESS = process.env.VUE_APP_OWNER_ADDRESS
 
 const getABI = function () {
   console.log(abiContract)
@@ -72,7 +71,7 @@ const resolveError = function (reject, error) {
 
 const sendPayment = function (web3, data, account, resolve, reject) {
   const amountToSend = web3.utils.toWei(String(data.amount), 'ether') // convert to wei value
-  web3.eth.sendTransaction({ from: account, to: OWNER_ADDRESS, value: amountToSend }).then((res) => {
+  web3.eth.sendTransaction({ from: account, to: data.ethPaymentAddress, value: amountToSend }).then((res) => {
     const result = {
       txId: res.transactionHash
     }
@@ -84,7 +83,7 @@ const sendPayment = function (web3, data, account, resolve, reject) {
 
 const mintToken = function (web3, data, account, resolve, reject) {
   const abi = getABI()
-  const nftContract = new web3.eth.Contract(abi, NFT_CONTRACT_ADDRESS, { from: account, gasLimit: '250000' })
+  const nftContract = new web3.eth.Contract(abi, data.ethContractAddress, { from: account, gasLimit: '250000' })
   nftContract.methods.getMintPrice().call({ from: account }).then((mintPrice) => {
     nftContract.methods.create().send({ from: account, value: mintPrice }).then((res) => {
       const result = {
@@ -206,6 +205,7 @@ const rpayEthereumStore = {
   actions: {
     transact ({ commit, state }, data) {
       return new Promise((resolve, reject) => {
+        NFT_CONTRACT_ADDRESS = data.ethContractAddress
         getWeb3().then((web3) => {
           if (!web3) {
             reject(new Error('no ethereum provider registered - please download Meta Mask to continue!'))

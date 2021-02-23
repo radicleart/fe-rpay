@@ -11,6 +11,7 @@
     <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="rpay-pay-card.css">
     
     <!-- link to the SqPaymentForm library -->
     <script type="text/javascript" src="https://js.squareupsandbox.com/v2/paymentform"></script>
@@ -18,75 +19,40 @@
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
     <title><%= htmlWebpackPlugin.options.title %></title>
-    <style>
-      #rpay-pay-card .custom-control-label {
-        color: #fff;
-        font-weight: 200;
-      }
-      #rpay-pay-card a {
-        color: #fff;
-        font-weight: 200;
-      }
-      .rpay-text-one {
-        color: #fff !important;
-        font-size: 12px;
-      }
-      .rpay-text-secondary {
-        color: #000 !important;
-        font-size: 12px;
-      }
-      .rpay-card-group {
-        max-width: 450px;
-        min-width: 450px;
-        min-height: 90vh;
-      }
-      .rpay-sq-logo {
-        padding: 20px;
-        max-width: 250px;
-        background-color: #fff;
-        border-radius: 5px;
-      }
-      .rpay-sq-payment-box {
-        background-color: #fff;
-        border-radius: 5px;
-        padding: 20px;
-        min-width: 400px;
-        max-width: 400px;
-      }
-      .rpay-countdown {
-        position: relative;
-        top: 0px;
-        text-align: left;
-        font-size: 12px;
-        font-weight: 200;
-        letter-spacing: 0px;
-        color: #fff;
-        opacity: 1;
-      }
-      .rpay-background {
-        padding: '0';
-        margin: '0';
-        background-repeat: 'no-repeat';
-        -webkit-background-size: 'cover';
-        -moz-background-size: 'cover';
-        -o-background-size: 'cover';
-        background-size: 'cover';
-        opacity: 0.9;
-        background-image: url('https://risidio-journal.cdn.prismic.io/risidio-journal/59455bcb-a954-4713-9afd-cfe6130f0b26_Group+994.svg');
-      }
-    </style>
   </head>
   <body class="bg-dark">
     <noscript>You need javascript.</noscript>
+    <div id="opcode"></div>
     <script>
+      setTimeout(function () {
+        window.eventBus.$on('mintEvent', function(data) { 
+          document.getElementById('opcode').innerHTML = data.opcode;
+        })
+        window.eventBus.$on('paymentEvent', function (data) {
+          localStorage.removeItem('OP_INVOICE')
+          document.getElementById('opcode').innerHTML = data.opcode;
+        })
+      }, 5000);
+      let risidioCardMode = 'payment-flow'
+      if (location.href.indexOf('mint') > -1) {
+        risidioCardMode = 'minting-flow'
+      }
+      let useNetwork = 'testnet'
+      let risidioBaseApi = 'http://api.risidio.local'
+      if (location.href.indexOf('https://trpay.risidio.com') > -1) {
+        risidioBaseApi = 'https://tapi.risidio.com'
+      } else if (location.href.indexOf('https://rpay.risidio.com') > -1) {
+        risidioBaseApi = 'https://api.risidio.com'
+        useNetwork = mainnet
+      }
       const lookAndFeel = {
         labels: {
+          numberUnits: 'How many items?',
           orderMsg: 'Place order for \'STX to Lightning\' select number required and pay.',
           successMsg: 'Your order has been received with thanks.',
           title: 'The People\'s',
           subtitle: ' Republic of Movies',
           card1Label: 'Select amount to send',
-          card2Label1: 'Number Required?',
           card2Label2: 'Select operation',
           card2Label3: 'Make Payment',
           card2Label4: 'Open Channel',
@@ -97,30 +63,79 @@
       }
       const payment = {
         forceNew: false,
-        amountFiat: 2.50,
+        amountFiat: 0.5,
         currency: 'GBP',
         paymentCode: 'po-12324',
-        allowMultiples: true
-      }
-      window.risidioPaymentConfig = JSON.stringify({ 
+        allowMultiples: true,
+        stxPaymentAddress: 'ST1R1061ZT6KPJXQ7PAXPFB6ZAZ6ZWW28G8HXK9G5',
+        ethPaymentAddress: '0xe31b011344f3f03dba31eeb12308fa446165b7b4',
         paymentOption: 'fiat',
-        gatewayUrl: 'https://tapi.risidio.com/mesh',
-        paymentOptions: [ 
+        paymentOptions: [
           { allowFiat: true },
-          { allowBitcoin: true }, 
-          { allowLightning: true }, 
+          { allowBitcoin: true },
+          { allowLightning: true },
           { allowStacks: true }, 
-          { allowLSAT: false }, 
+          { allowLSAT: false },
           { allowEthereum: true }
-        ], 
-        payment: payment,
+        ],
+        creditAttributes: {
+          start: 5,
+          min: 2,
+          max: 10,
+          step: 1
+        },
         squarePay: {
           applicationId: 'sandbox-sq0idb-B8CL6u-_2GdwAvkgg6M7WA',
           locationId: 'LA14YJ0CQM53A',
           squareUrl: 'squareupsandbox'
+        }
+      }
+      const minter = {
+        item: {
+          assetHash: '766e0fe6379a0256466c76d47d6caa2cb0c08d8607fe61b1d9192e8b4b71f2ed',
+          name: 'name'
         },
-        lookAndFeel: lookAndFeel
-      })
+        preferredNetwork: 'stacks connect',
+        networks: [
+          {
+            network: 'stacks risidio',
+            functionName: 'mint-token',
+            contractAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW',
+            contractName: 'loopbomb'
+          },
+          {
+            network: 'stacks connect',
+            functionName: 'mint-token',
+            contractAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW',
+            contractName: 'loopbomb'
+          },
+          {
+            network: 'ethereum',
+            functionName: 'mint-token',
+            contractAddress: '0xD32311b42F0F4B592A2a388F90725f4af686C51'
+          }
+        ],
+        beneficiaries: [
+          {
+            username: 'albert.einstein.id',
+            role: 'owner',
+            email: 'owner@somewhere.com',
+            royalty: 3,
+            chainAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW',
+          }
+        ]
+      }
+      const configuration = {
+        lookAndFeel: lookAndFeel,
+        payment: payment,
+        minter: minter,
+        network: useNetwork,
+        risidioBaseApi: risidioBaseApi,
+        risidioStacksApi: 'http://localhost:20443',
+        risidioWalletMac: '{"label": "MacMock", "mnemonic": "","keyInfo": {"privateKey": "4790db90a48e51bdbbc62a37fdc535719c22e195dc1aa6e1725b30bffc569ce501","address": "ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW","btcAddress": "","index": 0}}',
+        risidioCardMode: risidioCardMode
+      }
+      window.risidioPaymentConfig = JSON.stringify(configuration)
     </script>
     <div id="risidio-pay" msg="aint no sunshine!"></div>
   </body>

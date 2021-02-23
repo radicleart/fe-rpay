@@ -5,27 +5,26 @@
       <div class="text-center">
         <canvas ref="lndQrcode"></canvas>
       </div>
-      <div class="rpay-countdown mb-3 d-flex justify-content-center">
-        <span class="mr-2">Code is valid for</span>
-        <crypto-countdown class="" v-on="$listeners" />
-      </div>
-      <div class="mb-5 d-flex justify-content-center">
-        <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress()" style="text-decoration: underline;">
-          <span ref="myPaymentAddress" class="mr-2" :style="$globalLookAndFeel.text1Color">Copy the address</span>
-        </a>
-        <b-icon width="15px" height="15px" icon="file-earmark" :style="$globalLookAndFeel.text1Color"/>
-      </div>
+    </div>
+    <div class="mb-2 text-center">
+      <a href="#" @click.prevent="copyAddress()">
+        <span ref="myPaymentAddress" class="text-bold text-warning mr-2">Copy the address</span>
+      </a>
+      <b-icon class="text-warning" width="20px" height="20px" icon="file-earmark"/>
+    </div>
+    <div class="mb-2 text-center text-small">
+      or
     </div>
     <div class="text-center">
-      <b-button v-if="!profile.loggedIn" variant="info" class="mb-5" style="white-space: nowrap; width: 250px;" @click.prevent="doLogin()">Connect to Stacks Network</b-button>
-      <b-button v-else variant="info" class="mb-5" style="white-space: nowrap; width: 250px;" @click.prevent="sendPayment()">Donate with Stacks Connect</b-button>
+      <b-button v-if="!loggedIn" class="cp-btn-order" variant="warning" @click.prevent="doLogin()">Connect to Stacks</b-button>
+      <b-button v-else class="cp-btn-order" variant="warning" @click.prevent="sendPayment()">Send <span class="" v-html="currentSymbol"></span> {{currentAmount}}</b-button>
     </div>
-    <div class="text-center">
+    <div class="mb-3 text-center">
       <span class="text-danger">{{errorMessage}}</span>
     </div>
-    <div class="text-center">
-      <span class="text-danger">> <a target="_blank" href="https://www.hiro.so/wallet/install-web">Stacks Wallet</a></span>
-    </div>
+  </div>
+  <div class="text-center">
+    <span><a class="text-small text-info" target="_blank" href="https://www.hiro.so/wallet/install-web">Install stacks wallet</a></span>
   </div>
 </div>
 </template>
@@ -33,7 +32,6 @@
 <script>
 import QRCode from 'qrcode'
 import { LSAT_CONSTANTS } from '@/lsat-constants'
-import CryptoCountdown from '@/views/components/CryptoCountdown'
 
 const STACKS_PAYMENT_ADDRESS = process.env.VUE_APP_STACKS_PAYMENT_ADDRESS
 
@@ -41,7 +39,6 @@ const STACKS_PAYMENT_ADDRESS = process.env.VUE_APP_STACKS_PAYMENT_ADDRESS
 export default {
   name: 'StacksPaymentAddress',
   components: {
-    CryptoCountdown
   },
   props: {
   },
@@ -67,7 +64,7 @@ export default {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
       this.loading = true
       this.waitingMessage = 'Processing Payment'
-      this.$store.dispatch('rpayStacksStore/makeTransfer', { amountStx: configuration.payment.amountStx, paymentAddress: STACKS_PAYMENT_ADDRESS }).then((result) => {
+      this.$store.dispatch('rpayStacksStore/makeTransfer', { amountStx: configuration.payment.amountStx, paymentAddress: configuration.payment.stxPaymentAddress }).then((result) => {
         const data = { status: 10, opcode: 'stx-crypto-payment-success', txId: result.txId }
         this.waitingMessage = 'Processed Payment'
         this.loading = false
@@ -104,9 +101,33 @@ export default {
     }
   },
   computed: {
-    profile () {
+    currentSymbol () {
+      const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
+      if (paymentOption === 'ethereum') {
+        return 'Ξ'
+      } else if (paymentOption === 'stacks') {
+        return '&#931;'
+      } else {
+        return '&#8383;' // '&#x20BF;' // '&#8383;'
+      }
+    },
+    currentAmount () {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
+      if (configuration && configuration.payment.amountBtc) {
+        if (paymentOption === 'ethereum') {
+          return configuration.payment.amountEth + ' ETH'
+        } else if (paymentOption === 'stacks') {
+          return configuration.payment.amountStx + ' STX'
+        } else {
+          return configuration.payment.amountBtc + ' BTC'
+        }
+      }
+      return 0
+    },
+    loggedIn () {
       const profile = this.$store.getters[LSAT_CONSTANTS.KEY_PROFILE]
-      return profile
+      return (profile) ? profile.loggedIn : false
     },
     paymentAddress () {
       return STACKS_PAYMENT_ADDRESS

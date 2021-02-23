@@ -1,23 +1,26 @@
 <template>
-<div class="d-flex justify-content-center" :key="componentKey">
+<div v-if="!loading" class="d-flex justify-content-center" :key="componentKey">
   <div class="mx-auto">
-    <b-card-group class="rpay-card-group">
-      <b-card header-tag="header" footer-tag="footer" class="rpay-background">
-        <crypto-picker v-if="displayCard === 100" @paymentEvent="paymentEvent($event)"/>
-        <div v-else-if="displayCard === 102" :style="offsetTop()">
-          <order-info v-if="showOrderInfo" class="pb-5"/>
-          <div class="d-flex justify-content-center">
-            <img class="rpay-sq-logo" :src="logo()"/>
+    <b-card-group class="">
+      <b-card v-if="page === 'payment-page'" header-tag="header" footer-tag="footer" class="rpay-card">
+        <div>
+          <crypto-picker v-if="displayCard === 100" @paymentEvent="paymentEvent($event)"/>
+          <div v-else-if="displayCard === 102" :style="offsetTop()">
+            <order-info v-if="showOrderInfo" class="pb-4"/>
+            <div class="d-flex flex-column align-items-center">
+              <crypto-options class=""/>
+              <crypto-payment-screen @paymentEvent="paymentEvent($event)"/>
+            </div>
           </div>
-          <div class="d-flex flex-column align-items-center">
-            <crypto-options class=""/>
-            <crypto-payment-screen @paymentEvent="paymentEvent($event)" stye="position: relative; top: 500px;"/>
-          </div>
+          <result-page :result="'error'" v-else @paymentEvent="paymentEvent($event)"/>
         </div>
-        <token-screen v-else-if="displayCard === 104" @paymentEvent="paymentEvent($event)"/>
-        <error-screen v-else @paymentEvent="paymentEvent($event)"/>
-
+        <template v-slot:footer>
+          <footer-view :rangeValue="getRangeValue()" @rangeEvent="rangeEvent"/>
+        </template>
       </b-card>
+      <div v-else>
+        <result-page/>
+      </div>
     </b-card-group>
   </div>
 </div>
@@ -25,27 +28,26 @@
 
 <script>
 import { LSAT_CONSTANTS } from '@/lsat-constants'
-import ErrorScreen from './screens/ErrorScreen'
-import TokenScreen from './screens/TokenScreen'
-import CryptoPaymentScreen from './screens/CryptoPaymentScreen'
-import CryptoPicker from './screens/CryptoPicker'
+import CryptoPaymentScreen from './payment-screens/CryptoPaymentScreen'
+import CryptoPicker from './payment-screens/CryptoPicker'
 import CryptoOptions from '@/views/components/CryptoOptions'
 import OrderInfo from '@/views/components/OrderInfo'
+import ResultPage from '@/views/ResultPage'
+import FooterView from '@/views/components/FooterView'
 
 export default {
-  name: 'FrameworkFlow',
+  name: 'PaymentFlow',
   components: {
-    TokenScreen,
+    FooterView,
     CryptoPaymentScreen,
     CryptoPicker,
-    ErrorScreen,
     OrderInfo,
-    CryptoOptions
+    CryptoOptions,
+    ResultPage
   },
   data () {
     return {
-      // logo1: require('@/assets/img/sq-logo.png'),
-      // logo2: require('@/assets/img/btc1.jpeg'),
+      page: 'payment-page',
       message: null,
       paying: false,
       componentKey: 0,
@@ -54,23 +56,48 @@ export default {
     }
   },
   mounted () {
-    const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-    const displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
-    if (configuration.payment.allowMultiples && displayCard === 100) {
-      this.$store.commit('rpayStore/setDisplayCard', 100)
-    } else {
-      this.$store.commit('rpayStore/setDisplayCard', 102)
-    }
+    this.initPayment()
     const $self = this
     window.eventBus.$on('paymentEvent', function (data) {
       if (data.opcode.indexOf('-payment-success') > -1) {
-        $self.page = 'result'
+        $self.page = 'payment-result'
+        $self.$store.commit('rpayStore/setDisplayCard', 104)
       }
       $self.componentKey += 1
     })
-    this.loading = false
+  },
+  beforeDestroy () {
+    this.$store.dispatch('rpayStore/stopCheckPayment')
   },
   methods: {
+    initPayment: function (config) {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
+      if (configuration.payment.allowMultiples && displayCard === 100) {
+        this.$store.commit('rpayStore/setDisplayCard', 100)
+      } else {
+        this.$store.commit('rpayStore/setDisplayCard', 102)
+      }
+      this.$store.dispatch('rpayStore/initialiseApp', configuration).then((invoice) => {
+        this.page = 'payment-page'
+        if (invoice) {
+          if (invoice.data && (invoice.data.status === 'paid' || invoice.data.status === 'processing')) {
+            this.page = 'payment-result'
+            window.eventBus.$emit('paymentEvent', { opcode: 'payment-detected' })
+          }
+        }
+        this.loading = false
+      })
+    },
+    rangeEvent (displayCard) {
+      this.$store.commit('rpayStore/setDisplayCard', displayCard)
+    },
+    getRangeValue () {
+      const displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
+      if (displayCard === 100) return 0
+      else if (displayCard === 102) return 1
+      else if (displayCard === 104) return 2
+    },
     paymentEvent: function (data) {
       if (data.opcode === 'crypto-payment-expired') {
         this.paymentExpired()
@@ -99,20 +126,8 @@ export default {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
       this.$store.dispatch('rpayStore/initialiseApp', configuration).then(() => {
         this.componentKey += 1
-        this.loaded = true
+        this.loading = false
       })
-    },
-    logo () {
-      let logo = 'sq-logo.png'
-      const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
-      if (paymentOption !== 'fiat') {
-        logo = 'opennode.png'
-      }
-      if (this.network === 'testnet') {
-        return 'https://trpay.risidio.com/img/' + logo
-      } else {
-        return 'https://trpay.risidio.com/img/' + logo
-      }
     },
     offsetTop () {
       const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]

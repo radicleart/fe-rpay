@@ -10,7 +10,7 @@
         <canvas class="qr-canvas" ref="lndQrcode"></canvas>
       </div>
       <!-- <input v-show="false" class="input2" readonly="true" ref="paymentAddressBtc"  @click="copyAddress($event)" :value="paymentRequest" placeholder="Lightning invoice"/> -->
-      <div class="d-flex justify-content-center">
+      <div class="mb-3 d-flex justify-content-center">
         <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress($event)" style="text-decoration: underline;">
           <span ref="myPaymentAddress" class="mr-2" :style="$globalLookAndFeel.text1Color">Copy the address</span>
         </a>
@@ -53,7 +53,7 @@ export default {
     }
   },
   beforeDestroy () {
-    this.$store.dispatch('stopListening')
+    // this.$store.dispatch('stopListening')
   },
   mounted () {
     Vue.nextTick(function () {

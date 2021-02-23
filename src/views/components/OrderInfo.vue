@@ -1,17 +1,15 @@
 <template>
-<b-card-text>
-  <div v-if="method === 'fiat' || 'bitcoin'" class="d-column align-items-center text-center">
-    <h4 class="mb-2 rpay-text-one">{{numbUnits}} @ <span class="" v-html="fiatSymbol"></span> {{formattedFiat}} per unit</h4>
-    <div class="rpay-text-one">[ <span class="" v-html="currentSymbol"></span> {{currentAmount}} ]</div>
+<b-card-text class="oi-card-text">
+  <div class="mx-5 pt-5 row">
+    <div class="text-right col-6">
+      <div @click="backToCredits" class="cursor-pointer rpay-text-one">Your <span class="text-danger" v-if="network == 'testnet'">testnet</span> order <b-icon icon="pencil"/></div>
+    </div>
+    <div class="text-left col-6">
+      <div class="rpay-text-one"><span class="text-warning" v-html="numbUnits"></span> units</div>
+      <div class="rpay-text-one"><span class="text-warning" v-html="fiatSymbol"></span> {{formattedFiat}}</div>
+      <div class="rpay-text-one"><span class="text-warning" v-html="currentSymbol"></span> {{currentAmount}}</div>
+    </div>
   </div>
-  <div v-else class="d-column align-items-center text-center">
-    <h1 class="rpay-text-one"><span class="" v-html="currentSymbol"></span> {{currentAmount}}</h1>
-    <div class="mb-3 rpay-text-one">[ <span class="" v-html="fiatSymbol"></span> {{formattedFiat}} ]</div>
-  </div>
-  <div class="my-2 d-flex justify-content-center ">
-    <b-button variant="danger" @click.prevent="backToCredits()"><b-icon icon="b-icon-arrow-left"/> Back</b-button>
-  </div>
-  <div class="text-center border-bottom pb-4 mb-4 text-danger" v-if="network == 'testnet'">testnet</div>
 </b-card-text>
 </template>
 
@@ -41,10 +39,7 @@ export default {
   },
   mounted () {
     const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-    this.paymentOption = configuration.paymentOption
-    if (configuration.opcode === 'lsat-place-order') {
-      this.$store.commit('rpayStore/setDisplayCard', 0)
-    }
+    this.paymentOption = configuration.payment.paymentOption
     this.loading = false
   },
   methods: {
@@ -55,11 +50,11 @@ export default {
   computed: {
     numbUnits () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      return configuration.creditAttributes.start
+      return configuration.payment.creditAttributes.start
     },
     method () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      return configuration.paymentOption
+      return configuration.payment.paymentOption
     },
     formattedFiat () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
@@ -110,4 +105,7 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+.cursor-pointer {
+  cursor: pointer;
+}
 </style>

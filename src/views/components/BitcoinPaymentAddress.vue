@@ -1,11 +1,11 @@
 <template>
 <div class="d-flex flex-column align-items-center">
+  <div class="mb-3 mx-auto">
+    <canvas ref="lndQrcode"></canvas>
+  </div>
   <div class="rpay-countdown mb-3 d-flex justify-content-center">
     <span class="mr-2">Code is valid for</span>
     <crypto-countdown class="" v-on="$listeners" />
-  </div>
-  <div class="mb-3 mx-auto">
-    <canvas ref="lndQrcode"></canvas>
   </div>
   <!--
   <div class="rd-text mb-3 d-flex justify-content-center">

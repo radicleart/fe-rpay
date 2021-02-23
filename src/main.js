@@ -12,8 +12,6 @@ Vue.use(IconsPlugin)
 // Vue.use(Notifications, { closeOnClick: true, duration: 6000 })
 Vue.config.productionTip = false
 
-window.eventBus = new Vue()
-
 new Vue({
   store,
   render: h => h(RisidioPay),
