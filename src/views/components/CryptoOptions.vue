@@ -6,7 +6,7 @@
   <div class="text-center text-bold">Select your payment method</div>
   <div class="mx-5">
     <span v-for="(option, index) in options" :key="index">
-      <b-button @click="changePaymentOption(option.value)" variant="warning" :class="(currentOption === option.value) ? 'co-option-on' : 'co-option-off'"><span v-if="option.value === 'fiat'">Card</span><span v-else>{{option.value}}</span></b-button>
+      <b-button @click="changePaymentOption(option.value)" :variant="$globalLookAndFeel.variant0" :class="(currentOption === option.value) ? 'co-option-on' : 'co-option-off'"><span v-if="option.value === 'fiat'">Card</span><span v-else>{{option.value}}</span></b-button>
     </span>
   </div>
 </b-card-text>

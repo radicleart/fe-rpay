@@ -12,12 +12,12 @@
       <!-- <input v-show="false" class="input2" readonly="true" ref="paymentAddressBtc"  @click="copyAddress($event)" :value="paymentRequest" placeholder="Lightning invoice"/> -->
       <div class="mb-3 d-flex justify-content-center">
         <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress($event)" style="text-decoration: underline;">
-          <span ref="myPaymentAddress" class="mr-2" :style="$globalLookAndFeel.text1Color">Copy the address</span>
+          <span ref="myPaymentAddress" class="mr-2 text-one">Copy the address</span>
         </a>
       </div>
     </div>
     <div title="Open Channel" v-else>
-      <div class="text-info scan-text" :style="$globalLookAndFeel.text1Color">
+      <div class="text-info scan-text text-one">
         For better connectivity you can open a lightning channel.
       </div>
       <div class="d-flex justify-content-center mb-3">

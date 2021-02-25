@@ -1,6 +1,8 @@
 import Web3 from 'web3'
 import _ from 'lodash'
 import abiContract from './LoopbombX.json'
+import store from '@/store/mainStore'
+import { LSAT_CONSTANTS } from '@/lsat-constants'
 
 let NFT_CONTRACT_ADDRESS = null
 const NETWORK = process.env.VUE_APP_NETWORK
@@ -62,11 +64,17 @@ const getWeb3 = function () {
   })
 }
 const resolveError = function (reject, error) {
+  let errorMessage = 'Unable to contact your <b>Meta Mask wallet</b> <br/> are you logged in and connected to the ' + NETWORK + ' network?'
   if (error && error.message && error.message.toLowerCase().indexOf('user denied') > -1) {
-    reject(new Error('Minting process cancelled...'))
-  } else {
-    reject(new Error('Unable to contact your <b>Meta Mask wallet</b> <br/> are you logged in and connected to the ' + NETWORK + ' network?'))
+    errorMessage = 'Minting process cancelled...'
   }
+  store.commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, { opcode: 'eth-mint-error', message: errorMessage })
+  const result = {
+    opcode: 'eth-mint-error',
+    message: errorMessage
+  }
+  window.eventBus.$emit('rpayEvent', result)
+  reject(new Error(errorMessage))
 }
 
 const sendPayment = function (web3, data, account, resolve, reject) {
@@ -83,6 +91,8 @@ const sendPayment = function (web3, data, account, resolve, reject) {
 
 const mintToken = function (web3, data, account, resolve, reject) {
   const abi = getABI()
+  const message = 'Minting on Ethereum can take some time - please keep this tab open until we hear back from the network.'
+  store.commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, { opcode: 'eth-mint-begun', message: message })
   const nftContract = new web3.eth.Contract(abi, data.ethContractAddress, { from: account, gasLimit: '250000' })
   nftContract.methods.getMintPrice().call({ from: account }).then((mintPrice) => {
     nftContract.methods.create().send({ from: account, value: mintPrice }).then((res) => {
@@ -96,12 +106,14 @@ const mintToken = function (web3, data, account, resolve, reject) {
             const event = res.events[key]
             result.tokenId = parseInt(event.returnValues.id, 10)
           }
-          // if (event) {
-          //  result.tokenId = parseInt(event.raw.topics[3], 16)
-          //  result.logIndex = event.logIndex
-          // }
         }
       }
+      const message = 'Your music (#' + result.tokenId + ')<br/>has been minted and is registered to your Ethereum address'
+      result.message = message
+      store.commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, result)
+      store.commit(LSAT_CONSTANTS.SET_DISPLAY_CARD, 106)
+      result.opcode = 'eth-mint-success'
+      window.eventBus.$emit('rpayEvent', result)
       resolve(result)
     }).catch((e) => {
       resolveError(reject, e)

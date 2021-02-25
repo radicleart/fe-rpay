@@ -5,18 +5,18 @@
       <b>Lightning invoice has expired - {{timedOutOrExpired}}</b>
     </div>
     <div class="d-flex justify-content-center">
-      <b-button @click="prev()" variant="danger" class="button1 bg-danger">Start Over</b-button>
+      <b-button @click="prev()" :variant="$globalLookAndFeel.variant1" class="button1 bg-danger">Start Over</b-button>
     </div>
   </div>
   <div class="" v-else>
-    <div class="text-center text-bold" v-if="paymentOption !== 'fiat'">Scan the QR code (<a href="#" class="text-info" @click.prevent="checkChain()">check payment</a>)</div>
-    <div class="text-center text-bold" v-else>Enter your payment information</div>
+    <div class="text-center text-bold" v-if="desktopWalletSupported">Scan the QR code <a v-if="paymentOption === 'lightning'" href="#" class="text-info" @click.prevent="checkChain()">check payment</a></div>
+    <div class="text-center text-bold" v-if="paymentOption === 'fiat'">Enter your payment information</div>
     <div class="d-flex justify-content-center">
       <fiat-payment-screen v-on="$listeners" v-if="paymentOption === 'fiat'"/>
       <lightning-payment-address v-on="$listeners" v-if="paymentOption === 'lightning'"/>
       <bitcoin-payment-address v-on="$listeners" v-if="paymentOption === 'bitcoin'"/>
-      <stacks-payment-address v-on="$listeners" v-if="paymentOption === 'stacks'"/>
-      <ethereum-payment-address v-on="$listeners" v-if="paymentOption === 'ethereum'"/>
+      <stacks-payment-address :desktopWalletSupported="desktopWalletSupported" v-on="$listeners" v-if="paymentOption === 'stacks'"/>
+      <ethereum-payment-address :desktopWalletSupported="desktopWalletSupported" v-on="$listeners" v-if="paymentOption === 'ethereum'"/>
     </div>
   </div>
 </b-card-text>
@@ -63,6 +63,10 @@ export default {
     }
   },
   computed: {
+    desktopWalletSupported () {
+      const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
+      return paymentOption === 'bitcoin' || paymentOption === 'lightning'
+    },
     paymentOption () {
       const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
       return paymentOption

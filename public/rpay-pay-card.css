@@ -10,6 +10,15 @@
 #rpay-pay-card .card-body {
   padding: 0 0 30px 0;
 }
+#rpay-pay-card .text-one {
+  color: #000;
+}
+#rpay-pay-card .text-two {
+  color: #ad1457;
+}
+#rpay-pay-card .text-three {
+  color: #ffd54f;
+}
 #rpay-pay-card .co-option-on {
   color: #ffffff;
   padding: 5px 15px;
@@ -29,6 +38,35 @@
   font-weight: 700;
 }
 
+#rpay-pay-card .no-option-on {
+  color: #ffffff;
+  padding: 5px 15px;
+  margin: 8px;
+  text-transform: capitalize;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 70%;
+  border-radius: 18px;
+}
+#rpay-pay-card .round-btn {
+  border-radius: 18px;
+  width: 50%;
+  white-space: 'nowrap';
+}
+
+#rpay-pay-card .no-option-off {
+  color: #000000;
+  border: #cccccc;
+  background-color: #cccccc;
+  padding: 5px 15px;
+  margin: 8px;
+  text-transform: capitalize;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 70%;
+  border-radius: 18px;
+}
+
 #rpay-pay-card .oi-card-text {
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;
@@ -39,7 +77,7 @@
 #rpay-pay-card .rpay-card {
   max-width: 450px;
   min-width: 450px;
-  min-height: 90vh;
+  min-height: 80vh;
   padding: '0';
   margin: '0';
   background-repeat: 'no-repeat';
@@ -80,20 +118,15 @@
 #rpay-pay-card .text-300 {
   font-weight: 300;
 }
-#rpay-pay-card .text-small {
-  font-size: 11px;
-}
-#rpay-pay-card .custom-control-label {
-}
 #rpay-pay-card .cp-stepper {
   position: relative;
   margin-top: 15px;
   font-weight: 700;
   width: 28px;
   height: 28px;
-  border: 1pt solid #ffd54f;
+  border: 1pt solid #ad1457;
   border-radius: 50%;
-  color: #ffd54f;
+  color: #ad1457;
   padding: 5px;
   cursor: pointer;
 }
@@ -129,12 +162,12 @@
 #rpay-pay-card a {
   font-weight: 200;
 }
-#rpay-pay-card .rpay-text-one {
-  font-size: 14px;
-  font-weight: 500;
-}
 #rpay-pay-card .rpay-text-secondary {
   font-size: 12px;
+}
+#rpay-pay-card .text-h2 {
+  font-size: 24px;
+  font-weight: 300;
 }
 #rpay-pay-card .rpay-sq-logo {
   padding: 20px;
@@ -156,4 +189,13 @@
   font-weight: 200;
   letter-spacing: 0px;
   opacity: 1;
+}
+#rpay-pay-card .footer-container input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  cursor: default;
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
+  background-color: #ad1457;
+  margin-top: -7px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
 }

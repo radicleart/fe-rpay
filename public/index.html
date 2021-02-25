@@ -25,10 +25,7 @@
     <div id="opcode"></div>
     <script>
       setTimeout(function () {
-        window.eventBus.$on('mintEvent', function(data) { 
-          document.getElementById('opcode').innerHTML = data.opcode;
-        })
-        window.eventBus.$on('paymentEvent', function (data) {
+        window.eventBus.$on('rpayEvent', function (data) {
           localStorage.removeItem('OP_INVOICE')
           document.getElementById('opcode').innerHTML = data.opcode;
         })
@@ -46,18 +43,13 @@
         useNetwork = mainnet
       }
       const lookAndFeel = {
+        variant0: 'danger',
+        variant1: 'warning',
+        variant2: 'info',
+        variant3: 'light',
         labels: {
+          title: 'Mint Your Item',
           numberUnits: 'How many items?',
-          orderMsg: 'Place order for \'STX to Lightning\' select number required and pay.',
-          successMsg: 'Your order has been received with thanks.',
-          title: 'The People\'s',
-          subtitle: ' Republic of Movies',
-          card1Label: 'Select amount to send',
-          card2Label2: 'Select operation',
-          card2Label3: 'Make Payment',
-          card2Label4: 'Open Channel',
-          button1Label: 'Back',
-          button2Label: 'Next',
           quantityLabel: 'Tokens'
         }
       }
@@ -92,8 +84,9 @@
       }
       const minter = {
         item: {
-          assetHash: '766e0fe6379a0256466c76d47d6caa2cb0c08d8607fe61b1d9192e8b4b71f2ed',
-          name: 'name'
+          assetHash: '566e0fe6379a0256466c76d47d6caa2cb0c08d8607fe61b1d9192e8b4b71f2ed',
+          name: 'My Non Funginble Token',
+          imageUrl: 'https://images.prismic.io/risidio-journal/5757dd30-d293-4586-a99b-bdce237f7a69_alexander-sinn-KgLtFCgfC28-unsplash.png?auto=compress,format'
         },
         preferredNetwork: 'stacks connect',
         networks: [
@@ -112,7 +105,7 @@
           {
             network: 'ethereum',
             functionName: 'mint-token',
-            contractAddress: '0xD32311b42F0F4B592A2a388F90725f4af686C51'
+            contractAddress: '0xD32311b42F0F4B592A2a388F90725f4af686C51b'
           }
         ],
         beneficiaries: [

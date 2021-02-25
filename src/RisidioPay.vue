@@ -54,9 +54,13 @@ export default {
       configuration = this.parseConfiguration()
     }
     const lf = (configuration.lookAndFeel) ? configuration.lookAndFeel : this.defLF()
+    if (!lf.variant) lf.variant = 'warning'
+    if (!lf.variant1) lf.variant1 = 'danger'
+    if (!lf.variant2) lf.variant2 = 'info'
     Vue.prototype.$globalLookAndFeel = lf
     this.risidioCardMode = configuration.risidioCardMode
     this.$store.commit('rpayStore/addConfiguration', configuration)
+    this.$store.commit('rpayStore/setDisplayCard', 100) // initial screen for each flow.
     this.loaded = true
   },
   methods: {
@@ -79,7 +83,7 @@ export default {
           numberUnits: 'How many items?',
           orderMsg: 'Place order for \'STX to Lightning\' select number required and pay.',
           successMsg: 'Your order has been received with thanks.',
-          title: 'The People\'s',
+          title: 'dsfsfsdf',
           subtitle: 'Republic of Movies',
           card1Label: 'Select amount to send',
           card2Label2: 'Select operation',

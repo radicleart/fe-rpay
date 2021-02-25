@@ -4,22 +4,22 @@
     <img height="100%" width="100%" :src="logoDone"/>
   </b-card-text>
   <b-card-text v-if="result === 'error'" class="d-flex justify-content-center">
-    <div class="mb-4 text-bold text-danger">Please choose a payment method</div>
+    <div class="mb-4 text-bold text-one">Please choose a payment method</div>
   </b-card-text>
   <b-card-text v-else class="text-center mx-4">
-    <div class="mb-4 text-warning"><b-icon width="2em" height="2em" scale="1" icon="check-circle"></b-icon></div>
+    <div class="mb-4 text-two"><b-icon width="2em" height="2em" scale="1" icon="check-circle"></b-icon></div>
     <div class="mb-4 text-bold">Your payment is confirmed</div>
     <div class="mb-4 mx-5 row">
       <div class="text-right col-6">
-        <div class="rpay-text-one"><span class="text-warning" v-html="numbUnits"></span> units</div>
+        <div class="text-one"><span class="text-two" v-html="numbUnits"></span> units</div>
       </div>
       <div class="text-left col-6">
-        <div class="rpay-text-one"><span class="text-warning" v-html="fiatSymbol"></span> {{formattedFiat}}</div>
-        <div class="rpay-text-one"><span class="text-warning" v-html="currentSymbol"></span> {{currentAmount}}</div>
+        <div class="text-one"><span class="text-two" v-html="fiatSymbol"></span> {{formattedFiat}}</div>
+        <div class="text-one"><span class="text-two" v-html="currentSymbol"></span> {{currentAmount}}</div>
       </div>
     </div>
     <div class="mb-4">
-      <b-button class="cp-btn-order" variant="warning" @click.prevent="doFinish()">Done</b-button>
+      <b-button class="cp-btn-order" :variant="$globalLookAndFeel.variant0" @click.prevent="doFinish()">Done</b-button>
     </div>
   </b-card-text>
   <template v-if="!result" v-slot:footer>
@@ -51,7 +51,7 @@ export default {
   methods: {
     doFinish () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      window.eventBus.$emit('paymentEvent', { opcode: configuration.payment.paymentOption + '-payment-success' })
+      window.eventBus.$emit('rpayEvent', { opcode: configuration.payment.paymentOption + '-payment-success' })
     },
     rangeEvent (displayCard) {
       this.$store.commit('rpayStore/setDisplayCard', displayCard)

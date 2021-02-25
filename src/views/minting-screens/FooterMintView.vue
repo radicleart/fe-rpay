@@ -1,10 +1,10 @@
 <template>
 <div class="footer-container">
-  <b-form-input disabled id="range-2" v-model="rangeValue" type="range" min="0" max="2" step="1"></b-form-input>
-  <div class="d-flex justify-content-between" style="font-size: 11px;">
-    <div :class="(displayCard === 100) ? 'text-bold' : 'text-300'" class="click-effect" @click="skipAhead(0)">Select Amount</div>
-    <div :class="(displayCard === 102) ? 'text-bold' : 'text-300'" class="click-effect" @click="skipAhead(1)">Make Payment</div>
-    <div :class="(displayCard === 104) ? 'text-bold' : 'text-300'" class="click-effect" @click="skipAhead(2)">Confirmation</div>
+  <div>
+    <div class="d-flex justify-content between">
+      <b-button class="round-btn mx-1" :variant="$globalLookAndFeel.variant3" @click.prevent="saveData()">Back</b-button>
+      <b-button class="round-btn mx-1" :variant="$globalLookAndFeel.variant0" @click.prevent="mintToken()">Mint</b-button>
+    </div>
   </div>
 </div>
 </template>
@@ -13,7 +13,7 @@
 import { LSAT_CONSTANTS } from '@/lsat-constants'
 
 export default {
-  name: 'FooterView',
+  name: 'FooterMintView',
   components: {
   },
   props: ['rangeValue'],
@@ -79,7 +79,15 @@ input[type=range]::-webkit-slider-runnable-track {
   border-radius: 1.3px;
   border: 0.2px solid #ccc;
 }
-
+.footer-container input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  cursor: default;
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
+  background-color: #ffd54f;
+  margin-top: -7px; /* You need to specify a margin in Chrome, but in Firefox and IE it is automatic */
+}
 .click-effect {
   cursor: pointer;
 }

@@ -3,7 +3,7 @@
   <b-card header-tag="header" footer-tag="footer" class="rpay-card">
     <b-card-text class="m-4">
       <b-form>
-        <p class="">Add Beneficiary</p>
+        <p class="">Add Contributer</p>
         <div class="row">
           <div class="col-md-12">
             <div class="mb-3" role="group">
@@ -91,15 +91,18 @@
               </b-form-invalid-feedback>
               <b-form-text id="role-help">Role in relationship to this item</b-form-text>
             </div>
-
-            <div class="d-flex justify-content-between">
-              <b-button variant="danger" @click.prevent="cancel()">Cancel</b-button>
-              <b-button variant="info" @click.prevent="addBeneficiary()">Add Beneficiary</b-button>
-            </div>
           </div>
         </div>
       </b-form>
     </b-card-text>
+    <template v-slot:footer>
+      <div class="footer-container my-2">
+        <div class="d-flex justify-content-between">
+          <b-button class="round-btn mx-1" :variant="$globalLookAndFeel.variant3" @click.prevent="cancel()">Cancel</b-button>
+          <b-button class="round-btn mx-1" :variant="$globalLookAndFeel.variant0" @click.prevent="addBeneficiary()">Save</b-button>
+        </div>
+      </div>
+    </template>
   </b-card>
 </b-card-group>
 </template>
@@ -147,7 +150,7 @@ export default {
       this.formSubmitted = true
       if (!this.isValid('chainAddress') | !this.isValid('royalty')) return
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      const index = configuration.minter.beneficiaries.indexOf((obj) => obj.chainAddress === this.savedChainAddress)
+      const index = configuration.minter.beneficiaries.findIndex((obj) => obj.chainAddress === this.savedChainAddress)
       if (index > -1) {
         configuration.minter.beneficiaries.splice(index, 1, this.beneficiary)
       } else {
@@ -155,7 +158,7 @@ export default {
       }
       this.$store.commit('rpayStore/addConfiguration', configuration)
       configuration.opcode = 'save-mint-data'
-      window.eventBus.$emit('mintEvent', configuration)
+      window.eventBus.$emit('rpayEvent', configuration)
       this.$store.commit('rpayStore/setDisplayCard', 100)
     }
   },

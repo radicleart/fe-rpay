@@ -9,7 +9,7 @@
     </div>
   </div>
   <div class="cp-totals loading-container">
-    <div id="spiner" class="loading"><b-icon icon="arrow-clockwise" animation="spin" font-scale="4"></b-icon></div>
+    <div id="spiner" class="loading"><b-icon class="text-info" icon="arrow-clockwise" animation="spin" font-scale="4"></b-icon></div>
     <form id="nonce-form" novalidate :action="submitUrl" method="post">
       <div class="errorbox">
         <div class="error" v-for="(error, index) in errors" :key="index">
@@ -30,7 +30,7 @@
       </div>
     </form>
     <div class="text-center mx-auto border-radius w-100">
-      <b-button class="sq-btn-order" style="width: 80%;" variant="warning" @click.prevent="requestCardNonce($event)">Send <span class="" v-html="fiatSymbol"></span> {{formattedFiat}}</b-button>
+      <b-button class="sq-btn-order" style="width: 80%;" :variant="$globalLookAndFeel.variant0" @click.prevent="requestCardNonce($event)">Send <span class="" v-html="fiatSymbol"></span> {{formattedFiat}}</b-button>
     </div>
   </div>
   <b-card-text>
@@ -201,14 +201,14 @@ export default {
             data.numbCredits = configuration.payment.creditAttributes.start
             data.status = 'paid'
             that.$store.commit('rpayStore/setInvoice', data)
-            that.$emit('paymentEvent', data)
+            that.$emit('rpayEvent', data)
           }).catch(err => {
             // console.error(err)
             const data = {
               opcode: 'fiat-payment-error',
               reason: err
             }
-            that.$emit('paymentEvent', data)
+            that.$emit('rpayEvent', data)
           })
         },
         /*

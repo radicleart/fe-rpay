@@ -1,5 +1,5 @@
 <template>
-    <div class="mt-5" :style="$globalLookAndFeel.text1Color">
+    <div class="mt-5">
       <h1 class="d-flex justify-content-center">{{$globalLookAndFeel.labels.numberUnits}}</h1>
       <div class="mt-5 d-flex justify-content-center" style="margin-top: 20px; text-align: center; width: 100%;">
         <span @click.prevent="countDown">
@@ -20,19 +20,19 @@
           <div>
             <p class="text-bold">Your total</p>
             <div>
-              <span class="text-warning text-bold symbol" v-html="fiatSymbol"></span> <span class="text-bold">{{formattedFiat}}</span>
+              <span class="text-two text-bold symbol" v-html="fiatSymbol"></span> <span class="text-bold">{{formattedFiat}}</span>
             </div>
             <div class="mt-1">
-              <span class="text-warning text-bold symbol" v-html="currentSymbol"></span> <span class="text-bold">{{currentAmount}}</span>
+              <span class="text-two text-bold symbol" v-html="currentSymbol"></span> <span class="text-bold">{{currentAmount}}</span>
             </div>
           </div>
         </div>
         <div class="mt-0 text-left">
-          <a class="text-small" href="#" @click.prevent="$emit('rpay-cancel')"><b-icon class="text-dark" icon="chevron-left"/> Back</a>
+          <a class="text-small" href="#" @click.prevent="rpayCancel()"><b-icon class="text-dark" icon="chevron-left"/> Back</a>
         </div>
       </div>
       <div class="text-center mx-auto border-radius w-75">
-        <b-button class="cp-btn-order" style="width: 100%;" variant="warning" @click.prevent="continueToPayment()">Place Your Order</b-button>
+        <b-button class="cp-btn-order" style="width: 100%;" :variant="$globalLookAndFeel.variant0" @click.prevent="continueToPayment()">Place Your Order</b-button>
       </div>
     </div>
 </template>
@@ -61,6 +61,9 @@ export default {
       this.$store.dispatch('rpayStore/initialiseApp', config).then(() => {
         this.$store.commit('rpayStore/setDisplayCard', 102)
       })
+    },
+    rpayCancel () {
+      window.eventBus.$emit('rpayEvent', { opcode: 'payment-canceled' })
     },
     countDown () {
       const config = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]

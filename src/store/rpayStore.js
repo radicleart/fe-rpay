@@ -79,7 +79,7 @@ const checkPayment = function (resolve, reject, state, commit, paymentId) {
       localStorage.setItem('OP_INVOICE', JSON.stringify(invoice))
       commit('setInvoice', invoice)
       invoice.opcode = 'btc-crypto-payment-success'
-      window.eventBus.$emit('paymentEvent', invoice)
+      window.eventBus.$emit('rpayEvent', invoice)
       resolve(invoice)
     }
   }).catch((error) => {
@@ -107,14 +107,24 @@ const rpayStore = {
     displayCard: 100,
     beneficiary: null,
     paymentOption: null,
-    paymentOptions: []
+    paymentOptions: [],
+    mintingMessage: null
   },
   getters: {
     getDisplayCard: (state) => {
       return state.displayCard
     },
+    getMintingMessage: (state) => {
+      return state.mintingMessage
+    },
     getEditBeneficiary: (state) => {
       return state.beneficiary
+    },
+    getPreferredNetwork: (state) => {
+      const networkConfig = state.configuration.minter.networks.filter(obj => {
+        return obj.network === state.configuration.minter.preferredNetwork
+      })[0]
+      return networkConfig
     },
     getCurrentPaymentOption: (state) => {
       return state.configuration.payment.paymentOption
@@ -153,7 +163,7 @@ const rpayStore = {
   },
   mutations: {
     setDisplayCard (state, val) {
-      if (val !== 100 && val !== 102 && val !== 104) {
+      if (val !== 100 && val !== 102 && val !== 104 && val !== 106) {
         val = 100
       }
       if (val === 100) {
@@ -180,6 +190,9 @@ const rpayStore = {
         }
       }
       state.configuration = configuration
+    },
+    setMintingMessage (state, o) {
+      state.mintingMessage = o
     },
     setPreferredNetwork (state, o) {
       state.configuration.minter.preferredNetwork = o
@@ -226,7 +239,7 @@ const rpayStore = {
               if (savedInvoice.data.status === 'paid' || savedInvoice.data.status === 'processing') {
                 commit('setInvoice', savedInvoice)
                 savedInvoice.opcode = 'btc-crypto-payment-success'
-                window.eventBus.$emit('paymentEvent', savedInvoice)
+                window.eventBus.$emit('rpayEvent', savedInvoice)
                 resolve(savedInvoice)
                 return
               }

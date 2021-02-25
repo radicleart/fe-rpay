@@ -3,6 +3,9 @@ export const LSAT_CONSTANTS = {
   KEY_EDIT_BENEFICIARY: 'rpayStore/getEditBeneficiary',
   KEY_PROFILE: 'rpayStacksStore/getMyProfile',
   KEY_CONFIGURATION: 'rpayStore/getConfiguration',
+  KEY_MINTING_MESSAGE: 'rpayStore/getMintingMessage',
+  SET_MINTING_MESSAGE: 'rpayStore/setMintingMessage',
+  KEY_PREFERRED_NETWORK: 'rpayStore/getPreferredNetwork',
   KEY_PAYMENT_OPTION_VALUE: 'rpayStore/getCurrentPaymentOption',
   SET_PAYMENT_OPTION_VALUE: 'rpayStore/setCurrentCryptoPaymentOption',
   SET_PREFERRED_NETWORK_VALUE: 'rpayStore/setPreferredNetwork',
@@ -11,6 +14,7 @@ export const LSAT_CONSTANTS = {
   KEY_INVOICE_EXPIRY: 'rpayStore/getInvoiceExpiry',
   KEY_INVOICE_DURATION: 'rpayStore/getInvoiceDuration',
   KEY_DISPLAY_CARD: 'rpayStore/getDisplayCard',
+  SET_DISPLAY_CARD: 'rpayStore/setDisplayCard',
   KEY_INVOICE: 'rpayStore/getInvoice',
   KEY_EXCHANGE_RATES: 'rpayStore/getExchangeRates'
 }

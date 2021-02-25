@@ -1,16 +1,11 @@
 <template>
-<b-card-text class="">
+<div class="d-flex justify-content-between" v-if="beneficiary">
+  <div>{{chainAddress()}}</div>
   <div class="d-flex justify-content-between" v-if="beneficiary">
-    <div><a href="#" @click="editBeneficiary()">{{chainAddress()}}</a></div>
-    <div>Royalty: {{beneficiary.royalty}} %</div>
-    <!--
-    role: {{beneficiary.role}},
-    email: {{beneficiary.email}},
-    royalties: {{beneficiary.royalty}},
-    chainAddress: {{beneficiary.chainAddress}},
-    -->
+    <div class="mr-5">{{beneficiary.royalty}}%</div>
+    <div><a href="#" @click="editBeneficiary()"><b-icon icon="pencil"/></a></div>
   </div>
-</b-card-text>
+</div>
 </template>
 
 <script>
@@ -32,6 +27,7 @@ export default {
     chainAddress: function () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
       const bene = configuration.minter.beneficiaries[this.index]
+      if (bene.username) return bene.username
       return bene.chainAddress.substring(0, 5) + '...' + bene.chainAddress.substring(bene.chainAddress.length - 5)
     },
     editBeneficiary: function () {

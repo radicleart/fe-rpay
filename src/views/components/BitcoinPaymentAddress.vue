@@ -15,12 +15,12 @@
 
   <div class="d-flex justify-content-center">
     <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress(paymentAmount)">
-      <span ref="myPaymentAddress" class="mr-2" :style="$globalLookAndFeel.text1Color">&#8383; {{paymentAmount}}</span>
+      <span ref="myPaymentAddress" class="mr-2 text-two">&#8383; {{paymentAmount}}</span>
     </a>
   </div>
   <div class="d-flex justify-content-center">
     <a ref="myPaymentAddress" class="copyAddress" href="#" @click.prevent="copyAddress(paymentAddress)">
-      <span ref="myPaymentAddress" class="mr-2" :style="$globalLookAndFeel.text1Color">{{paymentAddress}}</span>
+      <span ref="myPaymentAddress" class="mr-2 text-two">{{paymentAddress}}</span>
     </a>
   </div>
 </div>

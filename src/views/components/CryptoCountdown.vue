@@ -31,7 +31,7 @@ export default {
     this.timeout = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE_DURATION]
     this.expired = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE_EXPIRED]
     if (this.expired) {
-      this.$emit('paymentEvent', { opcode: 'crypto-payment-expired' })
+      this.$emit('rpayEvent', { opcode: 'crypto-payment-expired' })
     }
     this.startCountdown()
   },
@@ -40,11 +40,11 @@ export default {
       return this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE_EXPIRES]
     },
     evPaymentExpired () {
-      this.$emit('paymentEvent', { opcode: 'crypto-payment-expired' })
+      this.$emit('rpayEvent', { opcode: 'crypto-payment-expired' })
     },
     clockReset () {
       this.expired = true
-      this.$emit('paymentEvent', { opcode: 'crypto-payment-expired' })
+      this.$emit('rpayEvent', { opcode: 'crypto-payment-expired' })
     },
     startCountdown () {
       var duration = moment.duration(this.timeout)

@@ -4,15 +4,15 @@
     <b-card-group class="">
       <b-card v-if="page === 'payment-page'" header-tag="header" footer-tag="footer" class="rpay-card">
         <div>
-          <crypto-picker v-if="displayCard === 100" @paymentEvent="paymentEvent($event)"/>
+          <crypto-picker v-if="displayCard === 100" @rpayEvent="rpayEvent($event)"/>
           <div v-else-if="displayCard === 102" :style="offsetTop()">
             <order-info v-if="showOrderInfo" class="pb-4"/>
             <div class="d-flex flex-column align-items-center">
               <crypto-options class=""/>
-              <crypto-payment-screen @paymentEvent="paymentEvent($event)"/>
+              <crypto-payment-screen @rpayEvent="rpayEvent($event)"/>
             </div>
           </div>
-          <result-page :result="'error'" v-else @paymentEvent="paymentEvent($event)"/>
+          <result-page :result="'error'" v-else @rpayEvent="rpayEvent($event)"/>
         </div>
         <template v-slot:footer>
           <footer-view :rangeValue="getRangeValue()" @rangeEvent="rangeEvent"/>
@@ -58,7 +58,7 @@ export default {
   mounted () {
     this.initPayment()
     const $self = this
-    window.eventBus.$on('paymentEvent', function (data) {
+    window.eventBus.$on('rpayEvent', function (data) {
       if (data.opcode.indexOf('-payment-success') > -1) {
         $self.page = 'payment-result'
         $self.$store.commit('rpayStore/setDisplayCard', 104)
@@ -83,7 +83,7 @@ export default {
         if (invoice) {
           if (invoice.data && (invoice.data.status === 'paid' || invoice.data.status === 'processing')) {
             this.page = 'payment-result'
-            window.eventBus.$emit('paymentEvent', { opcode: 'payment-detected' })
+            window.eventBus.$emit('rpayEvent', { opcode: 'payment-detected' })
           }
         }
         this.loading = false
@@ -98,7 +98,7 @@ export default {
       else if (displayCard === 102) return 1
       else if (displayCard === 104) return 2
     },
-    paymentEvent: function (data) {
+    rpayEvent: function (data) {
       if (data.opcode === 'crypto-payment-expired') {
         this.paymentExpired()
       } else if (data.opcode === 'payment-restart') {
@@ -107,13 +107,13 @@ export default {
       if (data.opcode.indexOf('-payment-success') > -1) {
         this.page = 'result'
       }
-      window.eventBus.$emit('paymentEvent', data)
+      window.eventBus.$emit('rpayEvent', data)
     },
     prev () {
       let displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
       if (displayCard === 102) {
         displayCard = 100
-        window.eventBus.$emit('paymentEvent', 'payment-cancelled')
+        window.eventBus.$emit('rpayEvent', 'payment-cancelled')
       } else if (displayCard === 104) {
         displayCard = 102
       } else {
@@ -138,16 +138,9 @@ export default {
     }
   },
   computed: {
-    background () {
-      return (this.$globalLookAndFeel) ? this.$globalLookAndFeel.background : ''
-    },
     showOrderInfo () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
       return configuration.payment.allowMultiples
-    },
-    id () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      return configuration.payment.paymentCode
     },
     displayCard () {
       const displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]

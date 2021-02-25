@@ -1,69 +1,80 @@
 <template>
 <b-card-group class="">
   <b-card header-tag="header" footer-tag="footer" class="rpay-card">
-    <b-card-text class="text-center">
-      <div class="my-5">Mint Your Item</div>
-      <network-options/>
-      <div v-if="errorMessage" class="text-danger mb-3 text-bold">{{errorMessage}}</div>
-      <div v-else-if="mintedMessage" class="text-info mb-3 text-bold">{{mintedMessage}}</div>
-      <div v-else class="text-white mb-3 text-bold">. &nbsp;</div>
-      <beneficiaries/>
-      <div class="mb-3">
-        <b-button class="mr-2 w-50 cp-btn-order" variant="warning" @click.prevent="saveData()">Complete Later</b-button>
-        <b-button class="ml-2 w-50 cp-btn-order" variant="warning" @click.prevent="mintToken()">Mint Now</b-button>
+    <header-screen :allowEdit="true" :errorMessage="errorMessage" :mintedMessage="mintedMessage"/>
+    <item-display/>
+    <beneficiaries/>
+    <template v-slot:footer>
+      <div class="footer-container">
+        <div>
+          <div class="d-flex justify-content-between">
+            <b-button class="round-btn mx-1" :variant="$globalLookAndFeel.variant3" @click.prevent="saveData()">Back</b-button>
+            <b-button class="round-btn mx-1" :variant="$globalLookAndFeel.variant0" @click.prevent="mintToken()">Mint</b-button>
+          </div>
+        </div>
       </div>
-    </b-card-text>
+    </template>
   </b-card>
 </b-card-group>
 </template>
 
 <script>
 import { LSAT_CONSTANTS } from '@/lsat-constants'
-import {
-  bufferCV
-} from '@stacks/transactions'
-import NetworkOptions from './NetworkOptions'
 import Beneficiaries from './Beneficiaries'
-const NETWORK = process.env.VUE_APP_NETWORK
+import HeaderScreen from './HeaderScreen'
+import ItemDisplay from './ItemDisplay'
 
 export default {
   name: 'RoyaltyScreen',
   components: {
-    NetworkOptions,
-    Beneficiaries
+    Beneficiaries,
+    ItemDisplay,
+    HeaderScreen
   },
   data () {
     return {
       errorMessage: null,
-      mintedMessage: null,
-      minted: false
+      mintedMessage: null
     }
   },
   mounted () {
     this.lookupNftTokenId()
-    // window.eventBus.$emit('mintEvent', { opcode: 'eth-mint-error' })
+    // window.eventBus.$emit('rpayEvent', { opcode: 'eth-mint-error' })
   },
   methods: {
+    rangeEvent (displayCard) {
+      this.$store.commit('rpayStore/setDisplayCard', displayCard)
+    },
+    getRangeValue () {
+      const displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
+      if (displayCard === 100) return 0
+      else if (displayCard === 102) return 1
+      else if (displayCard === 104) return 2
+    },
     saveData: function () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
       configuration.opcode = 'save-mint-data'
-      window.eventBus.$emit('mintEvent', configuration)
+      window.eventBus.$emit('rpayEvent', configuration)
     },
     mintToken: function () {
       this.errorMessage = 'Minting non fungible token - takes a minute or so..'
+      this.$store.commit('rpayStore/setDisplayCard', 104)
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      const network = configuration.minter.preferredNetwork
-      const networkConfig = configuration.minter.networks.filter(obj => {
-        return obj.network === network
-      })[0]
-
-      if (network === 'stacks connect') {
-        this.mintTokenStacks('rpayStacksStore/callContractBlockstack', networkConfig)
-      } else if (network === 'stacks risidio') {
-        this.mintTokenStacks('rpayStacksStore/callContractRisidio', networkConfig)
+      const networkConfig = this.$store.getters[LSAT_CONSTANTS.KEY_PREFERRED_NETWORK]
+      networkConfig.assetHash = configuration.minter.item.assetHash
+      networkConfig.beneficiaries = configuration.minter.beneficiaries
+      if (networkConfig.network === 'stacks connect') {
+        networkConfig.action = 'callContractBlockstack'
+        this.mintTokenStacks(networkConfig)
+      } else if (networkConfig.network === 'stacks risidio') {
+        networkConfig.action = 'callContractRisidio'
+        this.mintTokenStacks(networkConfig)
       } else {
         this.mintTokenEthereum(networkConfig)
       }
+    },
+    mintTokenStacks: function (data) {
+      this.$store.dispatch('rpayStacksStore/mintToken', data)
     },
     mintTokenEthereum: function (networkConfig) {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
@@ -72,78 +83,17 @@ export default {
         ethContractAddress: networkConfig.contractAddress,
         assetHash: configuration.minter.item.assetHash
       }
-      this.minted = true
-      this.$store.dispatch('rpayEthereumStore/transact', { ethContractAddress: mintConfig.ethContractAddress, opcode: 'eth-get-total-supply' }).then((result) => {
-        this.loading = false
-        mintConfig.totalSupply = result.totalSupply
-        this.$store.dispatch('rpayEthereumStore/transact', mintConfig).then((result) => {
-          this.mintedMessage = 'Success! Token has been minted on the Ethereum blockchain Id=' + result.tokenId
-          result.opcode = 'eth-mint-confirmed'
-          result.assetHash = configuration.minter.item.assetHash
-          window.eventBus.$emit('mintEvent', result)
-        }).catch((e) => {
-          this.errorMessage = (e.message) ? e.message : 'Minting error - please check you\'re connected to the right network: ' + NETWORK
-        })
-      }).catch((e) => {
-        this.errorMessage = (e.message) ? e.message : 'Minting error - please check you\'re connected to the right network: ' + NETWORK
-      })
-    },
-    mintTokenStacks: function (action, data) {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      this.minted = true
-      const buffer = Buffer.from(configuration.minter.item.assetHash, 'hex') // Buffer.from(hash.toString(CryptoJS.enc.Hex), 'hex')
-      data.functionArgs = [bufferCV(buffer)]
-      this.$store.dispatch(action, data).then((result) => {
-        this.captureResult(configuration.minter.item.assetHash, data.contractAddress, data.contractName)
-      }).catch((e) => {
-        data.action = 'inc-nonce'
-        this.$store.dispatch(action, data).then((result) => {
-          this.captureResult(configuration.minter.item.assetHash, data.contractAddress, data.contractName)
-        }).catch((e) => {
-          this.errorMessage = (e.message) ? e.message : 'Minting error - reason unknown'
-          window.eventBus.$emit('mintEvent', { opcode: 'stx-mint-error', message: this.message })
-        })
-      })
-    },
-    captureResult: function (assetHash, contractAddress, contractName) {
-      const $self = this
-      let counter = 0
-      const intval = setInterval(function () {
-        const result = {
-          assetHash: assetHash,
-          opcode: 'stx-mint-confirmed'
-        }
-        $self.$store.dispatch('rpayStacksStore/lookupNftTokenId', { assetHash: assetHash, contractAddress: contractAddress, contractName: contractName }).then((data) => {
-          if (typeof data.nftIndex !== 'undefined' && (data.nftIndex === 0 || data.nftIndex >= 0)) {
-            result.tokenId = data.tokenId
-            result.nftIndex = data.nftIndex
-            window.eventBus.$emit('mintEvent', result)
-            clearInterval(intval)
-          }
-        }).catch((e) => {
-          // try again
-        })
-        if (counter === 48) {
-          window.eventBus.$emit('mintEvent', { opcode: 'stx-mint-error-timeout' })
-          clearInterval(intval)
-        }
-        counter++
-      }, 10000)
+      this.$store.dispatch('rpayEthereumStore/transact', mintConfig)
+      // this.$store.dispatch('rpayEthereumStore/transact', { ethContractAddress: mintConfig.ethContractAddress, opcode: 'eth-get-total-supply' }).then((result) => {
+      //  this.loading = false
+      //  mintConfig.totalSupply = result.totalSupply
+      //  this.$store.dispatch('rpayEthereumStore/transact', mintConfig)
+      // })
     },
     lookupNftTokenId: function () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      this.$store.dispatch('rpayStacksStore/lookupNftTokenId', { assetHash: configuration.minter.item.assetHash, contractAddress: configuration.minter.contractAddress, contractName: configuration.minter.contractName }).then((data) => {
-        if (data.nftIndex && data.nftIndex > 0) {
-          data.opcode = 'stx-mint-confirmed'
-          data.assetHash = configuration.minter.item.assetHash
-          this.minted = true
-          this.mintedMessage = 'Asset with hash <br/>    ' + configuration.minter.item.assetHash + ' <br/> has already been minted with index: ' + data.nftIndex
-          window.eventBus.$emit('mintEvent', data)
-        }
-      }).catch((e) => {
-        // nothing to do here - no index so wait for minting operation
-        // window.eventBus.$emit('mintEvent', { opcode: 'nft-lookup-error' })
-      })
+      const networkConfig = this.$store.getters[LSAT_CONSTANTS.KEY_PREFERRED_NETWORK]
+      this.$store.dispatch('rpayStacksStore/lookupNftTokenId', { assetHash: configuration.minter.item.assetHash, contractAddress: networkConfig.contractAddress, contractName: networkConfig.contractName })
     }
   },
   computed: {
@@ -155,8 +105,4 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-.btn {
-  width: 80%;
-  margin-top: 30px;
-}
 </style>

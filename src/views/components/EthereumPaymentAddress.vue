@@ -1,23 +1,20 @@
 <template>
-<div class="vld-parent d-flex flex-column align-items-center">
+<div class="mt-4 d-flex flex-column align-items-center">
   <!--
     <loading :active.sync="loading"
     :can-cancel="true"
     :on-cancel="onCancel"
     :is-full-page="fullPage"></loading>
     -->
-  <div class="text-center">
+  <div class="text-center" v-if="desktopWalletSupported">
     <canvas ref="lndQrcode"></canvas>
   </div>
 
+  <div class="mt-5 mb-3 text-center">
+    <b-button class="cp-btn-order" :variant="$globalLookAndFeel.variant0" @click.prevent="sendPayment()">Connect via Meta Mask</b-button>
+  </div>
   <div class="mb-2 text-center" style="" v-if="loading">
      <span class="text-danger" v-html="waitingMessage"></span>
-  </div>
-  <div class="mb-2 text-center text-small">
-    or
-  </div>
-  <div class="mb-3 text-center">
-    <b-button class="cp-btn-order" variant="warning" @click.prevent="sendPayment()">Connect via Meta Mask</b-button>
   </div>
   <div class="mb-3 text-center">
     <span class="text-danger">{{errorMessage}}</span>
@@ -38,8 +35,7 @@ export default {
   name: 'EthereumPaymentAddress',
   components: {
   },
-  props: {
-  },
+  props: ['desktopWalletSupported'],
   data () {
     return {
       loading: false,
@@ -53,6 +49,10 @@ export default {
   },
   mounted () {
     this.addQrCode()
+    const $self = this
+    window.eventBus.$on('rpayEvent', function (data) {
+      $self.errorMessage = data
+    })
   },
   computed: {
   },
@@ -78,7 +78,7 @@ export default {
         const data = { status: 10, opcode: 'eth-crypto-payment-success', txId: result.txId }
         this.waitingMessage = 'Processed Payment'
         this.loading = false
-        this.$emit('paymentEvent', data)
+        this.$emit('rpayEvent', data)
       }).catch((e) => {
         if (e.message.indexOf('cancelled') === -1) {
           this.errorMessage = 'Please ensure you are logged into your meta mask account on the ' + NETWORK + ' network'

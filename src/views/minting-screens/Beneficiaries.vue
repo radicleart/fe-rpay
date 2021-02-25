@@ -1,14 +1,12 @@
 <template>
-<b-card-text class="text-center mx-4">
-  <div class="d-flex justify-content-between border-bottom">
-    <div>Royalties</div>
-    <div><b-button variant="info"  @click="addBeneficiary">add beneficiary</b-button></div>
-  </div>
+<b-card-text class="mx-4">
+  <h2 class="text-bold">Royalties</h2>
   <div class="">
     <span v-for="(beneficiary, index) in beneficiaries" :key="index">
       <beneficiary :index="index"/>
     </span>
   </div>
+  <div class="text-small mt-4 text-right">Add a contributer <a href="#" class="ml-2 text-two" style="font-size: 24px;" @click="addBeneficiary"><b-icon scale="1em" icon="plus-circle"/></a></div>
 </b-card-text>
 </template>
 

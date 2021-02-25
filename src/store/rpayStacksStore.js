@@ -1,4 +1,3 @@
-import store from '@/store/rpayStore'
 import bufferUtils from '@/services/bufferUtils'
 import { LSAT_CONSTANTS } from '@/lsat-constants'
 import {
@@ -8,6 +7,10 @@ import {
   broadcastTransaction,
   makeContractDeploy,
   bufferCV,
+  listCV,
+  uintCV,
+  standardPrincipalCV,
+  tupleCV,
   serializeCV
 } from '@stacks/transactions'
 import { StacksTestnet } from '@stacks/network'
@@ -21,37 +24,55 @@ const network = new StacksTestnet()
 // const mac = JSON.parse(process.env.VUE_APP_WALLET_MAC || '')
 const precision = 1000000
 
-const resolveError = function (reject, error) {
+const resolveError = function (commit, reject, error) {
+  let errorMessage = null
   if (!error) {
-    reject('Error happened')
+    errorMessage = 'Error happened'
   }
   if (error.response && error.response.data) {
     if (error.response.data.error) {
-      let msg = 'Transaction rejected: ' + error.response.data.reason
+      errorMessage = 'Transaction rejected: ' + error.response.data.reason
       if (error.response.data.reason_data) {
-        msg += JSON.stringify(error.response.data.reason_data)
+        errorMessage += JSON.stringify(error.response.data.reason_data)
       }
-      reject(new Error(msg))
     } else if (error.response.data.message) {
       if (error.response.data.message.indexOf('NotEnoughFunds') > -1) {
-        reject(new Error('Not enough funds in the wallet to send this - try decreasing the amount?'))
+        errorMessage = 'Not enough funds in the wallet to send this - try decreasing the amount?'
       } else if (error.response.data.message.indexOf('ConflictingNonceInMempool') > -1) {
-        reject(new Error('Conflicting Nonce In Mempool!'))
+        errorMessage = 'Conflicting Nonce In Mempool!'
       } else {
-        reject(new Error(error.response.data.message))
+        errorMessage = error.response.data.message
       }
     } else {
       if (error.response && error.response.data) {
-        reject(new Error(error.response.data))
+        errorMessage = error.response.data
       } else {
-        reject(new Error('no error.response.data'))
+        errorMessage = 'no error.response.data'
       }
     }
   } else if (error.message) {
-    reject(error.message)
+    errorMessage = error.message
   } else {
-    reject(error)
+    errorMessage = error
   }
+  commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, { opcode: 'stx-mint-error', message: errorMessage }, { root: true })
+  window.eventBus.$emit('rpayEvent', { opcode: 'stx-mint-error', message: errorMessage })
+  reject(new Error(errorMessage))
+}
+const captureResult = function (dispatch, assetHash, contractAddress, contractName) {
+  let counter = 0
+  const intval = setInterval(function () {
+    dispatch('lookupNftTokenId', { assetHash: assetHash, contractAddress: contractAddress, contractName: contractName }).then(() => {
+      clearInterval(intval)
+    }).catch((e) => {
+      // try again
+    })
+    if (counter === 100) {
+      window.eventBus.$emit('rpayEvent', { opcode: 'stx-mint-error-timeout' })
+      clearInterval(intval)
+    }
+    counter++
+  }, 5000)
 }
 
 const getAmountStx = function (amountMicroStx) {
@@ -118,33 +139,57 @@ const rpayStacksStore = {
         })
       })
     },
-    callContractBlockstack ({ state }, data) {
+    mintToken ({ dispatch }, data) {
       return new Promise((resolve, reject) => {
-        const txoptions = {
-          contractAddress: data.contractAddress,
-          contractName: data.contractName,
-          functionName: data.functionName,
-          functionArgs: (data.functionArgs) ? data.functionArgs : [],
-          // network: network,
-          appDetails: {
-            name: state.appName,
-            icon: state.appLogo
-          },
-          finished: (response) => {
-            const result = {
-              txId: response.txId,
-              txRaw: response.txRaw,
-              network: 15
-            }
-            resolve(result)
-          }
+        const buffer = Buffer.from(data.assetHash, 'hex')
+        const tuplArray = []
+        if (data.beneficiaries && data.beneficiaries.length > 0) {
+          data.beneficiaries.forEach((item) => {
+            tuplArray.push(tupleCV({
+              address: standardPrincipalCV(item.chainAddress),
+              amount: uintCV(item.royalty)
+            }))
+          })
         }
-        openContractCall(txoptions).catch((error) => {
-          reject(error)
+        const contributers = listCV(tuplArray)
+        data.functionArgs = [bufferCV(buffer), contributers]
+        dispatch(data.action, data).then((result) => {
+          resolve(result)
         })
       })
     },
-    callContractRisidio ({ state, rootGetters }, data) {
+    callContractBlockstack ({ commit, dispatch, state }, data) {
+      return new Promise((resolve, reject) => {
+        try {
+          const txoptions = {
+            contractAddress: data.contractAddress,
+            contractName: data.contractName,
+            functionName: data.functionName,
+            functionArgs: (data.functionArgs) ? data.functionArgs : [],
+            // network: network,
+            appDetails: {
+              name: state.appName,
+              icon: state.appLogo
+            },
+            finished: (response) => {
+              const result = {
+                txId: response.txId,
+                txRaw: response.txRaw,
+                network: 15
+              }
+              captureResult(dispatch, data.assetHash, data.contractAddress, data.contractName)
+              resolve(result)
+            }
+          }
+          openContractCall(txoptions).catch((error) => {
+            resolveError(commit, reject, error)
+          })
+        } catch (error) {
+          resolveError(commit, reject, error)
+        }
+      })
+    },
+    callContractRisidio ({ commit, dispatch, state, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         let nonce = new BigNum(state.macsWallet.nonce)
         if (data && data.action === 'inc-nonce') {
@@ -178,20 +223,11 @@ const rpayStacksStore = {
               const result = {
                 txId: response.data,
                 network: 15
-                // tokenId: Math.floor(Math.random() * Math.floor(1000000000))
               }
+              captureResult(dispatch, data.assetHash, data.contractAddress, data.contractName)
               resolve(result)
-            }).catch(() => {
-              axios.post(rootGetters['rpayStore/getConfiguration'].risidioStacksApi + '/v2/transactions', txdata, { headers: headers }).then(response => {
-                const result = {
-                  txId: response.data,
-                  network: 15
-                  // tokenId: Math.floor(Math.random() * Math.floor(1000000000))
-                }
-                resolve(result)
-              }).catch((error) => {
-                resolveError(reject, error)
-              })
+            }).catch((error) => {
+              resolveError(commit, reject, error)
             })
           }
         })
@@ -257,8 +293,8 @@ const rpayStacksStore = {
         })
       })
     },
-    lookupNftTokenId ({ dispatch }, data) {
-      return new Promise((resolve, reject) => {
+    lookupNftTokenId ({ commit, dispatch }, data) {
+      return new Promise((resolve) => {
         const buffer = `0x${serializeCV(bufferCV(Buffer.from(data.assetHash, 'hex'))).toString('hex')}` // Buffer.from(hash.toString(CryptoJS.enc.Hex), 'hex')
         const config = {
           contractId: data.contractAddress + '.' + data.contractName,
@@ -267,33 +303,36 @@ const rpayStacksStore = {
           functionName: 'get-index',
           functionArgs: [buffer]
         }
-        dispatch('callContractRisidioReadOnly', config).then((data) => {
-          const result = {}
-          result.network = 15
-          result.opcode = 'nft-lookup-success'
-          result.nftIndex = data.result
-          resolve(result)
+        dispatch('callContractRisidioReadOnly', config).then((resp) => {
+          if (typeof resp.result !== 'undefined' && (resp.result === 0 || resp.result >= 0)) {
+            const result = {}
+            result.nftIndex = resp.result
+            result.tokenId = resp.tokenId
+            result.network = 15
+            result.opcode = 'stx-mint-success'
+            result.assetHash = data.assetHash
+            result.message = 'Your item has been minted to your Stacks wallet'
+            commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, result, { root: true })
+            commit(LSAT_CONSTANTS.SET_DISPLAY_CARD, 106, { root: true })
+            window.eventBus.$emit('rpayEvent', result)
+            resolve(result)
+          } else {
+            // not found - no need to report anything as this is ususally the case
+          }
         }).catch((e) => {
-          this.message = (e.message) ? 'Error ' + e.message : 'Minting error in nftIndex lookup - reason unknown'
-          this.page = 'error'
-          reject(new Error({ opcode: 'nft-lookup-error', message: this.message }))
+          // not found - no need to report anything as this is ususally the case
         })
       })
     },
     makeTransferRisidio ({ state, rootGetters }, data) {
       return new Promise((resolve, reject) => {
-        const paymentChallenge = store.getters[LSAT_CONSTANTS.KEY_PAYMENT_CHALLENGE]
-        let amount = Math.round(paymentChallenge.xchange.amountStx * precision)
+        let amount = Math.round(data.amountStx * precision)
         amount = parseInt(amount, 16)
         amount = new BigNum(amount)
+        const recipient = data.paymentAddress
 
         // amount = amount.div(new BigNum(1000000))
         const senderKey = state.macsWallet.keyInfo.privateKey
-        let recipient = data.paymentAddress
-        const configuration = store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-        if (configuration.minter && configuration.minter.stxPaymentAddress) {
-          recipient = configuration.minter.stxPaymentAddress
-        }
 
         let nonce = new BigNum(state.macsWallet.nonce)
         if (data && data.action === 'inc-nonce') {
@@ -339,18 +378,17 @@ const rpayStacksStore = {
         })
       })
     },
-    makeTransferBlockstack ({ state }, data) {
+    makeTransferBlockstack ({ state, rootGetters }, data) {
       return new Promise((resolve, reject) => {
-        const configuration = store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-        let recipient = data.paymentAddress
-        if (configuration.minter && configuration.minter.stxPaymentAddress) {
-          recipient = configuration.minter.stxPaymentAddress
-        }
+        let amount = Math.round(data.amountStx * precision)
+        // amount = parseInt(amount, 16)
+        amount = new BigNum(amount)
+        const recipient = data.paymentAddress
         openSTXTransfer({
           recipient: recipient,
           // network: network,
-          amount: configuration.payment.amountStx,
-          memo: 'Payment for ' + configuration.payment.creditAttributes.start + ' credits',
+          amount: amount,
+          memo: 'Payment for credits',
           appDetails: {
             name: state.appName,
             icon: state.appLogo
@@ -384,7 +422,7 @@ const rpayStacksStore = {
         })
       })
     },
-    deployContractBlockstack ({ state }, data) {
+    deployContractBlockstack ({ state, dispatch }, data) {
       return new Promise((resolve) => {
         // const authOrigin = (state.provider === 'local-network') ? 'http://localhost:20443' : null
         openContractDeploy({
@@ -397,9 +435,9 @@ const rpayStacksStore = {
           },
           finished: (trans) => {
             console.log(trans.txid)
-            store.dispatch('rstackStore/saveToGaia', trans).then(() => {
+            dispatch('rstackStore/saveToGaia', trans).then(() => {
               data.result = trans
-              store.dispatch('rpayStacksStore/fetchMacsWalletInfo')
+              dispatch('rpayStacksStore/fetchMacsWalletInfo')
               resolve(data)
             })
           }
