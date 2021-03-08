@@ -89,6 +89,9 @@
   background-image: url('https://risidio-journal.cdn.prismic.io/risidio-journal/59455bcb-a954-4713-9afd-cfe6130f0b26_Group+994.svg');
   **/
 }
+#rpay-pay-card .btn:focus {
+  box-shadow: none !important;
+}
 #rpay-pay-card .text-small {
   font-size: 10px;
 }

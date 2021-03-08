@@ -8,6 +8,7 @@ export const LSAT_CONSTANTS = {
   KEY_PREFERRED_NETWORK: 'rpayStore/getPreferredNetwork',
   KEY_PAYMENT_OPTION_VALUE: 'rpayStore/getCurrentPaymentOption',
   SET_PAYMENT_OPTION_VALUE: 'rpayStore/setCurrentCryptoPaymentOption',
+  KEY_ENABLED_NETWORKS: 'rpayStore/getEnabledNetworks',
   SET_PREFERRED_NETWORK_VALUE: 'rpayStore/setPreferredNetwork',
   KEY_PAYMENT_OPTIONS: 'rpayStore/getPaymentOptions',
   KEY_INVOICE_EXPIRED: 'rpayStore/getInvoiceExpired',

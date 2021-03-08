@@ -8,7 +8,7 @@
   </div>
 </b-card-text>
 <b-card-text class="text-center mx-4" v-else>
-  <div class="text-center text-bold">Network: {{preferredNetwork}}  <a v-if="allowEdit" href="#" class="text-info" @click.prevent="editNetwork()"><b-icon icon="pencil"/></a></div>
+  <div class="text-center text-bold">Network: {{preferredNetwork}}  <a v-if="allowEdit && networks > 1" href="#" class="text-info" @click.prevent="editNetwork()"><b-icon icon="pencil"/></a></div>
 </b-card-text>
 </template>
 
@@ -38,8 +38,8 @@ export default {
   },
   computed: {
     networks: function () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      return configuration.minter.networks
+      const networks = this.$store.getters[LSAT_CONSTANTS.KEY_ENABLED_NETWORKS]
+      return networks
     },
     preferredNetwork () {
       const preferredNetwork = this.$store.getters[LSAT_CONSTANTS.KEY_PREFERRED_NETWORK]

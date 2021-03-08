@@ -15,8 +15,8 @@
       <fiat-payment-screen v-on="$listeners" v-if="paymentOption === 'fiat'"/>
       <lightning-payment-address v-on="$listeners" v-if="paymentOption === 'lightning'"/>
       <bitcoin-payment-address v-on="$listeners" v-if="paymentOption === 'bitcoin'"/>
-      <stacks-payment-address :desktopWalletSupported="desktopWalletSupported" v-on="$listeners" v-if="paymentOption === 'stacks'"/>
-      <ethereum-payment-address :desktopWalletSupported="desktopWalletSupported" v-on="$listeners" v-if="paymentOption === 'ethereum'"/>
+      <stacks-payment-address :desktopWalletSupported="desktopWalletSupported" v-if="paymentOption === 'stacks'"/>
+      <ethereum-payment-address :desktopWalletSupported="desktopWalletSupported" v-if="paymentOption === 'ethereum'"/>
     </div>
   </div>
 </b-card-text>

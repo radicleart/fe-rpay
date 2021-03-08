@@ -92,7 +92,7 @@ const sendPayment = function (web3, data, account, resolve, reject) {
 const mintToken = function (web3, data, account, resolve, reject) {
   const abi = getABI()
   const message = 'Minting on Ethereum can take some time - please keep this tab open until we hear back from the network.'
-  store.commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, { opcode: 'eth-mint-begun', message: message })
+  store.commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, { opcode: 'eth-mint-begun', message: message }, { root: true })
   const nftContract = new web3.eth.Contract(abi, data.ethContractAddress, { from: account, gasLimit: '250000' })
   nftContract.methods.getMintPrice().call({ from: account }).then((mintPrice) => {
     nftContract.methods.create().send({ from: account, value: mintPrice }).then((res) => {

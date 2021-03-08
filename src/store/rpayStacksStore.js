@@ -113,21 +113,27 @@ const rpayStacksStore = {
   actions: {
     fetchMacsWalletInfo ({ state, commit, rootGetters }) {
       return new Promise((resolve, reject) => {
-        const macsWallet = JSON.parse(rootGetters['rpayStore/getConfiguration'].risidioWalletMac)
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const index = configuration.minter.networks.findIndex(o => o.network.indexOf('stack') > -1)
+        if (index === -1) {
+          resolve(null)
+          return
+        }
+        const macsWallet = JSON.parse(configuration.risidioWalletMac)
         commit('setMacsWallet', macsWallet)
         const data = {
           path: '/v2/accounts/' + macsWallet.keyInfo.address,
           httpMethod: 'get',
           postData: null
         }
-        axios.post(rootGetters['rpayStore/getConfiguration'].risidioBaseApi + '/mesh/v2/accounts', data).then(response => {
+        axios.post(configuration.risidioBaseApi + '/mesh/v2/accounts', data).then(response => {
           macsWallet.nonce = response.data.nonce
           macsWallet.balance = getAmountStx(parseInt(response.data.balance, 16))
           commit('setMacsWallet', macsWallet)
           resolve(macsWallet)
         }).catch(() => {
           const macsWallet = state.macsWallet
-          const useApi = rootGetters['rpayStore/getConfiguration'].risidioStacksApi + '/v2/accounts/' + macsWallet.keyInfo.address
+          const useApi = configuration.risidioStacksApi + '/v2/accounts/' + macsWallet.keyInfo.address
           axios.get(useApi).then(response => {
             macsWallet.nonce = response.data.nonce
             macsWallet.balance = getAmountStx(parseInt(response.data.balance, 16))

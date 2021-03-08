@@ -60,17 +60,27 @@ export default {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
       this.loading = true
       this.waitingMessage = 'Processing Payment'
+      const data = {
+        numbCredits: configuration.payment.creditAttributes.start,
+        status: 10,
+        opcode: 'stx-crypto-payment-success'
+      }
       this.$store.dispatch('rpayStacksStore/makeTransferBlockstack', { amountStx: configuration.payment.amountStx, paymentAddress: configuration.payment.stxPaymentAddress }).then((result) => {
-        const data = { status: 10, opcode: 'stx-crypto-payment-success', txId: result.txId }
         this.waitingMessage = 'Processed Payment'
         this.loading = false
-        this.$emit('rpayEvent', data)
+        data.txId = result.txId
+        window.eventBus.$emit('rpayEvent', data)
+        this.$store.commit('rpayStore/setDisplayCard', 104)
       }).catch((e) => {
         this.$store.dispatch('rpayStacksStore/makeTransferRisidio', { amountStx: configuration.payment.amountStx, paymentAddress: configuration.payment.stxPaymentAddress }).then((result) => {
           if (!result.opcode) {
-            result.opcode = 'stacks-connect-error'
+            data.opcode = 'stacks-connect-error'
+          } else {
+            this.waitingMessage = 'Processed Payment'
           }
-          this.$emit('rpayEvent', result)
+          this.loading = false
+          window.eventBus.$emit('rpayEvent', data)
+          this.$store.commit('rpayStore/setDisplayCard', 104)
         }).catch((e) => {
           this.errorMessage = 'Unable to transfer funds at the moment - please try later or choose an alternate payment method'
           this.loading = false

@@ -31,11 +31,9 @@ export default {
   },
   mounted () {
     this.$store.dispatch('rpayStacksStore/fetchMacsWalletInfo').then(() => {
-      this.loading = false
-      const displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
-      if (!displayCard) {
-        this.$store.commit('rpayStore/setDisplayCard', 100)
-      }
+      this.setPage()
+    }).catch(() => {
+      this.setPage()
     })
     const $self = this
     window.eventBus.$on('rpayEvent', function (data) {
@@ -45,6 +43,13 @@ export default {
     })
   },
   methods: {
+    setPage () {
+      this.loading = false
+      const displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
+      if (!displayCard) {
+        this.$store.commit('rpayStore/setDisplayCard', 100)
+      }
+    }
   },
   computed: {
     displayCard () {

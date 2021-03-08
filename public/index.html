@@ -88,26 +88,30 @@
           name: 'My Non Funginble Token',
           imageUrl: 'https://images.prismic.io/risidio-journal/5757dd30-d293-4586-a99b-bdce237f7a69_alexander-sinn-KgLtFCgfC28-unsplash.png?auto=compress,format'
         },
-        preferredNetwork: 'stacks connect',
+        preferredNetwork: 'ethereum',
         networks: [
           {
             network: 'stacks risidio',
+            enabled: false,
             functionName: 'mint-token',
             contractAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW',
             contractName: 'loopbomb'
           },
           {
             network: 'stacks connect',
+            enabled: false,
             functionName: 'mint-token',
             contractAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW',
             contractName: 'loopbomb'
           },
           {
             network: 'ethereum',
+            enabled: true,
             functionName: 'mint-token',
             contractAddress: '0xD32311b42F0F4B592A2a388F90725f4af686C51b'
           }
         ],
+        enableRoyalties: false,
         beneficiaries: [
           {
             username: 'albert.einstein.id',

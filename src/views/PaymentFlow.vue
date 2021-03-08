@@ -99,12 +99,14 @@ export default {
       else if (displayCard === 104) return 2
     },
     rpayEvent: function (data) {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
       if (data.opcode === 'crypto-payment-expired') {
         this.paymentExpired()
       } else if (data.opcode === 'payment-restart') {
         this.paymentExpired()
       }
       if (data.opcode.indexOf('-payment-success') > -1) {
+        data.numbCredits = configuration.payment.creditAttributes.start
         this.page = 'result'
       }
       window.eventBus.$emit('rpayEvent', data)

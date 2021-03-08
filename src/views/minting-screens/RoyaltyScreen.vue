@@ -3,7 +3,7 @@
   <b-card header-tag="header" footer-tag="footer" class="rpay-card">
     <header-screen :allowEdit="true" :errorMessage="errorMessage" :mintedMessage="mintedMessage"/>
     <item-display/>
-    <beneficiaries/>
+    <beneficiaries v-if="enableRoyalties"/>
     <template v-slot:footer>
       <div class="footer-container">
         <div>
@@ -100,6 +100,10 @@ export default {
     displayCard () {
       const displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
       return displayCard
+    },
+    enableRoyalties () {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      return configuration.minter.enableRoyalties
     }
   }
 }

@@ -75,10 +75,17 @@ export default {
       this.loading = true
       this.waitingMessage = this.processingMessage
       this.$store.dispatch('rpayEthereumStore/transact', { opcode: 'send-payment', ethPaymentAddress: configuration.payment.ethPaymentAddress, amount: configuration.payment.amountEth }).then((result) => {
-        const data = { status: 10, opcode: 'eth-crypto-payment-success', txId: result.txId }
+        const data = {
+          status: 10,
+          numbCredits: configuration.payment.creditAttributes.start,
+          opcode: 'eth-crypto-payment-success',
+          txId: result.txId
+        }
         this.waitingMessage = 'Processed Payment'
         this.loading = false
-        this.$emit('rpayEvent', data)
+        // this.$emit('rpayEvent', data)
+        window.eventBus.$emit('rpayEvent', data)
+        this.$store.commit('rpayStore/setDisplayCard', 104)
       }).catch((e) => {
         if (e.message.indexOf('cancelled') === -1) {
           this.errorMessage = 'Please ensure you are logged into your meta mask account on the ' + NETWORK + ' network'

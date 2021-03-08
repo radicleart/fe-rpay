@@ -126,6 +126,10 @@ const rpayStore = {
       })[0]
       return networkConfig
     },
+    getEnabledNetworks: (state) => {
+      const networks = state.configuration.minter.networks.filter(o => o.enabled)
+      return networks
+    },
     getCurrentPaymentOption: (state) => {
       return state.configuration.payment.paymentOption
     },
