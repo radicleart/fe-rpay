@@ -9,6 +9,9 @@
   <div v-else-if="risidioCardMode === 'minting-flow'">
     <minting-flow/>
   </div>
+  <div v-else-if="risidioCardMode === 'selling-flow'">
+    <selling-flow/>
+  </div>
 </div>
 </template>
 
@@ -16,6 +19,7 @@
 import Vue from 'vue'
 import PaymentFlow from './views/PaymentFlow'
 import MintingFlow from './views/MintingFlow'
+import SellingFlow from './views/SellingFlow'
 import rpayStore from './store/rpayStore'
 import rpayEthereumStore from './store/rpayEthereumStore'
 import rpayStacksStore from './store/rpayStacksStore'
@@ -27,7 +31,8 @@ export default {
   name: 'RisidioPay',
   components: {
     PaymentFlow,
-    MintingFlow
+    MintingFlow,
+    SellingFlow
   },
   props: ['configuration'],
   data () {
@@ -101,4 +106,6 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@import '~vue-datetime/dist/vue-datetime.css'
+
 </style>

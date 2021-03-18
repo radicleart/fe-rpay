@@ -1,7 +1,7 @@
 <template>
 <div class="d-flex justify-content-between" v-if="beneficiary">
   <div>{{chainAddress()}}</div>
-  <div class="d-flex justify-content-between" v-if="beneficiary">
+  <div class="d-flex justify-content-between">
     <div class="mr-5">{{beneficiary.royalty}}%</div>
     <div><a href="#" @click="editBeneficiary()"><b-icon icon="pencil"/></a></div>
   </div>

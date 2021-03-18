@@ -50,11 +50,11 @@ export default {
   },
   computed: {
     getPendingMessage () {
-      let message = 'Minting on Stacks network can take some time - please keep this tab open so we can moniter progress.'
-      const mintingObject = this.$store.getters[LSAT_CONSTANTS.KEY_MINTING_MESSAGE]
-      if (mintingObject && mintingObject.message) {
-        message = mintingObject.message
-      }
+      const message = 'Minting on Stacks network can take some time - please keep this tab open so we can moniter progress.'
+      // const mintingObject = this.$store.getters[LSAT_CONSTANTS.KEY_MINTING_MESSAGE]
+      // if (mintingObject && mintingObject.message) {
+      //  message = mintingObject.message
+      // }
       return message
     },
     displayCard () {

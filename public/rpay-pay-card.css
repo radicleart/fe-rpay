@@ -1,3 +1,24 @@
+#rpay-pay-card .form-control {
+  background: #FFFFFF 0% 0% no-repeat padding-box;
+  border: 1px solid #E3E3E3;
+  border-radius: 0px !important;
+  text-align: left;
+  padding: 0 20px;
+}
+#rpay-pay-card .upload-preview {
+  padding: 20px 10px;
+  height: auto;
+  border: 0pt dashed rgb(146, 146, 38);
+  background-color: #FCFCFC 0% 0% no-repeat padding-box;
+  box-shadow: 0px 6px 9px #00000029;
+  border-radius: 6px;
+}
+
+#rpay-pay-card label {
+  font-size: 12px;
+  font-weight: 700;
+}
+
 #rpay-pay-card .card {
   color: #000;
   background: #FFFFFF 0% 0% no-repeat padding-box;

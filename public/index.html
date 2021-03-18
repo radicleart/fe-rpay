@@ -33,6 +33,8 @@
       let risidioCardMode = 'payment-flow'
       if (location.href.indexOf('mint') > -1) {
         risidioCardMode = 'minting-flow'
+      } else if (location.href.indexOf('set-sale-data') > -1) {
+        risidioCardMode = 'selling-flow'
       }
       let useNetwork = 'testnet'
       let risidioBaseApi = 'http://api.risidio.local'
@@ -48,6 +50,7 @@
         variant2: 'info',
         variant3: 'light',
         labels: {
+          titleSelling: 'Sell Your Item',
           title: 'Mint Your Item',
           numberUnits: 'How many items?',
           quantityLabel: 'Tokens'
@@ -61,7 +64,7 @@
         allowMultiples: true,
         stxPaymentAddress: 'ST1R1061ZT6KPJXQ7PAXPFB6ZAZ6ZWW28G8HXK9G5',
         ethPaymentAddress: '0xe31b011344f3f03dba31eeb12308fa446165b7b4',
-        paymentOption: 'fiat',
+        paymentOption: 'stacks',
         paymentOptions: [
           { allowFiat: true },
           { allowBitcoin: true },
@@ -82,39 +85,52 @@
           squareUrl: 'squareupsandbox'
         }
       }
+      const selling = {
+        tradeInfo: {
+          saleType: 1,
+          incrementPrice: 10,
+          buyNowOrStartingPrice: 10,
+          reservePrice: 10,
+          biddingEndTime: 1615716030000
+        }
+      }
       const minter = {
+        forceNew: true,
         item: {
-          assetHash: '566e0fe6379a0256466c76d47d6caa2cb0c08d8607fe61b1d9192e8b4b71f2ed',
+          assetHashMinted: 'e25722b4e9481bdfaffb0d3b88c1badd31e45dcb79f639cada783666dd95c8ff',
+          // assetHash: '5dd6d4318967820c49c1c83831ca17390a83776d183f44b21b55d5ff92653c7c',
+          assetHash: 'a3fa2d1e8631d5aa6d91e35eecfc003c202e1f5cbf3478128715a3b2c16b9014',
           name: 'My Non Funginble Token',
+          editions: 100,
           imageUrl: 'https://images.prismic.io/risidio-journal/5757dd30-d293-4586-a99b-bdce237f7a69_alexander-sinn-KgLtFCgfC28-unsplash.png?auto=compress,format'
         },
-        preferredNetwork: 'ethereum',
+        preferredNetwork: 'stacks risidio',
         networks: [
           {
             network: 'stacks risidio',
-            enabled: false,
+            enabled: true,
             functionName: 'mint-token',
             contractAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW',
-            contractName: 'loopbomb'
+            contractName: 'loopbomb-v1'
           },
           {
             network: 'stacks connect',
-            enabled: false,
+            enabled: true,
             functionName: 'mint-token',
             contractAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW',
             contractName: 'loopbomb'
           },
           {
             network: 'ethereum',
-            enabled: true,
+            enabled: false,
             functionName: 'mint-token',
             contractAddress: '0xD32311b42F0F4B592A2a388F90725f4af686C51b'
           }
         ],
-        enableRoyalties: false,
+        enableRoyalties: true,
         beneficiaries: [
           {
-            username: 'albert.einstein.id',
+            username: 'albert.id',
             role: 'owner',
             email: 'owner@somewhere.com',
             royalty: 3,
@@ -125,11 +141,13 @@
       const configuration = {
         lookAndFeel: lookAndFeel,
         payment: payment,
+        selling: selling,
         minter: minter,
         network: useNetwork,
         risidioBaseApi: risidioBaseApi,
         risidioStacksApi: 'http://localhost:20443',
         risidioWalletMac: '{"label": "MacMock", "mnemonic": "","keyInfo": {"privateKey": "4790db90a48e51bdbbc62a37fdc535719c22e195dc1aa6e1725b30bffc569ce501","address": "ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW","btcAddress": "","index": 0}}',
+        risidioWalletSky: '{"label": "sky", "mnemonic": "","keyInfo": {"privateKey": "55ea24570fda8285e888cd239c55a91ab30023ae87af20887710d29b6ba6aeee01","address": "STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG","btcAddress": "","index": 0}}',
         risidioCardMode: risidioCardMode
       }
       window.risidioPaymentConfig = JSON.stringify(configuration)

@@ -1,5 +1,5 @@
 <template>
-<div class="mt-4 d-flex flex-column align-items-center">
+<div class="mx-5 mt-4 d-flex flex-column align-items-center">
   <div>
     <div title="Make Payment">
       <div class="text-center" v-if="desktopWalletSupported">
@@ -20,7 +20,7 @@
       <span class="text-small text-danger">{{errorMessage}}</span>
     </div>
   </div>
-  <div class="text-center">
+  <div class="text-center ">
     <span><a class="text-small text-info" target="_blank" href="https://www.hiro.so/wallet/install-web">Install stacks wallet</a></span>
   </div>
 </div>
@@ -73,16 +73,14 @@ export default {
         this.$store.commit('rpayStore/setDisplayCard', 104)
       }).catch((e) => {
         this.$store.dispatch('rpayStacksStore/makeTransferRisidio', { amountStx: configuration.payment.amountStx, paymentAddress: configuration.payment.stxPaymentAddress }).then((result) => {
-          if (!result.opcode) {
-            data.opcode = 'stacks-connect-error'
-          } else {
-            this.waitingMessage = 'Processed Payment'
-          }
+          this.waitingMessage = 'Processed Payment'
           this.loading = false
+          data.txId = result.txId
           window.eventBus.$emit('rpayEvent', data)
           this.$store.commit('rpayStore/setDisplayCard', 104)
         }).catch((e) => {
           this.errorMessage = 'Unable to transfer funds at the moment - please try later or choose an alternate payment method'
+          this.$store.commit('rpayStore/setDisplayCard', 104)
           this.loading = false
         })
       })

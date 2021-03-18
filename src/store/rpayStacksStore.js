@@ -1,4 +1,4 @@
-import bufferUtils from '@/services/bufferUtils'
+import utils from '@/services/utils'
 import { LSAT_CONSTANTS } from '@/lsat-constants'
 import {
   makeSTXTokenTransfer,
@@ -11,18 +11,116 @@ import {
   uintCV,
   standardPrincipalCV,
   tupleCV,
-  serializeCV
+  serializeCV,
+  // standardPrincipalCV,
+  makeStandardSTXPostCondition,
+  FungibleConditionCode
 } from '@stacks/transactions'
-import { StacksTestnet } from '@stacks/network'
 import { openSTXTransfer, openContractDeploy, openContractCall } from '@stacks/connect'
+import {
+  StacksTestnet
+} from '@stacks/network'
 import axios from 'axios'
 import BigNum from 'bn.js'
+import searchIndexService from '@/services/searchIndexService'
+// import { connectWebSocketClient } from '@stacks/blockchain-api-client'
 
-const contractDeployFee = 8000
 const network = new StacksTestnet()
-
-// const mac = JSON.parse(process.env.VUE_APP_WALLET_MAC || '')
 const precision = 1000000
+const contractDeployFee = 20000
+
+// const STACKS_API_EXT = process.env.VUE_APP_API_STACKS_EXT
+// const STACKS_POLLING = process.env.VUE_APP_API_POLLING
+// const network = new StacksTestnet()
+// network.coreApiUrl = STACKS_API
+const provider = 'risidio'
+
+const pollTxStatus = function (txId) {
+  return new Promise((resolve) => {
+    // let sub
+    const subscribe = async txId => {
+      // const client = await connectWebSocketClient('wss://stacks-node-api.blockstack.org/')
+      // sub = await client.subscribeTxUpdates(txId, update => {
+      //  resolve(update)
+      // })
+      // console.log({ client, sub })
+    }
+    subscribe(txId)
+  })
+}
+/**
+const pollTxStatus = function (dispatch, txId) {
+  return new Promise((resolve) => {
+    let counter = 0
+    if (!STACKS_POLLING) return
+    const intval = setInterval(function () {
+      axios.get(STACKS_API_EXT + '/extended/v1/tx/' + txId).then(response => {
+        const meth1 = 'tx_status'
+        if (response[meth1] === 'success') {
+          const meth2 = 'tx_status'
+          const hexResolved = utils.fromHex(response[meth2].hex)
+          resolve(hexResolved)
+          clearInterval(intval)
+        }
+      }).catch((e) => {
+        console.log(e)
+      })
+      if (counter === 30) {
+        clearInterval(intval)
+        resolve()
+      }
+      counter++
+    }, 5000)
+  })
+}
+**/
+const handleSetTradeInfo = function (baseUrl, asset, result, resolve) {
+  asset.hexResp = (result && result.data) ? result.data : ''
+  // if (asset.tradeInfo.biddingEndTime && typeof asset.tradeInfo.biddingEndTime === 'string' && asset.tradeInfo.biddingEndTime.indexOf('-') > -1) {
+  //  asset.tradeInfo.biddingEndTime = moment(asset.tradeInfo.biddingEndTime).valueOf()
+  // }
+  searchIndexService.addTradeInfo(baseUrl, asset).then(() => {
+    console.log(asset)
+    resolve(asset)
+  }).catch((error) => {
+    console.log(error)
+    resolve(asset)
+  })
+}
+const handleBuyNow = function (baseUrl, asset, result, resolve, purchaseInfo) {
+  asset.owner = purchaseInfo.buyer
+  if (asset.tradeInfo) {
+    asset.tradeInfo.saleType = 0
+    asset.tradeInfo.buyNowOrStartingPrice = 0
+    asset.tradeInfo.incrementPrice = 0
+    asset.tradeInfo.reservePrice = 0
+    asset.tradeInfo.biddingEndTime = 0
+  }
+  asset.hexResp = (result && result.data) ? result.data : ''
+  searchIndexService.addRecord(baseUrl, asset).then(() => {
+    console.log(asset)
+    resolve(asset)
+  }).catch((error) => {
+    console.log(error)
+    resolve(asset)
+  })
+}
+
+const captureResult = function (dispatch, assetHash, contractAddress, contractName) {
+  let counter = 0
+  const intval = setInterval(function () {
+    dispatch('lookupNftTokenId', { assetHash: assetHash, contractAddress: contractAddress, contractName: contractName }).then(() => {
+      clearInterval(intval)
+    }).catch((e) => {
+      // try again
+    })
+    if (counter === 100) {
+      window.eventBus.$emit('rpayEvent', { opcode: 'stx-mint-error-timeout' })
+      clearInterval(intval)
+    }
+    counter++
+  }, 5000)
+}
 
 const resolveError = function (commit, reject, error) {
   let errorMessage = null
@@ -56,152 +154,126 @@ const resolveError = function (commit, reject, error) {
     errorMessage = error
   }
   commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, { opcode: 'stx-mint-error', message: errorMessage }, { root: true })
-  window.eventBus.$emit('rpayEvent', { opcode: 'stx-mint-error', message: errorMessage })
+  if (window.eventBus) window.eventBus.$emit('rpayEvent', { opcode: 'stx-mint-error', message: errorMessage })
   reject(new Error(errorMessage))
 }
-const captureResult = function (dispatch, assetHash, contractAddress, contractName) {
-  let counter = 0
-  const intval = setInterval(function () {
-    dispatch('lookupNftTokenId', { assetHash: assetHash, contractAddress: contractAddress, contractName: contractName }).then(() => {
-      clearInterval(intval)
-    }).catch((e) => {
-      // try again
-    })
-    if (counter === 100) {
-      window.eventBus.$emit('rpayEvent', { opcode: 'stx-mint-error-timeout' })
-      clearInterval(intval)
-    }
-    counter++
-  }, 5000)
+const handleFetchWalletInternal = function (wallet, response, commit, resolve) {
+  wallet.nonce = response.data.nonce
+  wallet.balance = utils.fromOnChainAmount(response.data.balance)
+  resolve(wallet)
 }
 
-const getAmountStx = function (amountMicroStx) {
-  try {
-    if (typeof amountMicroStx === 'string') {
-      amountMicroStx = Number(amountMicroStx)
-    }
-    if (amountMicroStx === 0) return 0
-    amountMicroStx = amountMicroStx / precision
-    return Math.round(amountMicroStx * precision) / precision
-  } catch {
-    return 0
-  }
-}
 const rpayStacksStore = {
   namespaced: true,
   state: {
-    myProfile: {
-      username: null,
-      loggedIn: false,
-      showAdmin: false
-    },
-    provider: 'risidio',
-    appName: 'Loopbomb',
-    appLogo: '/img/logo/Risidio_logo_256x256.png',
-    macsWallet: null
+    provider: provider,
+    result: null,
+    contracts: [],
+    appName: 'Risidio Auctions',
+    appLogo: '/img/risidio_collection_logo.svg'
   },
   getters: {
+    getWalletMode: state => {
+      return state.provider
+    },
     getMacsWallet: state => {
       return state.macsWallet
+    },
+    getSkysWallet: state => {
+      return state.skysWallet
     }
   },
   mutations: {
     setMacsWallet (state, newMac) {
       state.macsWallet = newMac
+    },
+    setSkysWallet (state, newMac) {
+      state.macsWallet = newMac
+    },
+    setResult (state, result) {
+      state.result = result
+    },
+    toggleWalletMode (state) {
+      if (state.provider === 'risidio') {
+        state.provider = 'connect'
+      } else {
+        state.provider = 'risidio'
+      }
     }
   },
   actions: {
-    fetchMacsWalletInfo ({ state, commit, rootGetters }) {
+    fetchMacSkyWalletInfo ({ commit, dispatch, rootGetters }) {
+      return new Promise((resolve) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const wallet = JSON.parse(configuration.risidioWalletMac)
+        dispatch('fetchWalletInternal', wallet).then((wallet) => {
+          commit('setMacsWallet', wallet)
+          resolve(wallet)
+          wallet = JSON.parse(configuration.risidioWalletSky)
+          dispatch('fetchWalletInternal', wallet).then((wallet) => {
+            commit('setSkysWallet', wallet)
+            resolve(wallet)
+          })
+        })
+      })
+    },
+    fetchWalletInternal ({ state, commit, rootGetters }, wallet) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const index = configuration.minter.networks.findIndex(o => o.network.indexOf('stack') > -1)
-        if (index === -1) {
-          resolve(null)
-          return
-        }
-        const macsWallet = JSON.parse(configuration.risidioWalletMac)
-        commit('setMacsWallet', macsWallet)
         const data = {
-          path: '/v2/accounts/' + macsWallet.keyInfo.address,
+          path: '/v2/accounts/' + wallet.keyInfo.address,
           httpMethod: 'get',
           postData: null
         }
-        axios.post(configuration.risidioBaseApi + '/mesh/v2/accounts', data).then(response => {
-          macsWallet.nonce = response.data.nonce
-          macsWallet.balance = getAmountStx(parseInt(response.data.balance, 16))
-          commit('setMacsWallet', macsWallet)
-          resolve(macsWallet)
-        }).catch(() => {
-          const macsWallet = state.macsWallet
-          const useApi = configuration.risidioStacksApi + '/v2/accounts/' + macsWallet.keyInfo.address
-          axios.get(useApi).then(response => {
-            macsWallet.nonce = response.data.nonce
-            macsWallet.balance = getAmountStx(parseInt(response.data.balance, 16))
-            commit('setMacsWallet', macsWallet)
-            resolve(macsWallet)
+        if (state.provider === 'risidio') {
+          axios.post(configuration.risidioBaseApi + '/mesh/v2/accounts', data).then(response => {
+            handleFetchWalletInternal(wallet, response, commit, resolve)
           }).catch((error) => {
-            reject(error)
-          })
-        })
-      })
-    },
-    mintToken ({ dispatch }, data) {
-      return new Promise((resolve, reject) => {
-        const buffer = Buffer.from(data.assetHash, 'hex')
-        const tuplArray = []
-        if (data.beneficiaries && data.beneficiaries.length > 0) {
-          data.beneficiaries.forEach((item) => {
-            tuplArray.push(tupleCV({
-              address: standardPrincipalCV(item.chainAddress),
-              amount: uintCV(item.royalty)
-            }))
-          })
-        }
-        const contributers = listCV(tuplArray)
-        data.functionArgs = [bufferCV(buffer), contributers]
-        dispatch(data.action, data).then((result) => {
-          resolve(result)
-        })
-      })
-    },
-    callContractBlockstack ({ commit, dispatch, state }, data) {
-      return new Promise((resolve, reject) => {
-        try {
-          const txoptions = {
-            contractAddress: data.contractAddress,
-            contractName: data.contractName,
-            functionName: data.functionName,
-            functionArgs: (data.functionArgs) ? data.functionArgs : [],
-            // network: network,
-            appDetails: {
-              name: state.appName,
-              icon: state.appLogo
-            },
-            finished: (response) => {
-              const result = {
-                txId: response.txId,
-                txRaw: response.txRaw,
-                network: 15
-              }
-              captureResult(dispatch, data.assetHash, data.contractAddress, data.contractName)
-              resolve(result)
-            }
-          }
-          openContractCall(txoptions).catch((error) => {
             resolveError(commit, reject, error)
           })
-        } catch (error) {
-          resolveError(commit, reject, error)
+        } else {
+          const useApi = configuration.risidioStacksApi + '/v2/accounts/' + wallet.keyInfo.address
+          axios.get(useApi).then(response => {
+            handleFetchWalletInternal(wallet, response, commit, resolve)
+          }).catch((error) => {
+            resolveError(commit, reject, error)
+          })
         }
       })
     },
-    callContractRisidio ({ commit, dispatch, state, rootGetters }, data) {
+    callContractBlockstack ({ state }, data) {
       return new Promise((resolve, reject) => {
+        const txOptions = {
+          contractAddress: data.contractAddress,
+          contractName: data.contractName,
+          functionName: data.functionName,
+          functionArgs: (data.functionArgs) ? data.functionArgs : [],
+          postConditions: (data.postConditions) ? data.postConditions : [],
+          appDetails: {
+            name: state.appName,
+            icon: state.appLogo
+          },
+          finished: (response) => {
+            const result = {
+              txId: response.txId,
+              txRaw: response.txRaw,
+              network: 15
+            }
+            resolve(result)
+          }
+        }
+        openContractCall(txOptions).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    callContractRisidio ({ commit, state, dispatch, rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
         let nonce = new BigNum(state.macsWallet.nonce)
         if (data && data.action === 'inc-nonce') {
           nonce = new BigNum(state.macsWallet.nonce + 1)
         }
-        // 5000 000 000 000 000
         const txOptions = {
           contractAddress: data.contractAddress,
           contractName: data.contractName,
@@ -210,8 +282,8 @@ const rpayStacksStore = {
           fee: new BigNum(1800),
           senderKey: state.macsWallet.keyInfo.privateKey,
           nonce: new BigNum(nonce),
-          validateWithAbi: false,
-          network
+          network,
+          postConditions: (data.postConditions) ? data.postConditions : []
         }
         makeContractCall(txOptions).then((transaction) => {
           if (state.provider !== 'risidio') {
@@ -225,62 +297,18 @@ const rpayStacksStore = {
             const headers = {
               'Content-Type': 'application/octet-stream'
             }
-            axios.post(rootGetters['rpayStore/getConfiguration'].risidioBaseApi + '/mesh' + '/v2/broadcast', txdata, { headers: headers }).then(response => {
+            axios.post(configuration.risidioBaseApi + '/mesh' + '/v2/broadcast', txdata, { headers: headers }).then(response => {
               const result = {
                 txId: response.data,
                 network: 15
               }
+              dispatch('fetchMacSkyWalletInfo')
               captureResult(dispatch, data.assetHash, data.contractAddress, data.contractName)
               resolve(result)
             }).catch((error) => {
               resolveError(commit, reject, error)
             })
           }
-        })
-      })
-    },
-    callContractRisidioReadOnly ({ state, rootGetters }, data) {
-      return new Promise((resolve, reject) => {
-        const postData = {
-          arguments: (data.functionArgs) ? data.functionArgs : [],
-          sender: state.macsWallet.keyInfo.address
-        }
-        const apiPath = '/v2/contracts/call-read/' + data.contractAddress + '/' + data.contractName + '/' + data.functionName
-        const txoptions = {
-          path: apiPath,
-          httpMethod: 'POST',
-          postData: postData
-        }
-        const headers = {
-          'Content-Type': 'application/json'
-        }
-        axios.post(rootGetters['rpayStore/getConfiguration'].risidioBaseApi + '/mesh' + '/v2/accounts', txoptions, { headers: headers }).then(response => {
-          if (!response.data.okay) {
-            reject(new Error('not okay - ' + response.data.cause))
-            return
-          }
-          data.result = bufferUtils.fromHex(data.functionName, response.data.result)
-          // const res = getAmountStx(parseInt(response.data.result, 16))
-          resolve(data)
-        }).catch(() => {
-          axios.post(rootGetters['rpayStore/getConfiguration'].risidioStacksApi + apiPath, postData, { headers: headers }).then(response => {
-            if (!response.data.okay) {
-              reject(new Error('not okay - ' + response.data.cause))
-              return
-            }
-            data.result = bufferUtils.fromHex(data.functionName, response.data.result)
-            resolve(data)
-          }).catch((error) => {
-            if (error.response && error.response.data && error.response.data.message) {
-              if (error.response.data.message.indexOf('NotEnoughFunds') > -1) {
-                reject(new Error('Not enough funds in the macsWallet to send this - try decreasing the amount?'))
-              } else {
-                reject(error.response.data.message)
-              }
-            } else {
-              reject(error.message)
-            }
-          })
         })
       })
     },
@@ -299,7 +327,44 @@ const rpayStacksStore = {
         })
       })
     },
-    lookupNftTokenId ({ commit, dispatch }, data) {
+    callContractReadOnly ({ commit, state, rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        if (state) {
+          console.log(state)
+        }
+        const path = '/v2/contracts/call-read/' + data.contractAddress + '/' + data.contractName + '/' + data.functionName
+        const txOptions = {
+          path: path,
+          httpMethod: 'POST',
+          postData: {
+            arguments: (data.functionArgs) ? data.functionArgs : [],
+            sender: data.contractAddress
+          }
+        }
+        const headers = {
+          'Content-Type': 'application/json'
+        }
+        if (state.provider === 'risidio') {
+          axios.post(configuration.risidioBaseApi + '/mesh' + '/v2/accounts', txOptions).then(response => {
+            data.result = utils.fromHex(data.functionName, response.data.result)
+            // data.result = bufferUtils.fromHex(data.functionName, response.data.result)
+            resolve(data)
+          }).catch((error) => {
+            resolveError(commit, reject, error)
+          })
+        } else {
+          axios.post(configuration.risidioStacksApi + path, txOptions.postData, { headers: headers }).then(response => {
+            // dispatch('fetchMacSkyWalletInfo')
+            data.result = utils.fromHex(data.functionName, response.data.result)
+            resolve(data)
+          }).catch((error) => {
+            resolveError(commit, reject, error)
+          })
+        }
+      })
+    },
+    lookupNftTokenId ({ dispatch }, data) {
       return new Promise((resolve) => {
         const buffer = `0x${serializeCV(bufferCV(Buffer.from(data.assetHash, 'hex'))).toString('hex')}` // Buffer.from(hash.toString(CryptoJS.enc.Hex), 'hex')
         const config = {
@@ -309,18 +374,15 @@ const rpayStacksStore = {
           functionName: 'get-index',
           functionArgs: [buffer]
         }
-        dispatch('callContractRisidioReadOnly', config).then((resp) => {
-          if (typeof resp.result !== 'undefined' && (resp.result === 0 || resp.result >= 0)) {
+        dispatch('callContractReadOnly', config).then((resp) => {
+          if (Array.isArray(resp.result)) {
             const result = {}
-            result.nftIndex = resp.result
+            result.nftIndex = resp.result[0]
+            result.nftIndices = resp.result
             result.tokenId = resp.tokenId
             result.network = 15
             result.opcode = 'stx-mint-success'
             result.assetHash = data.assetHash
-            result.message = 'Your item has been minted to your Stacks wallet'
-            commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, result, { root: true })
-            commit(LSAT_CONSTANTS.SET_DISPLAY_CARD, 106, { root: true })
-            window.eventBus.$emit('rpayEvent', result)
             resolve(result)
           } else {
             // not found - no need to report anything as this is ususally the case
@@ -330,12 +392,249 @@ const rpayStacksStore = {
         })
       })
     },
+    lookupContractInterface ({ commit, rootGetters }, projectId) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const contractAddress = projectId.split('.')[0]
+        const contractName = projectId.split('.')[1]
+        const txOptions = {
+          path: '/v2/contracts/interface/' + contractAddress + '/' + contractName + '?proof=0',
+          httpMethod: 'GET'
+        }
+        axios.post(configuration.risidioBaseApi + '/mesh' + '/v2/accounts', txOptions).then(response => {
+          resolve({ projectId: projectId, interface: response.data })
+          // commit('addValue', response)
+        }).catch(() => {
+          axios.get(configuration.risidioStacksApi + '/v2/contracts/interface/' + contractAddress + '/' + contractName + '?proof=0').then(response => {
+            resolve({ projectId: projectId, interface: response.data })
+          }).catch((error) => {
+            resolveError(commit, reject, error)
+          })
+        })
+      })
+    },
+    lookupTradeInfo: function ({ commit, dispatch }, data) {
+      return new Promise((resolve, reject) => {
+        const functionArgs = [`0x${serializeCV(uintCV(data.nftIndex)).toString('hex')}`]
+        const config = {
+          contractAddress: data.contractAddress,
+          contractName: data.contractName,
+          functionName: 'get-sale-data',
+          functionArgs: functionArgs
+        }
+        dispatch('callContractReadOnly', config).then((tradeInfo) => {
+          resolve(tradeInfo)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    setTradeInfo ({ state, dispatch, rootGetters }, asset) {
+      return new Promise((resolve, reject) => {
+        // (asset-hash (buff 32)) (sale-type uint) (increment-stx uint) (reserve-stx uint) (amount-stx uint)
+        // const buffer = bufferCV(Buffer.from(asset.assetHash, 'hex')) // Buffer.from(hash.toString(CryptoJS.enc.Hex), 'hex')
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const nftIndex = uintCV(asset.nftIndex)
+        const saleType = uintCV(asset.tradeInfo.saleType)
+        const incrementPrice = uintCV(utils.toOnChainAmount(asset.tradeInfo.incrementPrice))
+        const reservePrice = uintCV(utils.toOnChainAmount(asset.tradeInfo.reservePrice))
+        const buyNowOrStartingPrice = uintCV(utils.toOnChainAmount(asset.tradeInfo.buyNowOrStartingPrice))
+        const biddingEndTime = uintCV(asset.tradeInfo.biddingEndTime)
+        const auctionId = uintCV(asset.tradeInfo.biddingEndTime)
+        const functionArgs = [nftIndex, saleType, incrementPrice, reservePrice, buyNowOrStartingPrice, biddingEndTime, auctionId]
+        const data = {
+          contractAddress: asset.contractAddress,
+          contractName: asset.contractName,
+          functionName: 'set-sale-data',
+          functionArgs: functionArgs
+        }
+        const methos = (state.provider === 'risidio') ? 'callContractRisidio' : 'callContractBlockstack'
+        dispatch(methos, data).then((result) => {
+          handleSetTradeInfo(configuration.risidioBaseApi, asset, result, resolve)
+          pollTxStatus(result.txId).then(() => {
+            handleSetTradeInfo(configuration.risidioBaseApi, asset, result, resolve)
+          })
+        }).catch(() => {
+          data.action = 'inc-nonce'
+          dispatch(methos, data).then((result) => {
+            pollTxStatus(result.txId).then(() => {
+              handleSetTradeInfo(configuration.risidioBaseApi, asset, result, resolve)
+            })
+          }).catch((error) => {
+            reject(error)
+          })
+        })
+      })
+    },
+    mintToken ({ dispatch }, data) {
+      return new Promise((resolve, reject) => {
+        const buffer = Buffer.from(data.assetHash, 'hex')
+        const editions = uintCV(data.editions)
+        const tuplArray = []
+        if (data.beneficiaries && data.beneficiaries.length > 0) {
+          data.beneficiaries.forEach((item) => {
+            tuplArray.push(tupleCV({
+              address: standardPrincipalCV(item.chainAddress),
+              amount: uintCV(item.royalty)
+            }))
+          })
+        }
+        const contributers = listCV(tuplArray)
+        data.functionArgs = [bufferCV(buffer), editions, contributers]
+        dispatch(data.action, data).then((result) => {
+          resolve(result)
+        })
+      })
+    },
+    buyNow ({ state, dispatch, rootGetters }, purchaseInfo) {
+      return new Promise((resolve, reject) => {
+        // (asset-hash (buff 32)) (sale-type uint) (increment-stx uint) (reserve-stx uint) (amount-stx uint)
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const asset = purchaseInfo.asset
+        const profile = rootGetters['authStore/getMyProfile']
+        // const amount = new BigNum(utils.toOnChainAmount(asset.tradeInfo.buyNowOrStartingPrice + 1))
+        const amount = new BigNum(asset.tradeInfo.buyNowOrStartingPrice + 1)
+        const standardSTXPostCondition = makeStandardSTXPostCondition(
+          profile.stxAddress,
+          FungibleConditionCode.LessEqual,
+          amount
+        )
+
+        const nftIndex = uintCV(asset.nftIndex)
+        // const spCV = standardPrincipalCV(mac.keyInfo.address)
+        // const functionArgs = [spCV, nftIndex]
+        const functionArgs = [nftIndex]
+        const data = {
+          postConditions: [standardSTXPostCondition],
+          contractAddress: asset.projectId.split('.')[0],
+          contractName: asset.projectId.split('.')[1],
+          functionName: 'transfer-from',
+          functionArgs: functionArgs,
+          wallet: (state.provider === 'risidio' && purchaseInfo.useWallet && purchaseInfo.useWallet === 'sky') ? state.skysWallet : state.macsWallet
+        }
+
+        const methos = (state.provider === 'risidio') ? 'callContractRisidio' : 'callContractBlockstack'
+        dispatch(methos, data).then((result) => {
+          handleBuyNow(configuration.risidioBaseApi, asset, result, resolve, purchaseInfo)
+          pollTxStatus(result.txId).then(() => {
+            handleBuyNow(configuration.risidioBaseApi, asset, result, resolve, purchaseInfo)
+          })
+        }).catch(() => {
+          data.action = 'inc-nonce'
+          dispatch(methos, data).then((result) => {
+            handleBuyNow(configuration.risidioBaseApi, asset, result, resolve, purchaseInfo)
+            pollTxStatus(result.txId)
+          }).catch((error) => {
+            reject(error)
+          })
+        })
+      })
+    },
+    deployContractConnect ({ state }, datum) {
+      return new Promise((resolve, reject) => {
+        const txOptions = {
+          codeBody: datum.codeBody,
+          contractName: datum.projectId.split('.')[1],
+          appDetails: {
+            name: state.appName,
+            icon: state.appLogo
+          },
+          finished: (response) => {
+            const result = {
+              txId: response.txId,
+              txRaw: response.txRaw,
+              network: 15
+            }
+            resolve(result)
+          }
+        }
+        // 0x80800000000400216b6b9277c5e528fda5b7f3ba138839d4bc4d5d000000000000000000000000000007e20101fe1326c7ab2de2838bde08c01086bf34547cef8ca28e50c1623129b9cf851e1b754bade4c7baf045d273a468bdb32508ce874017fb1a710dce11fb0610a6c841030200000000010d6e66742d696e746572666163650000075c3b3b205061727469616c20737570706f727420666f72204552432d373231204e4654206d6574686f6473202d20617070726f76616c73206e6f742079657420737570706f727465642e0a28646566696e652d7472616974207472616e7366657261626c652d6e66742d74726169740a2020280a202020203b3b207472616e73666572206173736574202d2074782d73656e6465722069732074686520202f206275796572202d2074686973206973200a202020203b3b20646966666572656e742066726f6d2074686520626c6f636b737461636b20696d706c656d6e656e746174696f6e207768657265207468652074782d73656e646572200a202020203b3b2068617320746f2063616c6c2074686973206d6574686f642e0a20202020287472616e736665722d66726f6d20287072696e636970616c207072696e636970616c2075696e74292028726573706f6e73652075696e742075696e7429290a0a202020203b3b207472616e73666572206173736574202d20736166657220666f726d2074782d73656e646572206d7573742062652063757272656e74206f776e65720a20202020287472616e7366657220287072696e636970616c2075696e74292028726573706f6e73652075696e742075696e7429290a0a202020203b3b206e756d626572206f6620746f6b656e73206f776e656420627920616464726573730a202020202862616c616e63652d6f6620287072696e636970616c292028726573706f6e73652075696e742075696e7429290a2020290a290a0a3b3b20436f6e74726163747320726570726573656e74696e672061737365747320666f722073616c6520696e206d61726b6574706c6163652e0a28646566696e652d7472616974207472616461626c652d6e66742d74726169740a2020280a3b3b207365742d73616c652d646174612075706461746573207468652073616c65207479706520616e6420707572636861736520696e666f20666f72206120676976656e204e46542e204f6e6c7920746865206f776e65722063616e2063616c6c2074686973206d6574686f640a3b3b20616e6420646f696e6720736f206d616b6520746865206173736574207472616e7366657261626c652062792074686520726563697069656e74202d206f6e20636f6e646974696f6e206f66206d656574696e672074686520636f6e646974696f6e73206f662073616c650a3b3b2054686973206973206571756976616c656e7420746f2074686520736574417070726f76616c466f72416c6c206d6574686f6420696e204552432037323120636f6e7472616374732e0a202020203b3b2061726773202d20312e2073686132353620617373657420686173680a202020203b3b2020202020202020322e2073616c652d7479706520303d6e6f7420666f722073616c652c20313d627579206e6f772c20323d62696464696e670a202020203b3b2020202020202020332e20696e6372656d6574202d20302069662073616c652d7479706520213d2032200a202020203b3b2020202020202020342e2072657365727665202d20302069662073616c652d7479706520213d2032200a202020203b3b2020202020202020352e206275792d6e6f772d6f722d7374617274696e672d7072696365202d20302069662073616c652d74797065203d2030200a202020203b3b2020202020202020362e2062696464696e672d656e642d64617465202d20696e206d732073696e6365207475726e206f662065706f6368200a20202020287365742d73616c652d6461746120282862756666203332292075696e742075696e742075696e742075696e742075696e74292028726573706f6e73652075696e742075696e7429290a3b3b20496e6469636174657320746865206e756d626572206f66207472616e736665727320666f722074686520676976656e2061737365740a202020203b3b2061726773202d20312e206e66742d696e6465780a20202020286765742d7472616e736665722d636f756e74202875696e74292028726573706f6e73652075696e742075696e7429290a2020290a290a0a3b3b205265616c20776f726c642061737365742e0a28646566696e652d747261697420747261636561626c652d6e66742d74726169740a2020280a3b3b204120747261636561626c65207472616974207265717569726573204e46547320746f206578706f7365206120637265617465206d6574686f647768696368206c696e6b73206120534841323536206861736820746f207468650a3b3b20746f6b656e2d69640a202020202863726561746520282862756666203332292075696e742075696e742075696e742075696e742075696e74292028726573706f6e73652075696e742075696e7429290a3b3b20496e6469636174657320746865206e756d626572206f66207472616e736665727320666f722074686520676976656e2061737365740a202020203b3b2061726773202d20312e206e66742d696e6465780a20202020286765742d7472616e736665722d636f756e74202875696e74292028726573706f6e73652075696e742075696e7429290a2020290a29
+        openContractDeploy(txOptions).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    deployContractRisidio ({ commit, state, rootGetters }, project) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const contractName = project.projectId.split('.')[1]
+        const network = new StacksTestnet()
+        const txOptions = {
+          contractName: contractName,
+          codeBody: project.codeBody,
+          senderKey: state.macsWallet.keyInfo.privateKey,
+          nonce: new BigNum(state.macsWallet.nonce++), // watch for nonce increments if this works - may need to restart mocknet!
+          fee: new BigNum(contractDeployFee), // set a tx fee if you don't want the builder to estimate
+          network
+        }
+        makeContractDeploy(txOptions).then((transaction) => {
+          const txdata = new Uint8Array(transaction.serialize())
+          const headers = {
+            'Content-Type': 'application/octet-stream'
+          }
+
+          if (state.provider === 'risidio') {
+            axios.post(configuration.risidioBaseApi + '/mesh/v2/broadcast', txdata, { headers: headers }).then((response) => {
+              const result = {
+                txId: response.data,
+                txRaw: response.txRaw,
+                network: 15
+              }
+              resolve(result)
+            }).catch((error) => {
+              resolveError(commit, reject, error)
+            })
+          } else {
+            const useApi = configuration.risidioStacksApi + '/v2/transactions'
+            axios.post(useApi, txdata, { headers: { 'Content-Type': 'application/octet-stream' } }).then((response) => {
+              const result = {
+                txId: response.data,
+                txRaw: response.txRaw,
+                network: 15
+              }
+              resolve(result)
+            }).catch((error) => {
+              resolveError(commit, reject, error)
+            })
+          }
+        }).catch((error) => {
+          resolveError(commit, reject, error)
+        })
+      })
+    },
+    makeTransferBlockstack ({ state, rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const amount = Math.round(data.amountStx * precision)
+        // amount = parseInt(amount, 16)
+        const amountBN = new BigNum(amount)
+        openSTXTransfer({
+          recipient: data.paymentAddress,
+          // network: network,
+          amount: amountBN,
+          memo: 'Payment for credits',
+          appDetails: {
+            name: state.appName,
+            icon: state.appLogo
+          },
+          finished: result => {
+            resolve({ result: result })
+          }
+        }).catch((err) => {
+          console.log(err)
+          reject(err)
+        })
+      })
+    },
     makeTransferRisidio ({ state, rootGetters }, data) {
       return new Promise((resolve, reject) => {
-        let amount = Math.round(data.amountStx * precision)
-        amount = parseInt(amount, 16)
-        amount = new BigNum(amount)
-        const recipient = data.paymentAddress
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        if (data.amountStx > 500) {
+          resolve('no more than 500')
+          return
+        }
+        const amount = Math.round(data.amountStx * precision)
+        // amount = parseInt(String(amount), 16)
+        const amountBN = new BigNum(amount)
 
         // amount = amount.div(new BigNum(1000000))
         const senderKey = state.macsWallet.keyInfo.privateKey
@@ -346,8 +645,8 @@ const rpayStacksStore = {
         }
 
         const txOptions = {
-          recipient: recipient,
-          amount: amount,
+          recipient: data.paymentAddress,
+          amount: amountBN,
           senderKey: senderKey,
           network,
           memo: 'Sending payment for game credits.',
@@ -359,10 +658,10 @@ const rpayStacksStore = {
           const headers = {
             'Content-Type': 'application/octet-stream'
           }
-          axios.post(rootGetters['rpayStore/getConfiguration'].risidioBaseApi + '/mesh' + '/v2/broadcast', txdata, { headers: headers }).then(response => {
+          axios.post(configuration.risidioBaseApi + '/mesh/v2/broadcast', txdata, { headers: headers }).then(response => {
             resolve(response.data)
           }).catch(() => {
-            const useApi = rootGetters['rpayStore/getConfiguration'].risidioStacksApi + '/v2/transactions'
+            const useApi = configuration.risidioStacksApi + '/v2/transactions'
             axios.post(useApi, txdata).then((response) => {
               resolve(response.data)
             }).catch((error) => {
@@ -384,111 +683,15 @@ const rpayStacksStore = {
         })
       })
     },
-    makeTransferBlockstack ({ state, rootGetters }, data) {
+    deployProjectContract ({ state, dispatch }, datum) {
       return new Promise((resolve, reject) => {
-        let amount = Math.round(data.amountStx * precision)
-        // amount = parseInt(amount, 16)
-        amount = new BigNum(amount)
-        const recipient = data.paymentAddress
-        openSTXTransfer({
-          recipient: recipient,
-          // network: network,
-          amount: amount,
-          memo: 'Payment for credits',
-          appDetails: {
-            name: state.appName,
-            icon: state.appLogo
-          },
-          finished: result => {
-            resolve({ result: result })
-          }
-        }).catch((err) => {
-          console.log(err)
-          reject(err)
-        })
-      })
-    },
-    fetchFeeEstimate ({ state, commit, rootGetters }, data) {
-      return new Promise((resolve, reject) => {
-        const data = { path: '/v2/fees/transfer', httpMethod: 'get', postData: null }
-        axios.post(rootGetters['rpayStore/getConfiguration'].risidioBaseApi + '/mesh' + '/v2/accounts', data).then(response => {
-          resolve(response.data)
-          commit('setFeeEstimate', response.data)
-        }).catch(() => {
-          axios.get(rootGetters['rpayStore/getConfiguration'].risidioStacksApi + '/v2/fees/transfer').then((response) => {
-            resolve(response.data)
-          }).catch((error) => {
-            if (error.response && error.response.data) {
-              const msg = error.response.data.status + ' - ' + error.response.data.message
-              reject(msg)
-            } else {
-              reject(error)
-            }
-          })
-        })
-      })
-    },
-    deployContractBlockstack ({ state, dispatch }, data) {
-      return new Promise((resolve) => {
-        // const authOrigin = (state.provider === 'local-network') ? 'http://localhost:20443' : null
-        openContractDeploy({
-          contractName: data.contractName,
-          codeBody: data.codeBody,
-          // authOrigin,
-          appDetails: {
-            name: state.appName,
-            icon: state.appLogo
-          },
-          finished: (trans) => {
-            console.log(trans.txid)
-            dispatch('rstackStore/saveToGaia', trans).then(() => {
-              data.result = trans
-              dispatch('rpayStacksStore/fetchMacsWalletInfo')
-              resolve(data)
-            })
-          }
-        })
-      })
-    },
-    deployContractRisidio ({ state, commit, dispatch, rootGetters }, data) {
-      return new Promise((resolve, reject) => {
-        const sender = state.macsWallet
-        if (!data.fee) {
-          data.fee = contractDeployFee
-        }
-        const txOptions = {
-          contractName: data.contractName,
-          codeBody: data.codeBody,
-          senderKey: sender.keyInfo.privateKey,
-          nonce: new BigNum(sender.nonce++), // watch for nonce increments if this works - may need to restart mocknet!
-          fee: new BigNum(data.fee), // set a tx fee if you don't want the builder to estimate
-          network
-        }
-        makeContractDeploy(txOptions).then((transaction) => {
-          const txdata = new Uint8Array(transaction.serialize())
-          const headers = {
-            'Content-Type': 'application/octet-stream'
-          }
-          axios.post(rootGetters['rpayStore/getConfiguration'].risidioBaseApi + '/mesh' + '/v2/broadcast', txdata, { headers: headers }).then(response => {
-            txOptions.senderKey = null
-            txOptions.fromAddress = data.address
-            txOptions.result = response.data
-            txOptions.provider = 'risidio'
-            txOptions.txtype = 'deployment'
-            dispatch('rpayStacksStore/fetchMacsWalletInfo')
-            resolve(txOptions)
-          }).catch(() => {
-            const useApi = rootGetters['rpayStore/getConfiguration'].risidioStacksApi + '/v2/transactions'
-            axios.post(useApi, txdata).then((response) => {
-              txOptions.senderKey = null
-              txOptions.fromAddress = data.address
-              txOptions.result = response.data
-              txOptions.provider = 'risidio'
-              txOptions.txtype = 'deployment'
-              dispatch('rpayStacksStore/fetchMacsWalletInfo')
-              resolve(txOptions)
-            }).catch((error) => {
-              reject(error)
+        const methos = (state.provider === 'risidio') ? 'deployContractRisidio' : 'deployContractConnect'
+        dispatch(methos, datum).then((result) => {
+          resolve(null)
+          pollTxStatus(result.txId).then(() => {
+            dispatch('projectStore/updateProject', { projectId: datum.projectId, contractId: datum.projectId, txId: result.txId }, { root: true }).then((project) => {
+              // dispatch('fetchMacSkyWalletInfo')
+              resolve(project)
             })
           })
         }).catch((error) => {

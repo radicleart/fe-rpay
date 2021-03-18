@@ -6,9 +6,14 @@
       <b-button @click="changeNetwork(option.network)" :variant="$globalLookAndFeel.variant0" :class="(preferredNetwork === option.network) ? 'no-option-on mb-4' : 'no-option-off mb-4'"><span>{{option.network}}</span></b-button>
     </span>
   </div>
+  <div class="text-small text-left">
+    <p>Contract Address: {{network.contractAddress}}</p>
+    <p>Contract Name: {{network.contractName}}</p>
+    <p>Minting Function: {{network.functionName}}</p>
+  </div>
 </b-card-text>
 <b-card-text class="text-center mx-4" v-else>
-  <div class="text-center text-bold">Network: {{preferredNetwork}}  <a v-if="allowEdit && networks > 1" href="#" class="text-info" @click.prevent="editNetwork()"><b-icon icon="pencil"/></a></div>
+  <div class="text-center text-bold">{{preferredNetwork}}  <a v-if="allowEdit && networks.length > 1" href="#" class="text-info" @click.prevent="editNetwork()"><b-icon icon="pencil"/></a></div>
 </b-card-text>
 </template>
 
@@ -37,6 +42,10 @@ export default {
     }
   },
   computed: {
+    config: function () {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      return configuration
+    },
     networks: function () {
       const networks = this.$store.getters[LSAT_CONSTANTS.KEY_ENABLED_NETWORKS]
       return networks
@@ -44,6 +53,10 @@ export default {
     preferredNetwork () {
       const preferredNetwork = this.$store.getters[LSAT_CONSTANTS.KEY_PREFERRED_NETWORK]
       return preferredNetwork.network
+    },
+    network () {
+      const preferredNetwork = this.$store.getters[LSAT_CONSTANTS.KEY_PREFERRED_NETWORK]
+      return preferredNetwork
     }
   }
 }

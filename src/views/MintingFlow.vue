@@ -30,8 +30,9 @@ export default {
     }
   },
   mounted () {
-    this.$store.dispatch('rpayStacksStore/fetchMacsWalletInfo').then(() => {
+    this.$store.dispatch('rpayStacksStore/fetchMacSkyWalletInfo').then(() => {
       this.setPage()
+      this.lookupNftTokenId()
     }).catch(() => {
       this.setPage()
     })
@@ -49,6 +50,19 @@ export default {
       if (!displayCard) {
         this.$store.commit('rpayStore/setDisplayCard', 100)
       }
+    },
+    lookupNftTokenId: function () {
+      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const networkConfig = this.$store.getters[LSAT_CONSTANTS.KEY_PREFERRED_NETWORK]
+      this.$store.dispatch('rpayStacksStore/lookupNftTokenId', { assetHash: configuration.minter.item.assetHash, contractAddress: networkConfig.contractAddress, contractName: networkConfig.contractName }).then((result) => {
+        console.log(result)
+        if (result.nftIndex >= 0) {
+          result.message = 'Item #' + result.nftIndex + ' has been minted to your Stacks wallet'
+          this.$store.commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, result, { root: true })
+          this.$store.commit(LSAT_CONSTANTS.SET_DISPLAY_CARD, 106, { root: true })
+          window.eventBus.$emit('rpayEvent', result)
+        }
+      })
     }
   },
   computed: {

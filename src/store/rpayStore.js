@@ -195,6 +195,9 @@ const rpayStore = {
       }
       state.configuration = configuration
     },
+    setTradeInfo (state, tradeInfo) {
+      state.configuration.selling.tradeInfo = tradeInfo
+    },
     setMintingMessage (state, o) {
       state.mintingMessage = o
     },
@@ -231,7 +234,7 @@ const rpayStore = {
           commit('setTickerRates', response.data)
           setAmounts(state.tickerRates, configuration)
           commit('addConfiguration', configuration)
-          this.dispatch('rpayStacksStore/fetchMacsWalletInfo', { root: true })
+          this.dispatch('rpayStacksStore/fetchMacSkyWalletInfo', { root: true })
           commit('addPaymentOptions')
           if (configuration.payment.forceNew) {
             localStorage.removeItem('OP_INVOICE')

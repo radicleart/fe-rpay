@@ -5,7 +5,7 @@
     <img height="100%" width="100%" :src="logoDone"/>
   </b-card-text>
   <b-card-text class="text-center mx-4">
-    <div class="mb-4 text-two"><b-icon width="4em" height="4em" scale="1" icon="check-circle"></b-icon></div>
+    <div class="mb-4 text-two text-success"><b-icon width="4em" height="4em" scale="1" icon="check-circle"></b-icon></div>
     <h2 class="text-h2 mb-3" v-html="getPendingMessage"></h2>
     <p class="mt-4 text-bold text-small">Thanks for coming!</p>
   </b-card-text>

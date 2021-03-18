@@ -1,7 +1,6 @@
 import Web3 from 'web3'
 import _ from 'lodash'
 import abiContract from './LoopbombX.json'
-import store from '@/store/mainStore'
 import { LSAT_CONSTANTS } from '@/lsat-constants'
 
 let NFT_CONTRACT_ADDRESS = null
@@ -63,12 +62,12 @@ const getWeb3 = function () {
     }
   })
 }
-const resolveError = function (reject, error) {
+const resolveError = function (reject, error, commit) {
   let errorMessage = 'Unable to contact your <b>Meta Mask wallet</b> <br/> are you logged in and connected to the ' + NETWORK + ' network?'
   if (error && error.message && error.message.toLowerCase().indexOf('user denied') > -1) {
     errorMessage = 'Minting process cancelled...'
   }
-  store.commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, { opcode: 'eth-mint-error', message: errorMessage })
+  commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, { opcode: 'eth-mint-error', message: errorMessage }, { root: true })
   const result = {
     opcode: 'eth-mint-error',
     message: errorMessage
@@ -77,7 +76,7 @@ const resolveError = function (reject, error) {
   reject(new Error(errorMessage))
 }
 
-const sendPayment = function (web3, data, account, resolve, reject) {
+const sendPayment = function (web3, data, account, resolve, reject, commit) {
   const amountToSend = web3.utils.toWei(String(data.amount), 'ether') // convert to wei value
   web3.eth.sendTransaction({ from: account, to: data.ethPaymentAddress, value: amountToSend }).then((res) => {
     const result = {
@@ -85,14 +84,14 @@ const sendPayment = function (web3, data, account, resolve, reject) {
     }
     resolve(result)
   }).catch((e) => {
-    resolveError(reject, e)
+    resolveError(reject, e, commit)
   })
 }
 
-const mintToken = function (web3, data, account, resolve, reject) {
+const mintToken = function (web3, data, account, resolve, reject, commit) {
   const abi = getABI()
   const message = 'Minting on Ethereum can take some time - please keep this tab open until we hear back from the network.'
-  store.commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, { opcode: 'eth-mint-begun', message: message }, { root: true })
+  commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, { opcode: 'eth-mint-begun', message: message }, { root: true })
   const nftContract = new web3.eth.Contract(abi, data.ethContractAddress, { from: account, gasLimit: '250000' })
   nftContract.methods.getMintPrice().call({ from: account }).then((mintPrice) => {
     nftContract.methods.create().send({ from: account, value: mintPrice }).then((res) => {
@@ -110,20 +109,20 @@ const mintToken = function (web3, data, account, resolve, reject) {
       }
       const message = 'Your music (#' + result.tokenId + ')<br/>has been minted and is registered to your Ethereum address'
       result.message = message
-      store.commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, result)
-      store.commit(LSAT_CONSTANTS.SET_DISPLAY_CARD, 106)
+      commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, result, { root: true })
+      commit(LSAT_CONSTANTS.SET_DISPLAY_CARD, 106, { root: true })
       result.opcode = 'eth-mint-success'
       window.eventBus.$emit('rpayEvent', result)
       resolve(result)
     }).catch((e) => {
-      resolveError(reject, e)
+      resolveError(reject, e, commit)
     })
   }).catch((e) => {
-    resolveError(reject, e)
+    resolveError(reject, e, commit)
   })
 }
 
-const setBaseTokenURI = function (web3, data, account, resolve, reject) {
+const setBaseTokenURI = function (web3, data, account, resolve, reject, commit) {
   const abi = getABI()
   const nftContract = new web3.eth.Contract(abi, NFT_CONTRACT_ADDRESS, { from: account, gasLimit: '100000' })
   nftContract.methods.setBaseTokenURI(data.baseTokenURI).send({ from: account }).then((res) => {
@@ -142,7 +141,7 @@ const setBaseTokenURI = function (web3, data, account, resolve, reject) {
     }
     resolve(result)
   }).catch((e) => {
-    resolveError(reject, e)
+    resolveError(reject, e, commit)
   })
 }
 
@@ -229,11 +228,11 @@ const rpayEthereumStore = {
               reject(new Error('No accounts - not logged in to wallet'))
             } else {
               if (data.opcode === 'send-payment') {
-                sendPayment(web3, data, accounts[0], resolve, reject)
+                sendPayment(web3, data, accounts[0], resolve, reject, commit)
               } else if (data.opcode === 'mint-token') {
-                mintToken(web3, data, accounts[0], resolve, reject)
+                mintToken(web3, data, accounts[0], resolve, reject, commit)
               } else if (data.opcode === 'eth-set-base-token-uri') {
-                setBaseTokenURI(web3, data, accounts[0], resolve, reject)
+                setBaseTokenURI(web3, data, accounts[0], resolve, reject, commit)
               } else if (data.opcode === 'eth-get-total-supply') {
                 totalSupply(web3, accounts[0], resolve, reject)
               } else if (data.opcode === 'eth-get-contract-data') {

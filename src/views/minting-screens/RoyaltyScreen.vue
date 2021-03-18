@@ -38,7 +38,10 @@ export default {
     }
   },
   mounted () {
-    this.lookupNftTokenId()
+    const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+    if (!configuration.minter.forceNew) {
+      this.lookupNftTokenId()
+    }
     // window.eventBus.$emit('rpayEvent', { opcode: 'eth-mint-error' })
   },
   methods: {
@@ -62,6 +65,7 @@ export default {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
       const networkConfig = this.$store.getters[LSAT_CONSTANTS.KEY_PREFERRED_NETWORK]
       networkConfig.assetHash = configuration.minter.item.assetHash
+      networkConfig.editions = configuration.minter.item.editions
       networkConfig.beneficiaries = configuration.minter.beneficiaries
       if (networkConfig.network === 'stacks connect') {
         networkConfig.action = 'callContractBlockstack'
@@ -93,7 +97,12 @@ export default {
     lookupNftTokenId: function () {
       const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
       const networkConfig = this.$store.getters[LSAT_CONSTANTS.KEY_PREFERRED_NETWORK]
-      this.$store.dispatch('rpayStacksStore/lookupNftTokenId', { assetHash: configuration.minter.item.assetHash, contractAddress: networkConfig.contractAddress, contractName: networkConfig.contractName })
+      this.$store.dispatch('rpayStacksStore/lookupNftTokenId', { assetHash: configuration.minter.item.assetHash, contractAddress: networkConfig.contractAddress, contractName: networkConfig.contractName }).then((result) => {
+        result.message = 'Item #' + result.nftIndex + ' has been minted to your Stacks wallet'
+        this.$store.commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, result, { root: true })
+        this.$store.commit(LSAT_CONSTANTS.SET_DISPLAY_CARD, 106, { root: true })
+        window.eventBus.$emit('rpayEvent', result)
+      })
     }
   },
   computed: {
