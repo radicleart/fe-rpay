@@ -67,6 +67,8 @@ const subscribeApiNews = function (commit, connectUrl, paymentId) {
     stompClient.subscribe('/queue/contract-news', function (response) {
       const appMapContract = JSON.parse(response.body)
       commit('rpayStacksContractStore/setAppMapContract', appMapContract, { root: true })
+      const data = { opcode: 'stx-contract-data' }
+      window.eventBus.$emit('rpayEvent', data)
     })
   },
   function (error) {
