@@ -85,7 +85,8 @@ const rpayStacksContractStore = {
       }
     },
     addGaiaAsset (state, data) {
-      const index = state.gaiaAssets.findIndex((o) => o.assetHash === data.assethash)
+      if (!state.gaiaAssets) return
+      const index = state.gaiaAssets.findIndex((o) => o.assetHash === data.asset.assetHash)
       if (index === -1) {
         state.gaiaAssets.splice(0, 0, data.asset)
       } else {
@@ -125,7 +126,7 @@ const rpayStacksContractStore = {
           const rootFile = JSON.parse(file)
           if (rootFile && rootFile.records && rootFile.records.length > -1) {
             rootFile.records.forEach((asset) => {
-              commit('addGaiaAsset', asset)
+              commit('addGaiaAsset', { asset: asset })
             })
           }
         }).catch((error) => {
