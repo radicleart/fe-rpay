@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const SEARCH_API_PATH = process.env.VUE_APP_API_SEARCH
+let SEARCH_API_PATH = null
 
 /**
  *  The service is a client to the brightblock sever side grpc client.
@@ -26,6 +26,10 @@ const searchIndexService = {
     })
   },
   **/
+  setBaseUrl: function (baseUrl) {
+    SEARCH_API_PATH = baseUrl + '/index'
+  },
+
   addTradeInfo: function (baseUrl, asset) {
     return new Promise(function (resolve, reject) {
       axios.post(baseUrl + '/index/v1/trade-info/' + asset.assetHash, asset.tradeInfo).then((result) => {

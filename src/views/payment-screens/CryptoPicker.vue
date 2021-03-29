@@ -38,7 +38,7 @@
 </template>
 
 <script>
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 
 export default {
   name: 'CryptoStepper',
@@ -52,12 +52,12 @@ export default {
     }
   },
   mounted () {
-    const config = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+    const config = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
     this.localCredits = config.payment.creditAttributes.start
   },
   methods: {
     continueToPayment () {
-      const config = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const config = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       this.$store.dispatch('rpayStore/initialiseApp', config).then(() => {
         this.$store.commit('rpayStore/setDisplayCard', 102)
       })
@@ -66,7 +66,7 @@ export default {
       window.eventBus.$emit('rpayEvent', { opcode: 'payment-canceled' })
     },
     countDown () {
-      const config = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const config = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       if (this.localCredits <= config.payment.creditAttributes.min) {
         return
       }
@@ -78,7 +78,7 @@ export default {
       this.updateCredits()
     },
     countUp () {
-      const config = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const config = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       if (this.localCredits >= config.payment.creditAttributes.max) {
         return
       }
@@ -86,7 +86,7 @@ export default {
       this.updateCredits()
     },
     updateCredits (evt) {
-      const config = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const config = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       let numbC = 0
       try {
         if (this.localCredits.length === 0) {
@@ -118,15 +118,15 @@ export default {
       return ql
     },
     config () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return configuration
     },
     fadeMin () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return this.localCredits === configuration.payment.creditAttributes.min
     },
     fadeMax () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return this.localCredits === configuration.payment.creditAttributes.max
     },
     currentSymbol () {
@@ -139,7 +139,7 @@ export default {
       }
     },
     formattedFiat () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const amount = configuration.payment.amountFiat * configuration.payment.creditAttributes.start
       const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -149,7 +149,7 @@ export default {
       return ffiat[1].value + '.' + ffiat[3].value
     },
     fiatSymbol () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const fc = configuration.payment.currency
       if (fc === 'EUR') {
         return '&euro;'
@@ -160,16 +160,16 @@ export default {
       }
     },
     amountFiat () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const amount = configuration.payment.amountFiat * configuration.payment.creditAttributes.start
       return amount
     },
     fiatCurrency () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return configuration.payment.currency
     },
     currentAmount () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const precision = 100000000
       return Math.round(configuration.payment.amountBtc * configuration.payment.creditAttributes.start * precision) / precision
     }

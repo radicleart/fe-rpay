@@ -28,7 +28,7 @@
 
 <script>
 import QRCode from 'qrcode'
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 import CryptoCountdown from '@/views/components/CryptoCountdown'
 
 export default {
@@ -50,18 +50,18 @@ export default {
   },
   computed: {
     paymentAmount () {
-      const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      const invoice = this.$store.getters[APP_CONSTANTS.KEY_INVOICE]
       return invoice.data.amount / 100000000
     },
     paymentAddress () {
-      const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      const invoice = this.$store.getters[APP_CONSTANTS.KEY_INVOICE]
       return invoice.data.address
     }
   },
 
   methods: {
     paymentUri () {
-      const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      const invoice = this.$store.getters[APP_CONSTANTS.KEY_INVOICE]
       let uri = 'bitcoin:' + invoice.address
       uri += '?amount=' + invoice.amount
       uri += '&label=' + invoice.description
@@ -81,7 +81,7 @@ export default {
       this.$notify({ type: 'success', title: 'Copied Address', text: 'Copied the address to clipboard: ' + copyText.value })
     },
     copyAddress (value) {
-      // const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      // const invoice = this.$store.getters[APP_CONSTANTS.KEY_INVOICE]
       var tempInput = document.createElement('input')
       // tempInput.style = 'position: absolute; left: -1000px; top: -1000px'
       tempInput.value = value // invoice.data.address

@@ -22,19 +22,21 @@
   </head>
   <body class="bg-dark">
     <noscript>You need javascript.</noscript>
-    <div id="opcode"></div>
+    <div id="opcode" class="text-white mx-3"></div>
     <script>
+      /**
       setTimeout(function () {
         window.eventBus.$on('rpayEvent', function (data) {
           localStorage.removeItem('OP_INVOICE')
           document.getElementById('opcode').innerHTML = data.opcode;
         })
       }, 5000);
+      **/
+      const urlParams = new URLSearchParams(window.location.search);
+      const operation = urlParams.get('operation');
       let risidioCardMode = 'payment-flow'
-      if (location.href.indexOf('mint') > -1) {
-        risidioCardMode = 'minting-flow'
-      } else if (location.href.indexOf('set-sale-data') > -1) {
-        risidioCardMode = 'selling-flow'
+      if (operation) {
+        risidioCardMode = operation
       }
       let useNetwork = 'testnet'
       let risidioBaseApi = 'http://api.risidio.local'
@@ -86,23 +88,31 @@
         }
       }
       const selling = {
-        tradeInfo: {
-          saleType: 1,
-          incrementPrice: 10,
-          buyNowOrStartingPrice: 10,
-          reservePrice: 10,
-          biddingEndTime: 1615716030000
-        }
+      }
+      const marketConfig = {
+        oneLayout: true,
+        searchMenu: false,
+        sideMenu: false,
+        projectId: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW.thisisnumberone'
       }
       const minter = {
         forceNew: true,
         item: {
+          gaiaUsername: 'radicle_art.id.blockstack',
           assetHashMinted: 'e25722b4e9481bdfaffb0d3b88c1badd31e45dcb79f639cada783666dd95c8ff',
           // assetHash: '5dd6d4318967820c49c1c83831ca17390a83776d183f44b21b55d5ff92653c7c',
-          assetHash: 'a3fa2d1e8631d5aa6d91e35eecfc003c202e1f5cbf3478128715a3b2c16b9014',
+          // assetHash: '1c0b7b80e72eebf0f60a3ba6c53a99ba7bd5ef2ac4fec3be3e659fd1d6a1b44b',
+          assetHash: '04159c5ab91a0deb4ff813fcd418d0d4705cc6a01ca0d65dae28d48e0304e4dd',
           name: 'My Non Funginble Token',
           editions: 100,
-          imageUrl: 'https://images.prismic.io/risidio-journal/5757dd30-d293-4586-a99b-bdce237f7a69_alexander-sinn-KgLtFCgfC28-unsplash.png?auto=compress,format'
+          imageUrl: 'https://images.prismic.io/risidio-journal/5757dd30-d293-4586-a99b-bdce237f7a69_alexander-sinn-KgLtFCgfC28-unsplash.png?auto=compress,format',
+          tradeInfo: {
+            saleType: 1,
+            incrementPrice: 10,
+            buyNowOrStartingPrice: 10,
+            reservePrice: 10,
+            biddingEndTime: 1615716030000
+          }
         },
         preferredNetwork: 'stacks risidio',
         networks: [
@@ -128,6 +138,8 @@
           }
         ],
         enableRoyalties: true,
+        beneficiaries: []
+        /**
         beneficiaries: [
           {
             username: 'albert.id',
@@ -137,19 +149,23 @@
             chainAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW',
           }
         ]
+        **/
       }
       const configuration = {
         lookAndFeel: lookAndFeel,
         payment: payment,
+        marketConfig: marketConfig,
         selling: selling,
         minter: minter,
         network: useNetwork,
+        risidioProjectId: null,
         risidioBaseApi: risidioBaseApi,
         risidioStacksApi: 'http://localhost:20443',
         risidioWalletMac: '{"label": "MacMock", "mnemonic": "","keyInfo": {"privateKey": "4790db90a48e51bdbbc62a37fdc535719c22e195dc1aa6e1725b30bffc569ce501","address": "ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW","btcAddress": "","index": 0}}',
         risidioWalletSky: '{"label": "sky", "mnemonic": "","keyInfo": {"privateKey": "55ea24570fda8285e888cd239c55a91ab30023ae87af20887710d29b6ba6aeee01","address": "STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG","btcAddress": "","index": 0}}',
         risidioCardMode: risidioCardMode
       }
+      // document.getElementById('opcode').innerHTML = configuration.risidioCardMode
       window.risidioPaymentConfig = JSON.stringify(configuration)
     </script>
     <div id="risidio-pay" msg="aint no sunshine!"></div>

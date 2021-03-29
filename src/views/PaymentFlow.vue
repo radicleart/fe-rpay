@@ -27,7 +27,7 @@
 </template>
 
 <script>
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 import CryptoPaymentScreen from './payment-screens/CryptoPaymentScreen'
 import CryptoPicker from './payment-screens/CryptoPicker'
 import CryptoOptions from '@/views/components/CryptoOptions'
@@ -71,8 +71,8 @@ export default {
   },
   methods: {
     initPayment: function (config) {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      const displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      const displayCard = this.$store.getters[APP_CONSTANTS.KEY_DISPLAY_CARD]
       if (configuration.payment.allowMultiples && displayCard === 100) {
         this.$store.commit('rpayStore/setDisplayCard', 100)
       } else {
@@ -93,13 +93,13 @@ export default {
       this.$store.commit('rpayStore/setDisplayCard', displayCard)
     },
     getRangeValue () {
-      const displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
+      const displayCard = this.$store.getters[APP_CONSTANTS.KEY_DISPLAY_CARD]
       if (displayCard === 100) return 0
       else if (displayCard === 102) return 1
       else if (displayCard === 104) return 2
     },
     rpayEvent: function (data) {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       if (data.opcode === 'crypto-payment-expired') {
         this.paymentExpired()
       } else if (data.opcode === 'payment-restart') {
@@ -112,7 +112,7 @@ export default {
       window.eventBus.$emit('rpayEvent', data)
     },
     prev () {
-      let displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
+      let displayCard = this.$store.getters[APP_CONSTANTS.KEY_DISPLAY_CARD]
       if (displayCard === 102) {
         displayCard = 100
         window.eventBus.$emit('rpayEvent', 'payment-cancelled')
@@ -125,14 +125,14 @@ export default {
       this.$store.commit('rpayStore/setDisplayCard', displayCard)
     },
     paymentExpired () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       this.$store.dispatch('rpayStore/initialiseApp', configuration).then(() => {
         this.componentKey += 1
         this.loading = false
       })
     },
     offsetTop () {
-      const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
+      const paymentOption = this.$store.getters[APP_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
       if (paymentOption !== 'fiat') {
         return '' // 'position:relative; top: 52px;'
       }
@@ -141,11 +141,11 @@ export default {
   },
   computed: {
     showOrderInfo () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return configuration.payment.allowMultiples
     },
     displayCard () {
-      const displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
+      const displayCard = this.$store.getters[APP_CONSTANTS.KEY_DISPLAY_CARD]
       return displayCard
     }
   }

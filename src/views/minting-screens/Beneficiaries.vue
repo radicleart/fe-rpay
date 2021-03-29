@@ -4,15 +4,15 @@
     <b-form v-on:submit.prevent inline>
       <label class="sr-only" for="chain-address">Editions</label>
       <b-input-group prepend="Editions" class="mb-2 mr-sm-2 mb-sm-0">
-      <b-form-input
-        style="border-radius: none !important;"
-        id="chain-address"
-        v-model="editions"
-        :state="editionsState"
-        aria-describedby="editions-help editions-feedback"
-        placeholder="Enter number of NFT editions to mint"
-        trim
-      ></b-form-input>
+        <b-form-input
+          style="border-radius: none !important;"
+          id="chain-address"
+          v-model="editions"
+          :state="editionsState"
+          aria-describedby="editions-help editions-feedback"
+          placeholder="Enter number of NFT editions to mint"
+          trim
+        ></b-form-input>
       </b-input-group>
       <b-form-invalid-feedback id="editions-feedback">
         Enter at least 3 letters
@@ -30,7 +30,7 @@
 </template>
 
 <script>
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 import Beneficiary from './Beneficiary'
 
 export default {
@@ -40,7 +40,7 @@ export default {
   },
   data () {
     return {
-      editions: 100
+      editions: 9
     }
   },
   watch: {
@@ -49,7 +49,7 @@ export default {
     }
   },
   mounted () {
-    const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+    const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
     this.editions = (configuration.minter.item.editions) ? configuration.minter.item.editions : 2
   },
   methods: {
@@ -61,14 +61,16 @@ export default {
       if (!this.editions || this.editions < 1) {
         this.editions = 100
       }
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       configuration.minter.item.editions = this.editions
       this.$store.commit('rpayStore/addConfiguration', configuration)
+      configuration.opcode = 'save-mint-data'
+      window.eventBus.$emit('rpayEvent', configuration)
     }
   },
   computed: {
     beneficiaries: function () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return configuration.minter.beneficiaries
     },
     editionsState () {

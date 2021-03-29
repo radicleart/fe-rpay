@@ -5,7 +5,7 @@
     <div role="group">
       <label for="input-live"><span class="text2">Starting Price</span></label>
       <b-input-group>
-        <b-form-input @change="updateBuyNow" v-model="tradeInfo.buyNowOrStartingPrice" class="input" placeholder="STX"></b-form-input>
+        <b-form-input @keyup="toDecimals('buyNowOrStartingPrice')" @change="updateBuyNow" v-model="tradeInfo.buyNowOrStartingPrice" class="input" placeholder="STX"></b-form-input>
       </b-input-group>
     </div>
   </div>
@@ -13,7 +13,7 @@
     <div role="group">
       <label for="input-live"><span class="text2">Reserve Price</span></label>
       <b-input-group class="mb-3">
-        <b-form-input @change="updateReservePrice" v-model="tradeInfo.reservePrice" class="input" placeholder="STX"></b-form-input>
+        <b-form-input @keyup="toDecimals('reservePrice')" @change="updateReservePrice" v-model="tradeInfo.reservePrice" class="input" placeholder="STX"></b-form-input>
       </b-input-group>
     </div>
   </div>
@@ -21,7 +21,7 @@
     <div role="group">
       <label for="input-live"><span class="text2">Increment</span></label>
       <b-input-group class="mb-3">
-        <b-form-input @change="updateIncrementPrice" v-model="tradeInfo.incrementPrice" class="input" placeholder="STX"></b-form-input>
+        <b-form-input @keyup="toDecimals('incrementPrice')" @change="updateIncrementPrice" v-model="tradeInfo.incrementPrice" class="input" placeholder="STX"></b-form-input>
       </b-input-group>
     </div>
   </div>
@@ -40,7 +40,7 @@
 <script>
 import moment from 'moment'
 import { Datetime } from 'vue-datetime'
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 
 export default {
   name: 'SellAuction',
@@ -67,11 +67,11 @@ export default {
     }
   },
   mounted () {
-    const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-    if (configuration.selling.tradeInfo) this.tradeInfo = configuration.selling.tradeInfo
+    const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+    if (configuration.minter.item.tradeInfo) this.tradeInfo = configuration.minter.item.tradeInfo
 
-    if (configuration.selling.tradeInfo && configuration.selling.tradeInfo.biddingEndTime) {
-      const loaclEnd = moment(configuration.selling.tradeInfo.biddingEndTime).format()
+    if (configuration.minter.item.tradeInfo && configuration.minter.item.tradeInfo.biddingEndTime) {
+      const loaclEnd = moment(configuration.minter.item.tradeInfo.biddingEndTime).format()
       this.biddingEndTime = loaclEnd
     } else {
       const dd = moment({}).add(2, 'days')
@@ -82,42 +82,51 @@ export default {
     this.loading = false
   },
   methods: {
+    toDecimals: function (field) {
+      if (field === 'incrementPrice') {
+        if (this.tradeInfo.incrementPrice !== 0) this.tradeInfo.incrementPrice = Math.round(this.tradeInfo.incrementPrice * 1) / 1
+      } else if (field === 'reservePrice') {
+        if (this.tradeInfo.reservePrice !== 0) this.tradeInfo.reservePrice = Math.round(this.tradeInfo.reservePrice * 1) / 1
+      } else {
+        if (this.tradeInfo.buyNowOrStartingPrice !== 0) this.tradeInfo.buyNowOrStartingPrice = Math.round(this.tradeInfo.buyNowOrStartingPrice * 1) / 1
+      }
+    },
     updateBuyNow: function () {
       if (!this.tradeInfo.buyNowOrStartingPrice) {
         this.errorMessage = 'start price required'
         return
       }
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      configuration.selling.tradeInfo.buyNowOrStartingPrice = this.tradeInfo.buyNowOrStartingPrice
-      this.$store.commit('rpayStore/setTradeInfo', configuration.selling.tradeInfo)
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      configuration.minter.item.tradeInfo.buyNowOrStartingPrice = this.tradeInfo.buyNowOrStartingPrice
+      this.$store.commit('rpayStore/setTradeInfo', configuration.minter.item.tradeInfo)
     },
     updateReservePrice: function () {
       if (!this.tradeInfo.reservePrice || this.tradeInfo.reservePrice < 0) {
         this.errorMessage = 'Please enter the reserve'
         return
       }
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      configuration.selling.tradeInfo.reservePrice = this.tradeInfo.reservePrice
-      this.$store.commit('rpayStore/setTradeInfo', configuration.selling.tradeInfo)
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      configuration.minter.item.tradeInfo.reservePrice = this.tradeInfo.reservePrice
+      this.$store.commit('rpayStore/setTradeInfo', configuration.minter.item.tradeInfo)
     },
     updateIncrementPrice: function () {
       if (!this.tradeInfo.incrementPrice || this.tradeInfo.incrementPrice < 0) {
         this.errorMessage = 'Please enter the increment'
         return
       }
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      configuration.selling.tradeInfo.incrementPrice = this.tradeInfo.incrementPrice
-      this.$store.commit('rpayStore/setTradeInfo', configuration.selling.tradeInfo)
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      configuration.minter.item.tradeInfo.incrementPrice = this.tradeInfo.incrementPrice
+      this.$store.commit('rpayStore/setTradeInfo', configuration.minter.item.tradeInfo)
     },
     updateBiddingEndTime: function () {
       if (!this.biddingEndTime || this.biddingEndTime < 0) {
         this.errorMessage = 'Please enter the bidding end time'
         return
       }
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const localTime = moment(this.biddingEndTime).valueOf()
-      configuration.selling.tradeInfo.biddingEndTime = localTime
-      this.$store.commit('rpayStore/setTradeInfo', configuration.selling.tradeInfo)
+      configuration.minter.item.tradeInfo.biddingEndTime = localTime
+      this.$store.commit('rpayStore/setTradeInfo', configuration.minter.item.tradeInfo)
     },
     checkEndTime () {
       const now = moment().unix()

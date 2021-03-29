@@ -28,7 +28,7 @@
 
 <script>
 import QRCode from 'qrcode'
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 
 const STACKS_PAYMENT_ADDRESS = process.env.VUE_APP_STACKS_PAYMENT_ADDRESS
 
@@ -57,7 +57,7 @@ export default {
       })
     },
     sendPayment () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       this.loading = true
       this.waitingMessage = 'Processing Payment'
       const data = {
@@ -86,7 +86,7 @@ export default {
       })
     },
     paymentUri () {
-      // const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      // const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return STACKS_PAYMENT_ADDRESS
     },
     addQrCode () {
@@ -113,7 +113,7 @@ export default {
   },
   computed: {
     currentSymbol () {
-      const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
+      const paymentOption = this.$store.getters[APP_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
       if (paymentOption === 'ethereum') {
         return 'Ξ'
       } else if (paymentOption === 'stacks') {
@@ -123,8 +123,8 @@ export default {
       }
     },
     currentAmount () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      const paymentOption = this.$store.getters[APP_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
       if (configuration && configuration.payment.amountBtc) {
         if (paymentOption === 'ethereum') {
           return configuration.payment.amountEth + ' ETH'
@@ -137,7 +137,7 @@ export default {
       return 0
     },
     loggedIn () {
-      const profile = this.$store.getters[LSAT_CONSTANTS.KEY_PROFILE]
+      const profile = this.$store.getters[APP_CONSTANTS.KEY_PROFILE]
       return (profile) ? profile.loggedIn : false
     },
     paymentAddress () {

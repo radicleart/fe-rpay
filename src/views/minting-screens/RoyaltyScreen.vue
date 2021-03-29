@@ -19,7 +19,7 @@
 </template>
 
 <script>
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 import Beneficiaries from './Beneficiaries'
 import HeaderScreen from './HeaderScreen'
 import ItemDisplay from './ItemDisplay'
@@ -38,10 +38,6 @@ export default {
     }
   },
   mounted () {
-    const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-    if (!configuration.minter.forceNew) {
-      this.lookupNftTokenId()
-    }
     // window.eventBus.$emit('rpayEvent', { opcode: 'eth-mint-error' })
   },
   methods: {
@@ -49,23 +45,24 @@ export default {
       this.$store.commit('rpayStore/setDisplayCard', displayCard)
     },
     getRangeValue () {
-      const displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
+      const displayCard = this.$store.getters[APP_CONSTANTS.KEY_DISPLAY_CARD]
       if (displayCard === 100) return 0
       else if (displayCard === 102) return 1
       else if (displayCard === 104) return 2
     },
     saveData: function () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       configuration.opcode = 'save-mint-data'
       window.eventBus.$emit('rpayEvent', configuration)
     },
     mintToken: function () {
       this.errorMessage = 'Minting non fungible token - takes a minute or so..'
       this.$store.commit('rpayStore/setDisplayCard', 104)
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      const networkConfig = this.$store.getters[LSAT_CONSTANTS.KEY_PREFERRED_NETWORK]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
       networkConfig.assetHash = configuration.minter.item.assetHash
       networkConfig.editions = configuration.minter.item.editions
+      networkConfig.gaiaUsername = configuration.minter.item.gaiaUsername
       networkConfig.beneficiaries = configuration.minter.beneficiaries
       if (networkConfig.network === 'stacks connect') {
         networkConfig.action = 'callContractBlockstack'
@@ -81,7 +78,7 @@ export default {
       this.$store.dispatch('rpayStacksStore/mintToken', data)
     },
     mintTokenEthereum: function (networkConfig) {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const mintConfig = {
         opcode: 'mint-token',
         ethContractAddress: networkConfig.contractAddress,
@@ -93,25 +90,15 @@ export default {
       //  mintConfig.totalSupply = result.totalSupply
       //  this.$store.dispatch('rpayEthereumStore/transact', mintConfig)
       // })
-    },
-    lookupNftTokenId: function () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      const networkConfig = this.$store.getters[LSAT_CONSTANTS.KEY_PREFERRED_NETWORK]
-      this.$store.dispatch('rpayStacksStore/lookupNftTokenId', { assetHash: configuration.minter.item.assetHash, contractAddress: networkConfig.contractAddress, contractName: networkConfig.contractName }).then((result) => {
-        result.message = 'Item #' + result.nftIndex + ' has been minted to your Stacks wallet'
-        this.$store.commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, result, { root: true })
-        this.$store.commit(LSAT_CONSTANTS.SET_DISPLAY_CARD, 106, { root: true })
-        window.eventBus.$emit('rpayEvent', result)
-      })
     }
   },
   computed: {
     displayCard () {
-      const displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
+      const displayCard = this.$store.getters[APP_CONSTANTS.KEY_DISPLAY_CARD]
       return displayCard
     },
     enableRoyalties () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return configuration.minter.enableRoyalties
     }
   }

@@ -26,7 +26,7 @@
 </template>
 
 <script>
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 import HeaderScreen from './HeaderScreen'
 
 export default {
@@ -51,14 +51,14 @@ export default {
   computed: {
     getPendingMessage () {
       const message = 'Minting on Stacks network can take some time - please keep this tab open so we can moniter progress.'
-      // const mintingObject = this.$store.getters[LSAT_CONSTANTS.KEY_MINTING_MESSAGE]
+      // const mintingObject = this.$store.getters[APP_CONSTANTS.KEY_MINTING_MESSAGE]
       // if (mintingObject && mintingObject.message) {
       //  message = mintingObject.message
       // }
       return message
     },
     displayCard () {
-      const displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
+      const displayCard = this.$store.getters[APP_CONSTANTS.KEY_DISPLAY_CARD]
       return displayCard
     }
   }

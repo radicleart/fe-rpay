@@ -26,7 +26,7 @@
 </template>
 
 <script>
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 import QRCode from 'qrcode'
 
 const NETWORK = process.env.VUE_APP_NETWORK
@@ -59,8 +59,8 @@ export default {
 
   methods: {
     paymentUri () {
-      // const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      // const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return configuration.payment.ethPaymentAddress
     },
     addQrCode () {
@@ -71,7 +71,7 @@ export default {
         function () {})
     },
     sendPayment () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       this.loading = true
       this.waitingMessage = this.processingMessage
       this.$store.dispatch('rpayEthereumStore/transact', { opcode: 'send-payment', ethPaymentAddress: configuration.payment.ethPaymentAddress, amount: configuration.payment.amountEth }).then((result) => {

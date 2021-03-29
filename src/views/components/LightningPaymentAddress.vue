@@ -34,7 +34,7 @@
 <script>
 import QRCode from 'qrcode'
 import Vue from 'vue'
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 import CryptoCountdown from '@/views/components/CryptoCountdown'
 
 export default {
@@ -67,7 +67,7 @@ export default {
   methods: {
     addQrCode () {
       var element = this.$refs.lndQrcode
-      const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      const invoice = this.$store.getters[APP_CONSTANTS.KEY_INVOICE]
       const paymentUri = invoice.data.uri
       QRCode.toCanvas(element, paymentUri, { errorCorrectionLevel: 'H' },
         function (error) {
@@ -86,7 +86,7 @@ export default {
         })
     },
     copyAddress () {
-      const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      const invoice = this.$store.getters[APP_CONSTANTS.KEY_INVOICE]
       var tempInput = document.createElement('input')
       // tempInput.style = 'position: absolute; left: -1000px; top: -1000px'
       tempInput.value = invoice.data.lightning_invoice.payreq
@@ -112,15 +112,15 @@ export default {
   },
   computed: {
     paymentRequest () {
-      const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      const invoice = this.$store.getters[APP_CONSTANTS.KEY_INVOICE]
       return invoice.data.uri
     },
     paymentAmountSat () {
-      const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      const invoice = this.$store.getters[APP_CONSTANTS.KEY_INVOICE]
       return invoice.data.amount
     },
     paymentAmountBtc () {
-      const invoice = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      const invoice = this.$store.getters[APP_CONSTANTS.KEY_INVOICE]
       return invoice.data.amount / 100000000
     }
   }

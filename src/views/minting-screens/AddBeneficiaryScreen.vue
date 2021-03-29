@@ -35,6 +35,7 @@
                         aria-describedby="royalty-help royalty-feedback"
                         placeholder="Enter royalty"
                         trim
+                        @keyup="toDecimals()"
                         v-model.number="beneficiary.royalty">
                       </b-form-input>
                     </b-input-group>
@@ -108,7 +109,7 @@
 </template>
 
 <script>
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 
 export default {
   name: 'AddBeneficiaryScreen',
@@ -119,7 +120,7 @@ export default {
       formSubmitted: false,
       savedChainAddress: null,
       beneficiary: {
-        royalty: null,
+        royalty: 0,
         chainAddress: '',
         role: '',
         username: '',
@@ -128,13 +129,17 @@ export default {
     }
   },
   mounted () {
-    const benef = this.$store.getters[LSAT_CONSTANTS.KEY_EDIT_BENEFICIARY]
+    const benef = this.$store.getters[APP_CONSTANTS.KEY_EDIT_BENEFICIARY]
+    this.toDecimals()
     if (benef) {
       this.beneficiary = benef
       this.savedChainAddress = benef.chainAddress
     }
   },
   methods: {
+    toDecimals: function () {
+      this.beneficiary.royalty = Math.round(this.beneficiary.royalty * 100) / 100
+    },
     cancel: function () {
       this.$store.commit('rpayStore/setDisplayCard', 100)
     },
@@ -149,7 +154,7 @@ export default {
     addBeneficiary: function () {
       this.formSubmitted = true
       if (!this.isValid('chainAddress') | !this.isValid('royalty')) return
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const index = configuration.minter.beneficiaries.findIndex((obj) => obj.chainAddress === this.savedChainAddress)
       if (index > -1) {
         configuration.minter.beneficiaries.splice(index, 1, this.beneficiary)
@@ -164,15 +169,15 @@ export default {
   },
   computed: {
     chainAddressState () {
-      if (!this.formSubmitted && !this.beneficiary.chainAddress) return null
+      if (!this.formSubmitted && !this.beneficiary.chainAddress) return false
       return this.isValid('chainAddress')
     },
     royaltyState () {
-      if (!this.formSubmitted && !this.beneficiary.royalty) return null
+      if (!this.formSubmitted && !this.beneficiary.royalty) return false
       return this.isValid('royalty')
     },
     preferredNetwork () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return configuration.minter.preferredNetwork
     }
   }

@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 
 export default {
   name: 'CryptoOptions',
@@ -29,25 +29,25 @@ export default {
     }
   },
   mounted () {
-    const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
+    const paymentOption = this.$store.getters[APP_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
     this.selected = paymentOption
   },
   methods: {
     changePaymentOption: function (method) {
-      this.$store.commit(LSAT_CONSTANTS.SET_PAYMENT_OPTION_VALUE, method)
+      this.$store.commit(APP_CONSTANTS.SET_PAYMENT_OPTION_VALUE, method)
     }
   },
   computed: {
     options () {
-      const paymentOptions = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTIONS]
+      const paymentOptions = this.$store.getters[APP_CONSTANTS.KEY_PAYMENT_OPTIONS]
       return paymentOptions
     },
     currentOption () {
-      const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
+      const paymentOption = this.$store.getters[APP_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
       return paymentOption
     },
     logo () {
-      const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
+      const paymentOption = this.$store.getters[APP_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
       let logo = this.logoSq
       if (paymentOption === 'stacks') {
         logo = this.logoStx

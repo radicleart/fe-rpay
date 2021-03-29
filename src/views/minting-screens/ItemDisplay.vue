@@ -10,7 +10,7 @@
 </template>
 
 <script>
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 
 export default {
   name: 'ItemDisplay',
@@ -26,7 +26,7 @@ export default {
   },
   computed: {
     item: function () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return configuration.minter.item
     }
   }

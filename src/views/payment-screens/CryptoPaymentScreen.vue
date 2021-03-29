@@ -23,7 +23,7 @@
 </template>
 
 <script>
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 import LightningPaymentAddress from '@/views/components/LightningPaymentAddress'
 import BitcoinPaymentAddress from '@/views/components/BitcoinPaymentAddress'
 import StacksPaymentAddress from '@/views/components/StacksPaymentAddress'
@@ -64,15 +64,15 @@ export default {
   },
   computed: {
     desktopWalletSupported () {
-      const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
+      const paymentOption = this.$store.getters[APP_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
       return paymentOption === 'bitcoin' || paymentOption === 'lightning'
     },
     paymentOption () {
-      const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
+      const paymentOption = this.$store.getters[APP_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
       return paymentOption
     },
     timedOutOrExpired () {
-      const expired = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE_EXPIRED]
+      const expired = this.$store.getters[APP_CONSTANTS.KEY_INVOICE_EXPIRED]
       return expired
     }
   }

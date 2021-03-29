@@ -4,6 +4,7 @@ import lsatHelper from './lsatHelper'
 import axios from 'axios'
 import SockJS from 'sockjs-client'
 import Stomp from '@stomp/stompjs'
+import searchIndexService from '@/services/searchIndexService'
 
 // Vue.use(Vuex)
 let MESH_API = null
@@ -49,17 +50,23 @@ const getPaymentOptions = function (configuration) {
   })
   return allowedOptions
 }
-const subscribeApiNews = function (commit, paymentId) {
-  socket = new SockJS(MESH_API + '/api-news')
-  stompClient = Stomp.over(socket)
+const subscribeApiNews = function (commit, connectUrl, paymentId) {
+  if (!socket) socket = new SockJS(connectUrl + '/api-news')
+  if (!stompClient) stompClient = Stomp.over(socket)
   stompClient.connect({}, function () {
-    stompClient.subscribe('/queue/payment-news-' + paymentId, function (response) {
-      const news = JSON.parse(response.body)
-      commit('setMiningNews', news)
-    })
+    if (paymentId) {
+      stompClient.subscribe('/queue/payment-news-' + paymentId, function (response) {
+        const news = JSON.parse(response.body)
+        commit('setMiningNews', news)
+      })
+    }
     stompClient.subscribe('/queue/rates-news', function (response) {
       const rates = JSON.parse(response.body)
       commit('setTickerRates', rates.tickerRates)
+    })
+    stompClient.subscribe('/queue/contract-news', function (response) {
+      const appMapContract = JSON.parse(response.body)
+      commit('rpayStacksContractStore/setAppMapContract', appMapContract, { root: true })
     })
   },
   function (error) {
@@ -97,6 +104,7 @@ const rpayStore = {
   // rpayStacksStore: rpayStacksStore
   // },
   state: {
+    appMapContract: null,
     timer: null,
     xgeRates: null,
     ratesNews: null,
@@ -108,6 +116,22 @@ const rpayStore = {
     beneficiary: null,
     paymentOption: null,
     paymentOptions: [],
+    beneficiariesCharity: [
+      {
+        username: 'charity1.btc',
+        role: 'Donations',
+        email: 'info@charity1.com',
+        royalty: 10,
+        chainAddress: 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
+      },
+      {
+        username: 'fullerenes.id',
+        role: 'Sustainability and Carbon Capture',
+        email: 'info@fullerenes.com',
+        royalty: 3,
+        chainAddress: 'STMYA5EANW6C0HNS1S57VX52M0B795HHFDBW2XBE'
+      }
+    ],
     mintingMessage: null
   },
   getters: {
@@ -193,10 +217,16 @@ const rpayStore = {
           }
         }
       }
+      if (!configuration.minter.beneficiaries) {
+        configuration.minter.beneficiaries = []
+      }
+      if (configuration.minter.beneficiaries.length === 0) {
+        configuration.minter.beneficiaries.splice(0, 2, ...state.beneficiariesCharity)
+      }
       state.configuration = configuration
     },
     setTradeInfo (state, tradeInfo) {
-      state.configuration.selling.tradeInfo = tradeInfo
+      state.configuration.minter.item.tradeInfo = tradeInfo
     },
     setMintingMessage (state, o) {
       state.mintingMessage = o
@@ -227,8 +257,19 @@ const rpayStore = {
     }
   },
   actions: {
+    initialiseWebsockets ({ commit }, configuration) {
+      return new Promise((resolve, reject) => {
+        try {
+          searchIndexService.setBaseUrl(configuration.risidioBaseApi)
+          subscribeApiNews(commit, configuration.risidioBaseApi + '/mesh')
+        } catch (err) {
+          console.log(err)
+        }
+      })
+    },
     initialiseApp ({ state, commit }, configuration) {
       return new Promise((resolve, reject) => {
+        searchIndexService.setBaseUrl(configuration.risidioBaseApi)
         MESH_API = configuration.risidioBaseApi + '/mesh'
         axios.get(MESH_API + '/v1/rates/ticker').then(response => {
           commit('setTickerRates', response.data)

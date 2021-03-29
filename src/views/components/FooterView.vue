@@ -10,7 +10,7 @@
 </template>
 
 <script>
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 
 export default {
   name: 'FooterView',
@@ -29,7 +29,7 @@ export default {
       this.$emit('rangeEvent', disp)
     },
     isSelected () {
-      const displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
+      const displayCard = this.$store.getters[APP_CONSTANTS.KEY_DISPLAY_CARD]
       if (this.rangeValue === 0 && displayCard === 100) return true
       else if (this.rangeValue === 1 && displayCard === 102) return true
       else if (this.rangeValue === 2 && displayCard === 104) return true
@@ -38,7 +38,7 @@ export default {
   },
   computed: {
     displayCard () {
-      const displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
+      const displayCard = this.$store.getters[APP_CONSTANTS.KEY_DISPLAY_CARD]
       return displayCard
     }
   }

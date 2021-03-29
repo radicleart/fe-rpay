@@ -18,7 +18,7 @@
 </template>
 
 <script>
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 
 export default {
   name: 'NetworkOptions',
@@ -34,7 +34,7 @@ export default {
   },
   methods: {
     changeNetwork: function (method) {
-      this.$store.commit(LSAT_CONSTANTS.SET_PREFERRED_NETWORK_VALUE, method)
+      this.$store.commit(APP_CONSTANTS.SET_PREFERRED_NETWORK_VALUE, method)
       this.editingNetwork = false
     },
     editNetwork: function (method) {
@@ -43,19 +43,19 @@ export default {
   },
   computed: {
     config: function () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return configuration
     },
     networks: function () {
-      const networks = this.$store.getters[LSAT_CONSTANTS.KEY_ENABLED_NETWORKS]
+      const networks = this.$store.getters[APP_CONSTANTS.KEY_ENABLED_NETWORKS]
       return networks
     },
     preferredNetwork () {
-      const preferredNetwork = this.$store.getters[LSAT_CONSTANTS.KEY_PREFERRED_NETWORK]
+      const preferredNetwork = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
       return preferredNetwork.network
     },
     network () {
-      const preferredNetwork = this.$store.getters[LSAT_CONSTANTS.KEY_PREFERRED_NETWORK]
+      const preferredNetwork = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
       return preferredNetwork
     }
   }

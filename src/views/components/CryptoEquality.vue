@@ -9,7 +9,7 @@
 </template>
 
 <script>
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 
 export default {
   name: 'CryptoEquality',
@@ -35,15 +35,15 @@ export default {
       }
     },
     amountFiat () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      const paymentChallenge = this.$store.getters[APP_CONSTANTS.KEY_INVOICE]
       return (paymentChallenge.xchange) ? paymentChallenge.xchange.amountFiat : '0'
     },
     fiatCurrency () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      const paymentChallenge = this.$store.getters[APP_CONSTANTS.KEY_INVOICE]
       return (paymentChallenge.xchange) ? paymentChallenge.xchange.fiatCurrency : '???'
     },
     currentAmount () {
-      const paymentChallenge = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE]
+      const paymentChallenge = this.$store.getters[APP_CONSTANTS.KEY_INVOICE]
       if (paymentChallenge.xchange) {
         if (this.paymentOption === 'ethereum') {
           return paymentChallenge.xchange.amountEth

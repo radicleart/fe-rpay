@@ -1,7 +1,7 @@
 import Web3 from 'web3'
 import _ from 'lodash'
 import abiContract from './LoopbombX.json'
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 
 let NFT_CONTRACT_ADDRESS = null
 const NETWORK = process.env.VUE_APP_NETWORK
@@ -67,7 +67,7 @@ const resolveError = function (reject, error, commit) {
   if (error && error.message && error.message.toLowerCase().indexOf('user denied') > -1) {
     errorMessage = 'Minting process cancelled...'
   }
-  commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, { opcode: 'eth-mint-error', message: errorMessage }, { root: true })
+  commit(APP_CONSTANTS.SET_MINTING_MESSAGE, { opcode: 'eth-mint-error', message: errorMessage }, { root: true })
   const result = {
     opcode: 'eth-mint-error',
     message: errorMessage
@@ -91,7 +91,7 @@ const sendPayment = function (web3, data, account, resolve, reject, commit) {
 const mintToken = function (web3, data, account, resolve, reject, commit) {
   const abi = getABI()
   const message = 'Minting on Ethereum can take some time - please keep this tab open until we hear back from the network.'
-  commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, { opcode: 'eth-mint-begun', message: message }, { root: true })
+  commit(APP_CONSTANTS.SET_MINTING_MESSAGE, { opcode: 'eth-mint-begun', message: message }, { root: true })
   const nftContract = new web3.eth.Contract(abi, data.ethContractAddress, { from: account, gasLimit: '250000' })
   nftContract.methods.getMintPrice().call({ from: account }).then((mintPrice) => {
     nftContract.methods.create().send({ from: account, value: mintPrice }).then((res) => {
@@ -109,8 +109,8 @@ const mintToken = function (web3, data, account, resolve, reject, commit) {
       }
       const message = 'Your music (#' + result.tokenId + ')<br/>has been minted and is registered to your Ethereum address'
       result.message = message
-      commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, result, { root: true })
-      commit(LSAT_CONSTANTS.SET_DISPLAY_CARD, 106, { root: true })
+      commit(APP_CONSTANTS.SET_MINTING_MESSAGE, result, { root: true })
+      commit(APP_CONSTANTS.SET_DISPLAY_CARD, 106, { root: true })
       result.opcode = 'eth-mint-success'
       window.eventBus.$emit('rpayEvent', result)
       resolve(result)

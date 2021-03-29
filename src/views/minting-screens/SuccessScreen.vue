@@ -23,7 +23,7 @@
 </template>
 
 <script>
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 
 export default {
   name: 'PendingScreen',
@@ -46,19 +46,23 @@ export default {
   },
   computed: {
     getPendingMessage () {
-      const preferredNetwork = this.$store.getters[LSAT_CONSTANTS.KEY_PREFERRED_NETWORK]
-      let message = 'Minting on Stacks network can take some time - please keep this tab open so we can moniter progress.'
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      const assetHash = configuration.minter.item.assetHash
+      const asset = this.$store.getters[APP_CONSTANTS.GET_ASSET_FROM_HASH](assetHash)
+
+      const preferredNetwork = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
+      let message = 'This NFT (#' + asset.nftIndex + ') has been minted on the Stacks Blockchain!'
       if (preferredNetwork.network === 'ethereum') {
-        message = 'Minting on ethereum can take a few minutes'
+        message = 'This NFT (#' + asset.tokenId + ') has been minted on the Ethereum Blockchain'
       }
-      const mintingObject = this.$store.getters[LSAT_CONSTANTS.KEY_MINTING_MESSAGE]
+      const mintingObject = this.$store.getters[APP_CONSTANTS.KEY_MINTING_MESSAGE]
       if (mintingObject && mintingObject.message) {
         message = mintingObject.message
       }
       return message
     },
     displayCard () {
-      const displayCard = this.$store.getters[LSAT_CONSTANTS.KEY_DISPLAY_CARD]
+      const displayCard = this.$store.getters[APP_CONSTANTS.KEY_DISPLAY_CARD]
       return displayCard
     }
   }

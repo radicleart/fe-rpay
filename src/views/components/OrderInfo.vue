@@ -14,7 +14,7 @@
 </template>
 
 <script>
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 
 export default {
   name: 'OrderInfo',
@@ -38,7 +38,7 @@ export default {
     }
   },
   mounted () {
-    const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+    const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
     this.paymentOption = configuration.payment.paymentOption
     this.loading = false
   },
@@ -49,15 +49,15 @@ export default {
   },
   computed: {
     numbUnits () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return configuration.payment.creditAttributes.start
     },
     method () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return configuration.payment.paymentOption
     },
     formattedFiat () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const amountFiat = (configuration.payment) ? configuration.payment.amountFiat : '0'
       const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -67,7 +67,7 @@ export default {
       return ffiat[1].value + '.' + ffiat[3].value
     },
     formattedTotalFiat () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       let amountFiat = (configuration.payment) ? configuration.payment.amountFiat : '0'
       amountFiat = amountFiat * configuration.payment.creditAttributes.start
       const formatter = new Intl.NumberFormat('en-US', {
@@ -78,7 +78,7 @@ export default {
       return ffiat[1].value + '.' + ffiat[3].value
     },
     fiatSymbol () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const fc = (configuration.payment) ? configuration.payment.currency : '???'
       if (fc === 'EUR') {
         return '&euro;'
@@ -89,7 +89,7 @@ export default {
       }
     },
     currentSymbol () {
-      const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
+      const paymentOption = this.$store.getters[APP_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
       if (paymentOption === 'ethereum') {
         return 'Ξ'
       } else if (paymentOption === 'stacks') {
@@ -99,8 +99,8 @@ export default {
       }
     },
     currentAmount () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
-      const paymentOption = this.$store.getters[LSAT_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      const paymentOption = this.$store.getters[APP_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
       if (configuration && configuration.payment.amountBtc) {
         if (paymentOption === 'ethereum') {
           return configuration.payment.amountEth + ' ETH'

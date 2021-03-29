@@ -43,7 +43,7 @@
 </template>
 
 <script>
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 import TestPayments from '@/views/components/TestPayments'
 
 const MAINNET = process.env.VUE_APP_NETWORK
@@ -76,7 +76,7 @@ export default {
     }
   },
   mounted: function () {
-    const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+    const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
     this.internalId = this.id // + '_' + Math.floor(Math.random() * Math.floor(1000000))
     const idempotencyKey = this.uuidv4()
     const locationId = configuration.payment.squarePay.locationId
@@ -172,7 +172,7 @@ export default {
 
           // POST the nonce form to the payment processing page
           // document.getElementById('nonce-form').submit()
-          const configuration = that.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+          const configuration = that.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
           const amountFiat = configuration.payment.amountFiat * configuration.payment.creditAttributes.start * 100
           fetch(configuration.risidioBaseApi + that.submitUrl, {
             method: 'POST',
@@ -243,7 +243,7 @@ export default {
   },
   computed: {
     formattedFiat () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       // const amountFiat = (configuration.payment) ? configuration.payment.amountFiat : '0'
       const amountFiat = configuration.payment.amountFiat * configuration.payment.creditAttributes.start
       const formatter = new Intl.NumberFormat('en-US', {
@@ -254,7 +254,7 @@ export default {
       return ffiat[1].value + '.' + ffiat[3].value
     },
     fiatSymbol () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const fc = (configuration.payment) ? configuration.payment.currency : '???'
       if (fc === 'EUR') {
         return '&euro;'
@@ -265,7 +265,7 @@ export default {
       }
     },
     testMode () {
-      const configuration = this.$store.getters[LSAT_CONSTANTS.KEY_CONFIGURATION]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return configuration.payment.squarePay.applicationId.indexOf('sandbox') > -1
     }
   },

@@ -12,7 +12,7 @@
 
 <script>
 import moment from 'moment'
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 
 // noinspection JSUnusedGlobalSymbols
 export default {
@@ -24,12 +24,12 @@ export default {
       countdown: null,
       showExpires: false,
       expired: false,
-      timeout: this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE_EXPIRY] // { hours: 0, minutes: 1, seconds: 0 }
+      timeout: this.$store.getters[APP_CONSTANTS.KEY_INVOICE_EXPIRY] // { hours: 0, minutes: 1, seconds: 0 }
     }
   },
   mounted () {
-    this.timeout = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE_DURATION]
-    this.expired = this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE_EXPIRED]
+    this.timeout = this.$store.getters[APP_CONSTANTS.KEY_INVOICE_DURATION]
+    this.expired = this.$store.getters[APP_CONSTANTS.KEY_INVOICE_EXPIRED]
     if (this.expired) {
       this.$emit('rpayEvent', { opcode: 'crypto-payment-expired' })
     }
@@ -37,7 +37,7 @@ export default {
   },
   methods: {
     expires () {
-      return this.$store.getters[LSAT_CONSTANTS.KEY_INVOICE_EXPIRES]
+      return this.$store.getters[APP_CONSTANTS.KEY_INVOICE_EXPIRES]
     },
     evPaymentExpired () {
       this.$emit('rpayEvent', { opcode: 'crypto-payment-expired' })

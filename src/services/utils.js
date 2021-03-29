@@ -2,10 +2,14 @@
 import {
   hexToCV
 } from '@stacks/transactions'
+import crypto from 'crypto'
 
 const precision = 1000000
 
 const utils = {
+  buildHash: function (hashable) {
+    return crypto.createHash('sha256').update(hashable).digest('hex')
+  },
   copyAddress: function (document, flasher, target) {
     const tempInput = document.createElement('input')
     tempInput.style = 'position: absolute; left: -1000px; top: -1000px'
@@ -102,19 +106,15 @@ const utils = {
   },
   fromHex: function (method, rawResponse) {
     const td = new TextDecoder('utf-8')
+    if (!rawResponse) {
+      throw new Error('No response from blockchain - is the project deployed?')
+    }
     const res = hexToCV(rawResponse)
     if (rawResponse.startsWith('0x08')) {
       throw new Error('Blockchain call returned not okay with error code: ' + res.value.value.toNumber())
     }
     if (method === 'get-mint-price') {
       return res.value.value.toNumber()
-    } else if (method === 'get-index') {
-      const bnEditions = res.value.list
-      const editions = []
-      bnEditions.forEach(item => {
-        editions.push(item.value.toNumber())
-      })
-      return editions
     } else if (method === 'get-mint-counter') {
       return res.value.value.toNumber()
     } else if (method === 'get-app-counter') {
@@ -123,24 +123,31 @@ const utils = {
       return {
         // owner: td.decode(res.value.data.owner.buffer),
         contractId: td.decode(res.value.data['app-contract-id'].buffer),
+        gaiaRootPath: td.decode(res.value.data['gaia-root-path'].buffer),
         status: res.value.data.status.value.toNumber(),
         storageModel: res.value.data['storage-model'].value.toNumber()
       }
-    } else if (method === 'get-token-info') {
-      return {
-        // owner: td.decode(res.value.data.owner.buffer),
-        assetHash: res.value.data['asset-hash'].buffer.toString('hex'),
-        edition: res.value.data.edition.value.toNumber(),
-        seriesOriginal: res.value.data['series-original'].value.toNumber(),
-        date: res.value.data.date.value.toNumber()
-      }
-    } else if (method === 'get-token-info-full') {
+    } else if (method === 'get-token-by-index' || method === 'get-token-by-hash' || method === 'get-edition-by-hash') {
       const clarityAsset = {}
-      if (res.value.data.owner) {
-        clarityAsset.owner = res.value.data.owner.address.hash160
+      const tokenData = res.value.value.data
+      clarityAsset.nftIndex = tokenData.nftIndex.value.toNumber()
+      clarityAsset.editionCounter = tokenData.editionCounter.value.toNumber()
+      clarityAsset.transferCounter = tokenData.transferCounter.value.toNumber()
+      clarityAsset.highBidCounter = tokenData.bidCounter.value.toNumber()
+      clarityAsset.offerCounter = tokenData.offerCounter.value.toNumber()
+      if (tokenData.owner) {
+        clarityAsset.owner = tokenData.owner.address.hash160
       }
-      if (res.value.data['sale-data']) {
-        const saleData = res.value.data['sale-data']
+      clarityAsset.tradeInfo = {
+        saleType: 0,
+        buyNowOrStartingPrice: 0,
+        incrementPrice: 0,
+        reservePrice: 0,
+        biddingEndTime: 0,
+        auctionId: 0
+      }
+      if (tokenData.saleData) {
+        const saleData = tokenData.saleData
         if (saleData.value) {
           const tradeInfo = {}
           tradeInfo.biddingEndTime = saleData.value.data['bidding-end-time'].value.toNumber()
@@ -148,17 +155,19 @@ const utils = {
           tradeInfo.reservePrice = this.fromMicroAmount(saleData.value.data['reserve-stx'].value.toNumber())
           tradeInfo.buyNowOrStartingPrice = this.fromMicroAmount(saleData.value.data['amount-stx'].value.toNumber())
           tradeInfo.saleType = saleData.value.data['sale-type'].value.toNumber()
+          tradeInfo.saleCycle = saleData.value.data['sale-cycle-index'].value.toNumber()
           clarityAsset.tradeInfo = tradeInfo
         }
       }
-      if (res.value.data['token-info']) {
-        clarityAsset.assetHash = res.value.data['token-info'].value.data['asset-hash'].buffer.toString('hex')
-        clarityAsset.edition = res.value.data.edition.value.toNumber()
-        clarityAsset.seriesOriginal = res.value.data['series-original'].value.toNumber()
-        clarityAsset.date = res.value.data['token-info'].value.data.date.value.toNumber()
+      if (tokenData.tokenInfo) {
+        clarityAsset.assetHash = tokenData.tokenInfo.value.data['asset-hash'].buffer.toString('hex')
+        clarityAsset.edition = tokenData.tokenInfo.value.data.edition.value.toNumber()
+        clarityAsset.seriesOriginal = tokenData.tokenInfo.value.data['series-original'].value.toNumber()
+        clarityAsset.maxEditions = tokenData.tokenInfo.value.data['max-editions'].value.toNumber()
+        clarityAsset.date = tokenData.tokenInfo.value.data.date.value.toNumber()
       }
-      if (res.value.data['transfer-count']) {
-        clarityAsset.transferCount = res.value.data['transfer-count'].value.toNumber()
+      if (tokenData.transferCounter) {
+        clarityAsset.transferCount = tokenData.transferCounter.value.toNumber()
       }
       return clarityAsset
     } else if (method === 'get-sale-data') {

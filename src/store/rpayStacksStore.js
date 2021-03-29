@@ -1,5 +1,5 @@
 import utils from '@/services/utils'
-import { LSAT_CONSTANTS } from '@/lsat-constants'
+import { APP_CONSTANTS } from '@/app-constants'
 import {
   makeSTXTokenTransfer,
   makeContractCall,
@@ -9,8 +9,8 @@ import {
   bufferCV,
   listCV,
   uintCV,
+  intCV,
   standardPrincipalCV,
-  tupleCV,
   serializeCV,
   // standardPrincipalCV,
   makeStandardSTXPostCondition,
@@ -109,7 +109,7 @@ const handleBuyNow = function (baseUrl, asset, result, resolve, purchaseInfo) {
 const captureResult = function (dispatch, assetHash, contractAddress, contractName) {
   let counter = 0
   const intval = setInterval(function () {
-    dispatch('lookupNftTokenId', { assetHash: assetHash, contractAddress: contractAddress, contractName: contractName }).then(() => {
+    dispatch('lookupTokenByHash', { assetHash: assetHash, contractAddress: contractAddress, contractName: contractName }).then(() => {
       clearInterval(intval)
     }).catch((e) => {
       // try again
@@ -153,7 +153,7 @@ const resolveError = function (commit, reject, error) {
   } else {
     errorMessage = error
   }
-  commit(LSAT_CONSTANTS.SET_MINTING_MESSAGE, { opcode: 'stx-mint-error', message: errorMessage }, { root: true })
+  commit(APP_CONSTANTS.SET_MINTING_MESSAGE, { opcode: 'stx-mint-error', message: errorMessage }, { root: true })
   if (window.eventBus) window.eventBus.$emit('rpayEvent', { opcode: 'stx-mint-error', message: errorMessage })
   reject(new Error(errorMessage))
 }
@@ -348,7 +348,6 @@ const rpayStacksStore = {
         if (state.provider === 'risidio') {
           axios.post(configuration.risidioBaseApi + '/mesh' + '/v2/accounts', txOptions).then(response => {
             data.result = utils.fromHex(data.functionName, response.data.result)
-            // data.result = bufferUtils.fromHex(data.functionName, response.data.result)
             resolve(data)
           }).catch((error) => {
             resolveError(commit, reject, error)
@@ -364,31 +363,97 @@ const rpayStacksStore = {
         }
       })
     },
-    lookupNftTokenId ({ dispatch }, data) {
-      return new Promise((resolve) => {
-        const buffer = `0x${serializeCV(bufferCV(Buffer.from(data.assetHash, 'hex'))).toString('hex')}` // Buffer.from(hash.toString(CryptoJS.enc.Hex), 'hex')
+    lookupTokenContractData: function ({ dispatch }, data) {
+      return new Promise(function (resolve) {
+        const functionArgs = []
         const config = {
-          contractId: data.contractAddress + '.' + data.contractName,
           contractAddress: data.contractAddress,
           contractName: data.contractName,
-          functionName: 'get-index',
-          functionArgs: [buffer]
+          functionName: 'get-contract-data',
+          functionArgs: functionArgs
+        }
+        dispatch('callContractReadOnly', config).then((result) => {
+          resolve(result)
+        }).catch((e) => {
+          resolve(null)
+        })
+      })
+    },
+    lookupAppmapContractData: function ({ dispatch }, data) {
+      return new Promise(function (resolve) {
+        const functionArgs = []
+        const config = {
+          contractAddress: data.contractAddress,
+          contractName: data.contractName,
+          functionName: 'get-contract-data',
+          functionArgs: functionArgs
+        }
+        dispatch('callContractReadOnly', config).then((result) => {
+          resolve(result)
+        }).catch((e) => {
+          resolve(null)
+        })
+      })
+    },
+    lookupApplicationByIndex: function ({ dispatch }, data) {
+      return new Promise(function (resolve) {
+        const functionArgs = [`0x${serializeCV(intCV(data.appCounter)).toString('hex')}`]
+        const config = {
+          contractAddress: data.contractAddress,
+          contractName: data.contractName,
+          functionName: 'get-app',
+          functionArgs: functionArgs
+        }
+        dispatch('callContractReadOnly', config).then((result) => {
+          resolve(result)
+        }).catch((e) => {
+          resolve(null)
+        })
+      })
+    },
+    lookupToken: function ({ dispatch }, data) {
+      return new Promise(function (resolve) {
+        const functionArgs = [`0x${serializeCV(uintCV(data.nftIndex)).toString('hex')}`]
+        const config = {
+          contractAddress: data.contractAddress,
+          contractName: data.contractName,
+          functionName: 'get-token-by-index',
+          functionArgs: functionArgs
         }
         dispatch('callContractReadOnly', config).then((resp) => {
-          if (Array.isArray(resp.result)) {
-            const result = {}
-            result.nftIndex = resp.result[0]
-            result.nftIndices = resp.result
-            result.tokenId = resp.tokenId
+          if (resp.result && (resp.result.nftIndex === 0 || resp.result.nftIndex > 0)) {
+            const result = resp.result
             result.network = 15
             result.opcode = 'stx-mint-success'
-            result.assetHash = data.assetHash
             resolve(result)
+            window.eventBus.$emit('rpayEvent', result)
           } else {
-            // not found - no need to report anything as this is ususally the case
+            resolve(null)
           }
         }).catch((e) => {
-          // not found - no need to report anything as this is ususally the case
+          resolve(null)
+        })
+      })
+    },
+    lookupTokenByIndex: function ({ dispatch }, data) {
+      return new Promise((resolve, reject) => {
+        data.a1 = intCV(data.nftIndex)
+        data.a2 = serializeCV(data.a1)
+        data.a3 = (data.a2).toString('hex')
+        data.functionArgs = [`0x${serializeCV(intCV(data.nftIndex)).toString('hex')}`]
+        data.functionName = 'get-token-by-index'
+        dispatch('lookupToken', data).then((result) => {
+          resolve(result)
+        })
+      })
+    },
+    lookupTokenByHash ({ dispatch }, data) {
+      return new Promise((resolve, reject) => {
+        const buffer = `0x${serializeCV(bufferCV(Buffer.from(data.assetHash, 'hex'))).toString('hex')}` // Buffer.from(hash.toString(CryptoJS.enc.Hex), 'hex')
+        data.functionArgs = [buffer]
+        data.functionName = 'get-token-by-hash'
+        dispatch('lookupToken', data).then((result) => {
+          resolve(result)
         })
       })
     },
@@ -413,22 +478,6 @@ const rpayStacksStore = {
         })
       })
     },
-    lookupTradeInfo: function ({ commit, dispatch }, data) {
-      return new Promise((resolve, reject) => {
-        const functionArgs = [`0x${serializeCV(uintCV(data.nftIndex)).toString('hex')}`]
-        const config = {
-          contractAddress: data.contractAddress,
-          contractName: data.contractName,
-          functionName: 'get-sale-data',
-          functionArgs: functionArgs
-        }
-        dispatch('callContractReadOnly', config).then((tradeInfo) => {
-          resolve(tradeInfo)
-        }).catch((error) => {
-          reject(error)
-        })
-      })
-    },
     setTradeInfo ({ state, dispatch, rootGetters }, asset) {
       return new Promise((resolve, reject) => {
         // (asset-hash (buff 32)) (sale-type uint) (increment-stx uint) (reserve-stx uint) (amount-stx uint)
@@ -440,8 +489,8 @@ const rpayStacksStore = {
         const reservePrice = uintCV(utils.toOnChainAmount(asset.tradeInfo.reservePrice))
         const buyNowOrStartingPrice = uintCV(utils.toOnChainAmount(asset.tradeInfo.buyNowOrStartingPrice))
         const biddingEndTime = uintCV(asset.tradeInfo.biddingEndTime)
-        const auctionId = uintCV(asset.tradeInfo.biddingEndTime)
-        const functionArgs = [nftIndex, saleType, incrementPrice, reservePrice, buyNowOrStartingPrice, biddingEndTime, auctionId]
+        // const auctionId = uintCV(asset.tradeInfo.biddingEndTime)
+        const functionArgs = [nftIndex, saleType, incrementPrice, reservePrice, buyNowOrStartingPrice, biddingEndTime]
         const data = {
           contractAddress: asset.contractAddress,
           contractName: asset.contractName,
@@ -466,21 +515,37 @@ const rpayStacksStore = {
         })
       })
     },
-    mintToken ({ dispatch }, data) {
-      return new Promise((resolve, reject) => {
+    mintToken ({ dispatch, rootGetters }, data) {
+      return new Promise((resolve) => {
+        const postConditionAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
+        const postConditionCode = FungibleConditionCode.GreaterEqual
+        const postConditionAmount = new BigNum(10000)
+
+        const standardSTXPostCondition = makeStandardSTXPostCondition(
+          postConditionAddress,
+          postConditionCode,
+          postConditionAmount
+        )
+        data.postConditions = [standardSTXPostCondition]
         const buffer = Buffer.from(data.assetHash, 'hex')
+        const gaiaUsername = bufferCV(Buffer.from(data.gaiaUsername, 'utf8'))
         const editions = uintCV(data.editions)
-        const tuplArray = []
-        if (data.beneficiaries && data.beneficiaries.length > 0) {
-          data.beneficiaries.forEach((item) => {
-            tuplArray.push(tupleCV({
-              address: standardPrincipalCV(item.chainAddress),
-              amount: uintCV(item.royalty)
-            }))
-          })
+        const addressList = []
+        const shareList = []
+        for (let i = 0; i < 10; i++) {
+          const beneficiary = data.beneficiaries[i]
+          if (beneficiary) {
+            const convertedValue = beneficiary.royalty * 100
+            addressList.push(standardPrincipalCV(beneficiary.chainAddress))
+            shareList.push(uintCV(convertedValue))
+          } else {
+            addressList.push(standardPrincipalCV(data.contractAddress))
+            shareList.push(uintCV(0))
+          }
         }
-        const contributers = listCV(tuplArray)
-        data.functionArgs = [bufferCV(buffer), editions, contributers]
+        const addresses = listCV(addressList)
+        const shares = listCV(shareList)
+        data.functionArgs = [bufferCV(buffer), gaiaUsername, editions, addresses, shares]
         dispatch(data.action, data).then((result) => {
           resolve(result)
         })
@@ -491,7 +556,7 @@ const rpayStacksStore = {
         // (asset-hash (buff 32)) (sale-type uint) (increment-stx uint) (reserve-stx uint) (amount-stx uint)
         const configuration = rootGetters['rpayStore/getConfiguration']
         const asset = purchaseInfo.asset
-        const profile = rootGetters['authStore/getMyProfile']
+        const profile = rootGetters['rpayAuthStore/getMyProfile']
         // const amount = new BigNum(utils.toOnChainAmount(asset.tradeInfo.buyNowOrStartingPrice + 1))
         const amount = new BigNum(asset.tradeInfo.buyNowOrStartingPrice + 1)
         const standardSTXPostCondition = makeStandardSTXPostCondition(
