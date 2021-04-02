@@ -76,8 +76,8 @@ const pollTxStatus = function (dispatch, txId) {
 **/
 const handleSetTradeInfo = function (baseUrl, asset, result, resolve) {
   asset.hexResp = (result && result.data) ? result.data : ''
-  // if (asset.tradeInfo.biddingEndTime && typeof asset.tradeInfo.biddingEndTime === 'string' && asset.tradeInfo.biddingEndTime.indexOf('-') > -1) {
-  //  asset.tradeInfo.biddingEndTime = moment(asset.tradeInfo.biddingEndTime).valueOf()
+  // if (asset.saleData.biddingEndTime && typeof asset.saleData.biddingEndTime === 'string' && asset.saleData.biddingEndTime.indexOf('-') > -1) {
+  //  asset.saleData.biddingEndTime = moment(asset.saleData.biddingEndTime).valueOf()
   // }
   searchIndexService.addTradeInfo(baseUrl, asset).then(() => {
     console.log(asset)
@@ -89,12 +89,12 @@ const handleSetTradeInfo = function (baseUrl, asset, result, resolve) {
 }
 const handleBuyNow = function (baseUrl, asset, result, resolve, purchaseInfo) {
   asset.owner = purchaseInfo.buyer
-  if (asset.tradeInfo) {
-    asset.tradeInfo.saleType = 0
-    asset.tradeInfo.buyNowOrStartingPrice = 0
-    asset.tradeInfo.incrementPrice = 0
-    asset.tradeInfo.reservePrice = 0
-    asset.tradeInfo.biddingEndTime = 0
+  if (asset.saleData) {
+    asset.saleData.saleType = 0
+    asset.saleData.buyNowOrStartingPrice = 0
+    asset.saleData.incrementPrice = 0
+    asset.saleData.reservePrice = 0
+    asset.saleData.biddingEndTime = 0
   }
   asset.hexResp = (result && result.data) ? result.data : ''
   searchIndexService.addRecord(baseUrl, asset).then(() => {
@@ -484,12 +484,12 @@ const rpayStacksStore = {
         // const buffer = bufferCV(Buffer.from(asset.assetHash, 'hex')) // Buffer.from(hash.toString(CryptoJS.enc.Hex), 'hex')
         const configuration = rootGetters['rpayStore/getConfiguration']
         const nftIndex = uintCV(asset.nftIndex)
-        const saleType = uintCV(asset.tradeInfo.saleType)
-        const incrementPrice = uintCV(utils.toOnChainAmount(asset.tradeInfo.incrementPrice))
-        const reservePrice = uintCV(utils.toOnChainAmount(asset.tradeInfo.reservePrice))
-        const buyNowOrStartingPrice = uintCV(utils.toOnChainAmount(asset.tradeInfo.buyNowOrStartingPrice))
-        const biddingEndTime = uintCV(asset.tradeInfo.biddingEndTime)
-        // const auctionId = uintCV(asset.tradeInfo.biddingEndTime)
+        const saleType = uintCV(asset.saleData.saleType)
+        const incrementPrice = uintCV(utils.toOnChainAmount(asset.saleData.incrementPrice))
+        const reservePrice = uintCV(utils.toOnChainAmount(asset.saleData.reservePrice))
+        const buyNowOrStartingPrice = uintCV(utils.toOnChainAmount(asset.saleData.buyNowOrStartingPrice))
+        const biddingEndTime = uintCV(asset.saleData.biddingEndTime)
+        // const auctionId = uintCV(asset.saleData.biddingEndTime)
         const functionArgs = [nftIndex, saleType, incrementPrice, reservePrice, buyNowOrStartingPrice, biddingEndTime]
         const data = {
           contractAddress: asset.contractAddress,
@@ -557,8 +557,8 @@ const rpayStacksStore = {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const asset = purchaseInfo.asset
         const profile = rootGetters['rpayAuthStore/getMyProfile']
-        // const amount = new BigNum(utils.toOnChainAmount(asset.tradeInfo.buyNowOrStartingPrice + 1))
-        const amount = new BigNum(asset.tradeInfo.buyNowOrStartingPrice + 1)
+        // const amount = new BigNum(utils.toOnChainAmount(asset.saleData.buyNowOrStartingPrice + 1))
+        const amount = new BigNum(asset.saleData.buyNowOrStartingPrice + 1)
         const standardSTXPostCondition = makeStandardSTXPostCondition(
           profile.stxAddress,
           FungibleConditionCode.LessEqual,

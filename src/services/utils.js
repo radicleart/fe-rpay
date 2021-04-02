@@ -138,7 +138,7 @@ const utils = {
       if (tokenData.owner) {
         clarityAsset.owner = tokenData.owner.address.hash160
       }
-      clarityAsset.tradeInfo = {
+      clarityAsset.saleData = {
         saleType: 0,
         buyNowOrStartingPrice: 0,
         incrementPrice: 0,
@@ -149,14 +149,14 @@ const utils = {
       if (tokenData.saleData) {
         const saleData = tokenData.saleData
         if (saleData.value) {
-          const tradeInfo = {}
-          tradeInfo.biddingEndTime = saleData.value.data['bidding-end-time'].value.toNumber()
-          tradeInfo.incrementPrice = this.fromMicroAmount(saleData.value.data['increment-stx'].value.toNumber())
-          tradeInfo.reservePrice = this.fromMicroAmount(saleData.value.data['reserve-stx'].value.toNumber())
-          tradeInfo.buyNowOrStartingPrice = this.fromMicroAmount(saleData.value.data['amount-stx'].value.toNumber())
-          tradeInfo.saleType = saleData.value.data['sale-type'].value.toNumber()
-          tradeInfo.saleCycle = saleData.value.data['sale-cycle-index'].value.toNumber()
-          clarityAsset.tradeInfo = tradeInfo
+          const saleData = {}
+          saleData.biddingEndTime = saleData.value.data['bidding-end-time'].value.toNumber()
+          saleData.incrementPrice = this.fromMicroAmount(saleData.value.data['increment-stx'].value.toNumber())
+          saleData.reservePrice = this.fromMicroAmount(saleData.value.data['reserve-stx'].value.toNumber())
+          saleData.buyNowOrStartingPrice = this.fromMicroAmount(saleData.value.data['amount-stx'].value.toNumber())
+          saleData.saleType = saleData.value.data['sale-type'].value.toNumber()
+          saleData.saleCycle = saleData.value.data['sale-cycle-index'].value.toNumber()
+          clarityAsset.saleData = saleData
         }
       }
       if (tokenData.tokenInfo) {

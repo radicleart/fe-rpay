@@ -102,11 +102,11 @@
           assetHashMinted: 'e25722b4e9481bdfaffb0d3b88c1badd31e45dcb79f639cada783666dd95c8ff',
           // assetHash: '5dd6d4318967820c49c1c83831ca17390a83776d183f44b21b55d5ff92653c7c',
           // assetHash: '1c0b7b80e72eebf0f60a3ba6c53a99ba7bd5ef2ac4fec3be3e659fd1d6a1b44b',
-          assetHash: '04159c5ab91a0deb4ff813fcd418d0d4705cc6a01ca0d65dae28d48e0304e4dd',
+          assetHash: '1c0b7b80e72eebf0f60a3ba6c53a99ba7bd5ef2ac4fec3be3e659fd1d6a1b44b',
           name: 'My Non Funginble Token',
           editions: 100,
           imageUrl: 'https://images.prismic.io/risidio-journal/5757dd30-d293-4586-a99b-bdce237f7a69_alexander-sinn-KgLtFCgfC28-unsplash.png?auto=compress,format',
-          tradeInfo: {
+          saleData: {
             saleType: 1,
             incrementPrice: 10,
             buyNowOrStartingPrice: 10,
@@ -121,7 +121,7 @@
             enabled: true,
             functionName: 'mint-token',
             contractAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW',
-            contractName: 'loopbomb-v1'
+            contractName: 'thisisnumberone-v1'
           },
           {
             network: 'stacks connect',
@@ -152,6 +152,7 @@
         **/
       }
       const configuration = {
+        gaiaAppDomains: ['localhost:8080', 'localhost:8081', 'localhost:8082'],
         lookAndFeel: lookAndFeel,
         payment: payment,
         marketConfig: marketConfig,

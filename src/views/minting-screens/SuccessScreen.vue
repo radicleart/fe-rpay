@@ -48,7 +48,7 @@ export default {
     getPendingMessage () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const assetHash = configuration.minter.item.assetHash
-      const asset = this.$store.getters[APP_CONSTANTS.GET_ASSET_FROM_HASH](assetHash)
+      const asset = this.$store.getters[APP_CONSTANTS.GET_ASSET_FROM_CONTRACT_BY_HASH](assetHash)
 
       const preferredNetwork = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
       let message = 'This NFT (#' + asset.nftIndex + ') has been minted on the Stacks Blockchain!'

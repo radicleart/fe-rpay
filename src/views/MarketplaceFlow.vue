@@ -2,7 +2,7 @@
 <div v-if="marketConfig.oneLayout">
   <div class="vh-100 market-container">
     <div class="mx-auto">
-      <result-grid-one style="height: 250px; width: 250px;" :resultSet="resultSet" v-if="resultSet && resultSet.length > 0"/>
+      <result-grid style="height: 250px; width: 250px;" :resultSet="resultSet" v-if="resultSet && resultSet.length > 0"/>
       <div v-else v-html="currentSearch">No results: {{currentSearch}}</div>
     </div>
   </div>
@@ -33,7 +33,6 @@
 import moment from 'moment'
 import { APP_CONSTANTS } from '@/app-constants'
 import ResultGrid from '@/views/marketplace-screens/agora/ResultGrid'
-import ResultGridOne from '@/views/marketplace-screens/agora/ResultGridOne'
 import MarketplaceSideMenu from '@/views/marketplace-screens/agora/MarketplaceSideMenu'
 import MarketplaceFilterBar from '@/views/marketplace-screens/agora/MarketplaceFilterBar'
 
@@ -41,7 +40,6 @@ export default {
   name: 'MarketplaceFlow',
   components: {
     ResultGrid,
-    ResultGridOne,
     MarketplaceSideMenu,
     MarketplaceFilterBar
   },

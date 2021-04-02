@@ -51,8 +51,8 @@ export default {
     isMinted () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const assetHash = configuration.minter.item.assetHash
-      const asset = this.$store.getters[APP_CONSTANTS.GET_ASSET_FROM_HASH](assetHash)
-      return (asset.nftIndex > -1 || (asset && asset.assetHash === assetHash))
+      const asset = this.$store.getters[APP_CONSTANTS.GET_ASSET_FROM_CONTRACT_BY_HASH](assetHash)
+      return asset
     },
     displayCard () {
       const displayCard = this.$store.getters[APP_CONSTANTS.KEY_DISPLAY_CARD]

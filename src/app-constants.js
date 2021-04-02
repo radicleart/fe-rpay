@@ -26,7 +26,7 @@ export const APP_CONSTANTS = {
   KEY_EXCHANGE_RATE: 'rpayCategoryStore/getExchangeRateFormatted',
   KEY_STX_AMOUNT: 'rpayCategoryStore/getStxAmountFormatted',
 
-  GET_ASSET_FROM_HASH: 'rpayStacksContractStore/getAssetFromHash',
+  GET_ASSET_FROM_CONTRACT_BY_HASH: 'rpayStacksContractStore/getAssetFromContractByHash',
   GET_APP_MAP_CONTRACT: 'rpayStacksContractStore/getAppMapContract',
   GET_TRADE_INFO_FROM_HASH: 'rpayStacksContractStore/getTradeInfoFromHash',
 

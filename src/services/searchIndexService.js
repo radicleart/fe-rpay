@@ -32,7 +32,7 @@ const searchIndexService = {
 
   addTradeInfo: function (baseUrl, asset) {
     return new Promise(function (resolve, reject) {
-      axios.post(baseUrl + '/index/v1/trade-info/' + asset.assetHash, asset.tradeInfo).then((result) => {
+      axios.post(baseUrl + '/index/v1/trade-info/' + asset.assetHash, asset.saleData).then((result) => {
         resolve(result.data)
       }).catch((error) => {
         reject(new Error('Unable index record: ' + error))
@@ -57,12 +57,12 @@ const searchIndexService = {
           level: 1
         }
       }
-      indexable.tradeInfo = {
-        saleType: (indexable.tradeInfo) ? indexable.tradeInfo.saleType : 0,
-        buyNowOrStartingPrice: (indexable.tradeInfo) ? indexable.tradeInfo.buyNowOrStartingPrice : 0,
-        reservePrice: (indexable.tradeInfo) ? indexable.tradeInfo.reservePrice : 0,
-        biddingEndTime: (indexable.tradeInfo) ? indexable.tradeInfo.biddingEndTime : 0,
-        incrementPrice: (indexable.tradeInfo) ? indexable.tradeInfo.incrementPrice : 0
+      indexable.saleData = {
+        saleType: (indexable.saleData) ? indexable.saleData.saleType : 0,
+        buyNowOrStartingPrice: (indexable.saleData) ? indexable.saleData.buyNowOrStartingPrice : 0,
+        reservePrice: (indexable.saleData) ? indexable.saleData.reservePrice : 0,
+        biddingEndTime: (indexable.saleData) ? indexable.saleData.biddingEndTime : 0,
+        incrementPrice: (indexable.saleData) ? indexable.saleData.incrementPrice : 0
       }
       axios.post(baseUrl + '/index/addRecord', indexable).then((result) => {
         resolve(result)

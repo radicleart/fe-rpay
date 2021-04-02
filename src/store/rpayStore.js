@@ -64,15 +64,6 @@ const subscribeApiNews = function (commit, connectUrl, paymentId) {
       const rates = JSON.parse(response.body)
       commit('setTickerRates', rates.tickerRates)
     })
-    stompClient.subscribe('/queue/contract-news', function (response) {
-      const appMapContract = JSON.parse(response.body)
-      commit('rpayStacksContractStore/setAppMapContract', appMapContract, { root: true })
-      const data = {
-        opcode: 'stx-contract-data',
-        appMapContract: appMapContract
-      }
-      window.eventBus.$emit('rpayEvent', data)
-    })
   },
   function (error) {
     console.log(error)
@@ -230,8 +221,8 @@ const rpayStore = {
       }
       state.configuration = configuration
     },
-    setTradeInfo (state, tradeInfo) {
-      state.configuration.minter.item.tradeInfo = tradeInfo
+    setTradeInfo (state, saleData) {
+      state.configuration.minter.item.saleData = saleData
     },
     setMintingMessage (state, o) {
       state.mintingMessage = o

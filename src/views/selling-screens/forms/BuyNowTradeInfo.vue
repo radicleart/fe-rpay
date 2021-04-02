@@ -19,7 +19,7 @@ export default {
   name: 'SellBuyNow',
   components: {
   },
-  props: ['tradeInfo'],
+  props: ['saleData'],
   watch: {
   },
   data () {
@@ -30,7 +30,7 @@ export default {
   },
   mounted () {
     const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-    this.buyNowOrStartingPrice = configuration.minter.item.tradeInfo.buyNowOrStartingPrice
+    this.buyNowOrStartingPrice = configuration.minter.item.saleData.buyNowOrStartingPrice
   },
   methods: {
     toDecimals: function () {
@@ -43,9 +43,9 @@ export default {
       }
 
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      const tradeInfo = configuration.minter.item.tradeInfo
-      tradeInfo.buyNowOrStartingPrice = this.buyNowOrStartingPrice
-      this.$store.commit('rpayStore/setTradeInfo', tradeInfo)
+      const saleData = configuration.minter.item.saleData
+      saleData.buyNowOrStartingPrice = this.buyNowOrStartingPrice
+      this.$store.commit('rpayStore/setTradeInfo', saleData)
     }
   },
   computed: {

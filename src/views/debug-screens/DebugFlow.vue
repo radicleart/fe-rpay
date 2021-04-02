@@ -66,7 +66,7 @@
       </div>
       <div class="row mt-2">
         <div class="col-2">Selling</div>
-        <div class="col-10">{{tradeInfoDesc()}}</div>
+        <div class="col-10">{{saleDataDesc()}}</div>
       </div>
     </div>
 
@@ -89,14 +89,16 @@
             <div class="col-2">Minted</div><div class="col-10">{{application.tokenContract.mintCounter}}</div>
             <div class="row text-danger ml-4 mt-3 border-bottom mb-3 pb-2" v-for="(token, index) in application.tokenContract.tokens" :key="index">
               <div class="col-2">NFT</div><div class="col-10">#<a href="#" class="text-small text-info" @click.prevent="loadToken(application.contractId, token.nftIndex)">{{token.nftIndex}}</a></div>
-              <div class="col-2">TokenInfo</div><div class="col-10"><a href="#" class="text-small text-info" @click.prevent="loadToken(application.contractId, token.nftIndex, token.tokenInfo['asset-hash'].valueHex)">{{token.tokenInfo['asset-hash'].valueHex}}</a></div>
+              <div class="col-2">TokenInfo</div><div class="col-10"><a href="#" class="text-small text-info" @click.prevent="loadToken(application.contractId, token.nftIndex, token.tokenInfo.assetHash)">{{token.tokenInfo.assetHash}}</a></div>
               <div class="col-2">Owner</div><div class="col-10">{{token.owner}}</div>
               <div class="col-2">Offers</div><div class="col-10">{{token.offers}}</div>
-              <div class="col-2">SaleData</div><div class="col-10">Type={{token.saleData['sale-type'].value}}, Opening/Guide Amount {{token.saleData['amount-stx'].value}}</div>
-              <div class="col-2">Max Eds.</div><div class="col-10">{{token.tokenInfo['max-editions'].value}}</div>
-              <div class="col-2">Eds.</div><div class="col-10">{{token.tokenInfo['edition'].value}}</div>
-              <div class="col-2">Block-height</div><div class="col-10">{{token.tokenInfo['date'].value}}</div>
-              <div class="col-2">Original</div><div class="col-10">{{token.tokenInfo['series-original'].value}}</div>
+              <div class="col-2">SaleData</div><div class="col-10">Type={{token.saleData.saleType}}, Amount {{token.saleData.buyNowOrStartingPrice}}</div>
+              <div class="col-2">Reserve</div><div class="col-10">{{token.saleData.reservePrice}}, Increment {{token.saleData.incrementPrice}}</div>
+              <div class="col-2">End time</div><div class="col-10">{{token.saleData.biddingEndTime}}</div>
+              <div class="col-2">Max Eds.</div><div class="col-10">{{token.tokenInfo.maxEditions}}</div>
+              <div class="col-2">Eds.</div><div class="col-10">{{token.tokenInfo.edition}}</div>
+              <div class="col-2">Block-height</div><div class="col-10">{{token.tokenInfo.date}}</div>
+              <div class="col-2">Original</div><div class="col-10">{{token.tokenInfo.seriesOriginal}}</div>
             </div>
           </div>
       </div>
@@ -152,15 +154,15 @@ export default {
         this.result = result
       })
     },
-    tradeInfoDesc: function () {
-      if (this.result && this.result.tradeInfo) {
-        if (this.result.tradeInfo.saleType === 0) {
+    saleDataDesc: function () {
+      if (this.result && this.result.saleData) {
+        if (this.result.saleData.saleType === 0) {
           return 'not selling'
-        } else if (this.result.tradeInfo.saleType === 1) {
-          return 'buy now for ' + this.result.tradeInfo.buyNowOrStartingPrice
-        } else if (this.result.tradeInfo.saleType === 2) {
-          return 'place bid for ' + this.result.tradeInfo.buyNowOrStartingPrice + this.result.tradeInfo.incrementPrice
-        } else if (this.result.tradeInfo.saleType === 3) {
+        } else if (this.result.saleData.saleType === 1) {
+          return 'buy now for ' + this.result.saleData.buyNowOrStartingPrice
+        } else if (this.result.saleData.saleType === 2) {
+          return 'place bid for ' + this.result.saleData.buyNowOrStartingPrice + this.result.saleData.incrementPrice
+        } else if (this.result.saleData.saleType === 3) {
           return 'Make an offer (' + this.result.offerCounter + ' offers made so far)'
         }
       }

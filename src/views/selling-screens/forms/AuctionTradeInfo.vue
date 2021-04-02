@@ -5,7 +5,7 @@
     <div role="group">
       <label for="input-live"><span class="text2">Starting Price</span></label>
       <b-input-group>
-        <b-form-input @keyup="toDecimals('buyNowOrStartingPrice')" @change="updateBuyNow" v-model="tradeInfo.buyNowOrStartingPrice" class="input" placeholder="STX"></b-form-input>
+        <b-form-input @keyup="toDecimals('buyNowOrStartingPrice')" @change="updateBuyNow" v-model="saleData.buyNowOrStartingPrice" class="input" placeholder="STX"></b-form-input>
       </b-input-group>
     </div>
   </div>
@@ -13,7 +13,7 @@
     <div role="group">
       <label for="input-live"><span class="text2">Reserve Price</span></label>
       <b-input-group class="mb-3">
-        <b-form-input @keyup="toDecimals('reservePrice')" @change="updateReservePrice" v-model="tradeInfo.reservePrice" class="input" placeholder="STX"></b-form-input>
+        <b-form-input @keyup="toDecimals('reservePrice')" @change="updateReservePrice" v-model="saleData.reservePrice" class="input" placeholder="STX"></b-form-input>
       </b-input-group>
     </div>
   </div>
@@ -21,7 +21,7 @@
     <div role="group">
       <label for="input-live"><span class="text2">Increment</span></label>
       <b-input-group class="mb-3">
-        <b-form-input @keyup="toDecimals('incrementPrice')" @change="updateIncrementPrice" v-model="tradeInfo.incrementPrice" class="input" placeholder="STX"></b-form-input>
+        <b-form-input @keyup="toDecimals('incrementPrice')" @change="updateIncrementPrice" v-model="saleData.incrementPrice" class="input" placeholder="STX"></b-form-input>
       </b-input-group>
     </div>
   </div>
@@ -58,7 +58,7 @@ export default {
       biddingEndTime: null,
       errorMessage: null,
       loading: true,
-      tradeInfo: {
+      saleData: {
         saleType: 2,
         incrementPrice: 1,
         buyNowOrStartingPrice: 0,
@@ -68,10 +68,10 @@ export default {
   },
   mounted () {
     const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-    if (configuration.minter.item.tradeInfo) this.tradeInfo = configuration.minter.item.tradeInfo
+    if (configuration.minter.item.saleData) this.saleData = configuration.minter.item.saleData
 
-    if (configuration.minter.item.tradeInfo && configuration.minter.item.tradeInfo.biddingEndTime) {
-      const loaclEnd = moment(configuration.minter.item.tradeInfo.biddingEndTime).format()
+    if (configuration.minter.item.saleData && configuration.minter.item.saleData.biddingEndTime) {
+      const loaclEnd = moment(configuration.minter.item.saleData.biddingEndTime).format()
       this.biddingEndTime = loaclEnd
     } else {
       const dd = moment({}).add(2, 'days')
@@ -84,39 +84,39 @@ export default {
   methods: {
     toDecimals: function (field) {
       if (field === 'incrementPrice') {
-        if (this.tradeInfo.incrementPrice !== 0) this.tradeInfo.incrementPrice = Math.round(this.tradeInfo.incrementPrice * 1) / 1
+        if (this.saleData.incrementPrice !== 0) this.saleData.incrementPrice = Math.round(this.saleData.incrementPrice * 1) / 1
       } else if (field === 'reservePrice') {
-        if (this.tradeInfo.reservePrice !== 0) this.tradeInfo.reservePrice = Math.round(this.tradeInfo.reservePrice * 1) / 1
+        if (this.saleData.reservePrice !== 0) this.saleData.reservePrice = Math.round(this.saleData.reservePrice * 1) / 1
       } else {
-        if (this.tradeInfo.buyNowOrStartingPrice !== 0) this.tradeInfo.buyNowOrStartingPrice = Math.round(this.tradeInfo.buyNowOrStartingPrice * 1) / 1
+        if (this.saleData.buyNowOrStartingPrice !== 0) this.saleData.buyNowOrStartingPrice = Math.round(this.saleData.buyNowOrStartingPrice * 1) / 1
       }
     },
     updateBuyNow: function () {
-      if (!this.tradeInfo.buyNowOrStartingPrice) {
+      if (!this.saleData.buyNowOrStartingPrice) {
         this.errorMessage = 'start price required'
         return
       }
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      configuration.minter.item.tradeInfo.buyNowOrStartingPrice = this.tradeInfo.buyNowOrStartingPrice
-      this.$store.commit('rpayStore/setTradeInfo', configuration.minter.item.tradeInfo)
+      configuration.minter.item.saleData.buyNowOrStartingPrice = this.saleData.buyNowOrStartingPrice
+      this.$store.commit('rpayStore/setTradeInfo', configuration.minter.item.saleData)
     },
     updateReservePrice: function () {
-      if (!this.tradeInfo.reservePrice || this.tradeInfo.reservePrice < 0) {
+      if (!this.saleData.reservePrice || this.saleData.reservePrice < 0) {
         this.errorMessage = 'Please enter the reserve'
         return
       }
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      configuration.minter.item.tradeInfo.reservePrice = this.tradeInfo.reservePrice
-      this.$store.commit('rpayStore/setTradeInfo', configuration.minter.item.tradeInfo)
+      configuration.minter.item.saleData.reservePrice = this.saleData.reservePrice
+      this.$store.commit('rpayStore/setTradeInfo', configuration.minter.item.saleData)
     },
     updateIncrementPrice: function () {
-      if (!this.tradeInfo.incrementPrice || this.tradeInfo.incrementPrice < 0) {
+      if (!this.saleData.incrementPrice || this.saleData.incrementPrice < 0) {
         this.errorMessage = 'Please enter the increment'
         return
       }
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      configuration.minter.item.tradeInfo.incrementPrice = this.tradeInfo.incrementPrice
-      this.$store.commit('rpayStore/setTradeInfo', configuration.minter.item.tradeInfo)
+      configuration.minter.item.saleData.incrementPrice = this.saleData.incrementPrice
+      this.$store.commit('rpayStore/setTradeInfo', configuration.minter.item.saleData)
     },
     updateBiddingEndTime: function () {
       if (!this.biddingEndTime || this.biddingEndTime < 0) {
@@ -125,16 +125,16 @@ export default {
       }
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const localTime = moment(this.biddingEndTime).valueOf()
-      configuration.minter.item.tradeInfo.biddingEndTime = localTime
-      this.$store.commit('rpayStore/setTradeInfo', configuration.minter.item.tradeInfo)
+      configuration.minter.item.saleData.biddingEndTime = localTime
+      this.$store.commit('rpayStore/setTradeInfo', configuration.minter.item.saleData)
     },
     checkEndTime () {
       const now = moment().unix()
-      const diff = this.tradeInfo.biddingEndTime - now
+      const diff = this.saleData.biddingEndTime - now
       return diff > 0
     },
     getLongTime () {
-      return moment(this.tradeInfo.biddingEndTime).valueOf()
+      return moment(this.saleData.biddingEndTime).valueOf()
     }
   },
   computed: {

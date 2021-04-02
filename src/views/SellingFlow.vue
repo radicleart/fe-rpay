@@ -38,6 +38,9 @@
     </b-card-group>
   </div>
 </div>
+<div v-else>
+  Asset not passed.
+</div>
 </template>
 
 <script>
@@ -54,7 +57,6 @@ export default {
   },
   data () {
     return {
-      minted: false,
       componentKey: 0,
       errorMessage: null,
       sellingMessage: null,
@@ -66,18 +68,13 @@ export default {
     this.$store.dispatch('rpayStacksStore/fetchMacSkyWalletInfo').then(() => {
       this.$store.commit('setModalMessage', '')
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
-      this.$store.dispatch('rpayStacksStore/lookupTokenByHash', { assetHash: configuration.minter.item.assetHash, contractAddress: networkConfig.contractAddress, contractName: networkConfig.contractName }).then((result) => {
-        this.loading = false
-        if (result && result.nftIndex >= 0) {
-          this.minted = true
-          console.log(result)
-          configuration.minter.item = Object.assign(configuration.minter.item, result)
-          this.$store.commit('rpayStore/addConfiguration', configuration)
-          this.$store.commit('rpayStore/setDisplayCard', 100)
-          this.loading = false
-        }
-      })
+      if (!configuration.gaiaAsset) {
+        const asset = this.$store.getters[APP_CONSTANTS.GET_ASSET_FROM_CONTRACT_BY_HASH](configuration.minter.item.assetHash)
+        configuration.gaiaAsset = asset
+      }
+      this.$store.commit('rpayStore/addConfiguration', configuration)
+      this.$store.commit('rpayStore/setDisplayCard', 100)
+      this.loading = false
     }).catch(() => {
       this.loading = false
       this.setPage()
@@ -95,6 +92,9 @@ export default {
       configuration.opcode = 'save-selling-data'
       window.eventBus.$emit('rpayEvent', configuration)
     },
+    minted () {
+      return this.configuration.gaiaAsset && this.configuration.gaiaAsset.token && this.configuration.gaiaAsset.token.nftIndex > -1
+    },
     setTradeInfo () {
       this.errorMessage = null
       if (!this.isValid()) return
@@ -104,7 +104,7 @@ export default {
       const asset = {
         assetHash: configuration.minter.item.assetHash,
         nftIndex: configuration.minter.item.nftIndex,
-        tradeInfo: configuration.minter.item.tradeInfo,
+        saleData: configuration.minter.item.saleData,
         contractAddress: networkConfig.contractAddress,
         contractName: networkConfig.contractName
       }
@@ -125,27 +125,27 @@ export default {
     isValid: function () {
       this.errorMessage = null
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      const tradeInfo = configuration.minter.item.tradeInfo
-      if (tradeInfo.saleType === 2) {
-        if (!tradeInfo.biddingEndTime) {
+      const saleData = configuration.minter.item.saleData
+      if (saleData.saleType === 2) {
+        if (!saleData.biddingEndTime) {
           this.errorMessage = 'Please select end time for for bidding'
           return false
         }
-        if (!tradeInfo.incrementPrice || tradeInfo.incrementPrice < 0) {
+        if (!saleData.incrementPrice || saleData.incrementPrice < 0) {
           this.errorMessage = 'Please enter the increment for bidding'
           return false
         }
-        if (!tradeInfo.buyNowOrStartingPrice || tradeInfo.buyNowOrStartingPrice < 0) {
+        if (!saleData.buyNowOrStartingPrice || saleData.buyNowOrStartingPrice < 0) {
           this.errorMessage = 'Please enter the buy now / starting price for bidding'
           return false
         }
-        if (!tradeInfo.reservePrice || tradeInfo.reservePrice < 0) {
+        if (!saleData.reservePrice || saleData.reservePrice < 0) {
           this.$notify({ type: 'error', title: 'Reserve Price', text: 'Please enter the reserve.' })
           this.errorMessage = 'Please enter the reserve for this item'
           return false
         }
-      } else if (tradeInfo.saleType === 1) {
-        if (!tradeInfo.buyNowOrStartingPrice || tradeInfo.buyNowOrStartingPrice < 0) {
+      } else if (saleData.saleType === 1) {
+        if (!saleData.buyNowOrStartingPrice || saleData.buyNowOrStartingPrice < 0) {
           this.errorMessage = 'Please enter the buy now / starting price for bidding'
           return false
         }
@@ -161,10 +161,14 @@ export default {
     }
   },
   computed: {
-    tradeInfo () {
+    saleData () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      const tradeInfo = configuration.minter.item.tradeInfo
-      return tradeInfo
+      const saleData = configuration.minter.item.saleData
+      return saleData
+    },
+    configuration () {
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      return configuration
     },
     displayCard () {
       const displayCard = this.$store.getters[APP_CONSTANTS.KEY_DISPLAY_CARD]
