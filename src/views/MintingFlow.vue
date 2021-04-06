@@ -50,8 +50,8 @@ export default {
   computed: {
     isMinted () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      const assetHash = configuration.minter.item.assetHash
-      const asset = this.$store.getters[APP_CONSTANTS.GET_ASSET_FROM_CONTRACT_BY_HASH](assetHash)
+      const assetHash = configuration.gaiaAsset.assetHash
+      const asset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](assetHash)
       return asset
     },
     displayCard () {

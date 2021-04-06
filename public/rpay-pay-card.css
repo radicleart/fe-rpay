@@ -85,6 +85,12 @@
   white-space: 'nowrap';
 }
 
+#rpay-pay-card .square-btn {
+  border-radius: 0px;
+  width: 25%;
+  white-space: 'nowrap';
+}
+
 #rpay-pay-card .no-option-off {
   color: #000000;
   border: #cccccc;
@@ -111,6 +117,21 @@
   min-height: 80vh;
   padding: '0';
   margin: '0';
+  background-repeat: 'no-repeat';
+  -webkit-background-size: 'cover';
+  -moz-background-size: 'cover';
+  -o-background-size: 'cover';
+  background-size: 'cover';
+  /** opacity: 0.9;
+  background-image: url('https://risidio-journal.cdn.prismic.io/risidio-journal/59455bcb-a954-4713-9afd-cfe6130f0b26_Group+994.svg');
+  **/
+}
+#rpay-pay-card .rpay-purchase-card {
+  max-width: 60vw;
+  min-width: 60vw;
+  padding: 30px;
+  margin-top: 20px;
+  background-color: #fff;
   background-repeat: 'no-repeat';
   -webkit-background-size: 'cover';
   -moz-background-size: 'cover';

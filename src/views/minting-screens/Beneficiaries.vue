@@ -50,7 +50,7 @@ export default {
   },
   mounted () {
     const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-    this.editions = (configuration.minter.item.editions) ? configuration.minter.item.editions : 2
+    this.editions = (configuration.gaiaAsset.editions) ? configuration.gaiaAsset.editions : 2
   },
   methods: {
     addBeneficiary: function () {
@@ -62,7 +62,7 @@ export default {
         this.editions = 100
       }
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      configuration.minter.item.editions = this.editions
+      configuration.gaiaAsset.editions = this.editions
       this.$store.commit('rpayStore/addConfiguration', configuration)
       configuration.opcode = 'save-mint-data'
       window.eventBus.$emit('rpayEvent', configuration)

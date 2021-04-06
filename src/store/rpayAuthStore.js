@@ -4,16 +4,14 @@
  * directly to the user.
  */
 import { AppConfig, UserSession, authenticate, showConnect } from '@stacks/connect'
-import store from '@/store/rpayAuthStore'
 
 const origin = window.location.origin
 const appConfig = new AppConfig(['store_write', 'publish_data'])
 const userSession = new UserSession({ appConfig })
 const NETWORK = process.env.VUE_APP_NETWORK
 const BLOCKSTACK_LOGIN = Number(process.env.VUE_APP_BLOCKSTACK_LOGIN)
-const authFinished = function (o) {
-  store.commit('rpayAuthStore/setAuthResponse', o)
-  store.dispatch('rpayAuthStore/fetchMyAccount')
+const authFinished = function (session) {
+  window.eventBus.$emit('rpayEvent', { opcode: 'configured-logged-in', session: session })
 }
 const authOptions = {
   sendToSignIn: false,

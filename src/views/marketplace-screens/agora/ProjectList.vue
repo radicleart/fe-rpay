@@ -24,8 +24,8 @@ export default {
   },
   computed: {
     projects () {
-      const appmap = this.$store.getters[APP_CONSTANTS.KEY_APP_MAP]
-      if (appmap) return appmap.apps
+      const appmap = this.$store.getters[APP_CONSTANTS.KEY_REGISTRY]
+      if (appmap) return appmap.applications
       return []
     }
   }

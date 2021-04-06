@@ -33,7 +33,7 @@ export default {
   },
   computed: {
     application () {
-      const application = this.$store.getters[APP_CONSTANTS.KEY_APP_MAP_PROJECT](this.contractId)
+      const application = this.$store.getters[APP_CONSTANTS.KEY_APPLICATION_FROM_REGISTRY_BY_CONTRACT_ID](this.contractId)
       return application
     }
   }

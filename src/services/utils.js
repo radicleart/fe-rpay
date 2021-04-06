@@ -50,6 +50,14 @@ const utils = {
       return 0
     }
   },
+  toDecimals: function (amount, precision) {
+    if (!precision) precision = 100
+    if (!amount) return
+    if (typeof amount === 'string') {
+      amount = Number(amount)
+    }
+    return Math.round(amount * precision) / precision // amount.toFixed(2)
+  },
   fromOnChainAmount: function (amountMicroStx) {
     try {
       amountMicroStx = parseInt(amountMicroStx, 16)

@@ -6,7 +6,7 @@
         <a class="text-white mr-3" href="/?operation=payment-flow&debug=true">payment flow</a>
         <a class="text-white mr-3" href="/?operation=minting-flow&debug=true">minting flow</a>
         <a class="text-white mr-3" href="/?operation=selling-flow&debug=true">selling flow</a>
-        <a class="text-white mr-3" href="/?operation=buying-flow&debug=true">buying flow</a>
+        <a class="text-white mr-3" href="/?operation=purchase-flow&debug=true">purchase flow</a>
         <a class="text-white mr-3" href="/?operation=marketplace-flow&debug=true">marketplace flow</a>
       </div>
     </div>
@@ -23,9 +23,9 @@
       <div class="col-2">Address:</div><div class="col-10"><a target="_blank" class="text-warning" :href="contractUrl()">{{configuration.minter.networks[0].contractAddress}}.{{configuration.minter.networks[0].contractName}}</a></div>
       <div class="col-2">API Base:</div><div class="col-10">{{configuration.risidioBaseApi}}</div>
       <div class="col-2">Mode:</div><div class="col-10">{{configuration.risidioCardMode}}</div>
-      <div class="col-2">Item name:</div><div class="col-10">{{configuration.minter.item.name}}</div>
-      <div class="col-2">Asset hash:</div><div class="col-10">{{configuration.minter.item.assetHash}} <a href="#" @click.prevent="genHash()"><b-icon icon="alarm"/></a></div>
-      <div class="col-2">Editions:</div><div class="col-10">{{configuration.minter.item.editions}}</div>
+      <div class="col-2">Item name:</div><div class="col-10">{{configuration.gaiaAsset.name}}</div>
+      <div class="col-2">Asset hash:</div><div class="col-10">{{configuration.gaiaAsset.assetHash}} <a href="#" @click.prevent="genHash()"><b-icon icon="alarm"/></a></div>
+      <div class="col-2">Editions:</div><div class="col-10">{{configuration.gaiaAsset.editions}}</div>
       <div class="col-2">Royalties:</div>
       <div class="col-10">
         <div class="row" v-for="(beneficiary, index) in configuration.minter.beneficiaries" :key="index">
@@ -34,7 +34,7 @@
           <div class="col-8">{{beneficiary.chainAddress}}</div>
         </div>
       </div>
-      <div class="col-2">ImageUrl:</div><div class="col-10">{{configuration.minter.item.imageUrl}}</div>
+      <div class="col-2">ImageUrl:</div><div class="col-10">{{configuration.gaiaAsset.imageUrl}}</div>
     </div>
     <div class="row my-5">
       <div class="col-2">Look Up:</div>
@@ -51,18 +51,18 @@
         </b-input-group>
       </div>
     </div>
-    <div v-if="result">
+    <div v-if="currentAsset">
       <div class="row mt-2">
-        <div class="col-2"><a class="text-white" href="#" @click.prevent="lookupTokenByHash()">NFT Data</a></div>
-        <div class="col-10">{{result}}</div>
+        <div class="col-2"><a class="text-white" href="#">NFT Data</a></div>
+        <div class="col-10">{{currentAsset.name}}</div>
       </div>
       <div class="row mt-2">
         <div class="col-2">Index</div>
-        <div class="col-10">{{result.nftIndex}}</div>
+        <div class="col-10">{{currentAsset.nftIndex}}</div>
       </div>
       <div class="row mt-2">
-        <div class="col-2">Edition # {{result.edition}}</div>
-        <div class="col-10">of {{result.maxEditions}} and {{result.editionCounter}} minted so far</div>
+        <div class="col-2">Edition # {{currentAsset.edition}}</div>
+        <div class="col-10">of {{currentAsset.maxEditions}} and {{currentAsset.editionCounter}} minted so far</div>
       </div>
       <div class="row mt-2">
         <div class="col-2">Selling</div>
@@ -70,13 +70,13 @@
       </div>
     </div>
 
-    <div class="bg-light text-dark p-4" v-if="appMapContract">
+    <div class="bg-light text-dark p-4" v-if="registry">
       <div class="row border-bottom mb-3 pb-2">
         <div class="col-12"><h6>All Contract Data</h6></div>
-        <div class="col-2">administrator</div><div class="col-10">{{appMapContract.administrator}}</div>
-        <div class="col-2">appCounter</div><div class="col-10">{{appMapContract.appCounter}}</div>
+        <div class="col-2">administrator</div><div class="col-10">{{registry.administrator}}</div>
+        <div class="col-2">appCounter</div><div class="col-10">{{registry.appCounter}}</div>
       </div>
-      <div class="row border-bottom mb-3 pb-2" v-for="(application, index) in appMapContract.applications" :key="index">
+      <div class="row border-bottom mb-3 pb-2" v-for="(application, index) in registry.applications" :key="index">
         <div class="col-2">Contract Id</div><div class="col-10">{{application.contractId}}</div>
         <div class="col-2">App-Index</div><div class="col-10">{{application.appIndex}}</div>
         <div class="col-2">Storage</div><div class="col-10">{{application.storageModel}}</div>
@@ -129,6 +129,12 @@ export default {
   mounted () {
     this.$store.dispatch('rpayStacksContractStore/fetchContractData')
     const $self = this
+    const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+    const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
+    if (gaiaAsset) {
+      configuration.gaiaAsset = gaiaAsset
+      this.$store.commit('rpayStore/addConfiguration', configuration)
+    }
     window.eventBus.$on('rpayEvent', function (data) {
       $self.globalEvent = data
     })
@@ -140,8 +146,8 @@ export default {
       const cName = contractId.split('.')[1]
       configuration.minter.networks[0].contractAddress = cAddr
       configuration.minter.networks[0].contractName = cName
-      configuration.minter.item.nftIndex = nftIndex
-      configuration.minter.item.assetHash = aHash
+      configuration.gaiaAsset.nftIndex = nftIndex
+      configuration.gaiaAsset.assetHash = aHash
       this.$store.commit('rpayStore/addConfiguration', configuration)
     },
     startLogout: function () {
@@ -154,16 +160,16 @@ export default {
         this.result = result
       })
     },
-    saleDataDesc: function () {
-      if (this.result && this.result.saleData) {
-        if (this.result.saleData.saleType === 0) {
+    saleDataDesc: function (currentAsset) {
+      if (currentAsset && currentAsset.saleData) {
+        if (currentAsset.saleData.saleType === 0) {
           return 'not selling'
-        } else if (this.result.saleData.saleType === 1) {
-          return 'buy now for ' + this.result.saleData.buyNowOrStartingPrice
-        } else if (this.result.saleData.saleType === 2) {
-          return 'place bid for ' + this.result.saleData.buyNowOrStartingPrice + this.result.saleData.incrementPrice
-        } else if (this.result.saleData.saleType === 3) {
-          return 'Make an offer (' + this.result.offerCounter + ' offers made so far)'
+        } else if (currentAsset.saleData.saleType === 1) {
+          return 'buy now for ' + currentAsset.saleData.buyNowOrStartingPrice
+        } else if (currentAsset.saleData.saleType === 2) {
+          return 'place bid for ' + currentAsset.saleData.buyNowOrStartingPrice + currentAsset.saleData.incrementPrice
+        } else if (currentAsset.saleData.saleType === 3) {
+          return 'Make an offer (' + currentAsset.offerCounter + ' offers made so far)'
         }
       }
     },
@@ -197,23 +203,28 @@ export default {
     },
     genHash: function () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      if (!configuration.minter.item.assetHashes) configuration.minter.item.assetHashes = []
-      configuration.minter.item.assetHashes.push(configuration.minter.item.assetHash)
+      if (!configuration.gaiaAsset.assetHashes) configuration.gaiaAsset.assetHashes = []
+      configuration.gaiaAsset.assetHashes.push(configuration.gaiaAsset.assetHash)
       const ran = Math.floor(Math.random() * Math.floor(1000000000))
       // const ranHash = utils.buildHash(ran)
       const ranHash = crypto.createHash('sha256').update(ran).digest('hex')
-      configuration.minter.item.assetHash = ranHash
+      configuration.gaiaAsset.assetHash = ranHash
       this.$store.commit('rpayStore/addConfiguration', configuration)
     },
     lookupTokenByHash: function () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
-      this.$store.dispatch('rpayStacksStore/lookupTokenByHash', { assetHash: configuration.minter.item.assetHash, contractAddress: networkConfig.contractAddress, contractName: networkConfig.contractName }).then((result) => {
+      this.$store.dispatch('rpayStacksStore/lookupTokenByHash', { assetHash: configuration.gaiaAsset.assetHash, contractAddress: networkConfig.contractAddress, contractName: networkConfig.contractName }).then((result) => {
         this.result = result
       })
     }
   },
   computed: {
+    currentAsset () {
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      const currentAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
+      return currentAsset
+    },
     configuration () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return configuration
@@ -222,9 +233,9 @@ export default {
       const profile = this.$store.getters[APP_CONSTANTS.KEY_PROFILE]
       return profile
     },
-    appMapContract () {
-      const appMapContract = this.$store.getters[APP_CONSTANTS.GET_APP_MAP_CONTRACT]
-      return appMapContract
+    registry () {
+      const registry = this.$store.getters[APP_CONSTANTS.KEY_REGISTRY]
+      return registry
     }
   }
 }

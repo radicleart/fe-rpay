@@ -15,10 +15,10 @@
     </span>
   </div>
   <div class="mt-5 mx-5">
-    <not-for-sale v-if="saleData.saleType === 0"/>
-    <buy-now-trade-info v-if="saleData.saleType === 1"/>
-    <auction-trade-info v-else-if="saleData.saleType === 2"/>
-    <offer-trade-info v-else-if="saleData.saleType === 3"/>
+    <not-for-sale v-if="saleData.saleType === 0" v-on="$listeners"/>
+    <buy-now-trade-info v-if="saleData.saleType === 1" v-on="$listeners"/>
+    <auction-trade-info v-else-if="saleData.saleType === 2" v-on="$listeners"/>
+    <offer-trade-info v-else-if="saleData.saleType === 3" v-on="$listeners"/>
   </div>
 </b-card-text>
 </template>
@@ -45,25 +45,22 @@ export default {
   },
   mounted () {
     const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-    const saleData = configuration.minter.item.saleData
+    const saleData = configuration.gaiaAsset.saleData
     if (!saleData.biddingEndTime) {
       saleData.biddingEndTime = String(moment().unix())
     }
-    this.$store.commit('rpayStore/setTradeInfo', saleData)
   },
   methods: {
     changeSellingOption: function (saleType) {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      const saleData = configuration.minter.item.saleData
-      saleData.saleType = saleType
-      this.$store.commit('rpayStore/setTradeInfo', saleData)
+      configuration.gaiaAsset.saleData.saleType = saleType
+      this.$store.commit('rpayStore/addConfiguration', configuration)
     }
   },
   computed: {
     saleData () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      const saleData = configuration.minter.item.saleData
-      return saleData
+      return configuration.gaiaAsset.saleData
     }
   }
 }

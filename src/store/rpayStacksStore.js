@@ -23,7 +23,11 @@ import {
 import axios from 'axios'
 import BigNum from 'bn.js'
 import searchIndexService from '@/services/searchIndexService'
-// import { connectWebSocketClient } from '@stacks/blockchain-api-client'
+import SockJS from 'sockjs-client'
+import Stomp from '@stomp/stompjs'
+
+let socket = null
+let stompClient = null
 
 const network = new StacksTestnet()
 const precision = 1000000
@@ -48,32 +52,7 @@ const pollTxStatus = function (txId) {
     subscribe(txId)
   })
 }
-/**
-const pollTxStatus = function (dispatch, txId) {
-  return new Promise((resolve) => {
-    let counter = 0
-    if (!STACKS_POLLING) return
-    const intval = setInterval(function () {
-      axios.get(STACKS_API_EXT + '/extended/v1/tx/' + txId).then(response => {
-        const meth1 = 'tx_status'
-        if (response[meth1] === 'success') {
-          const meth2 = 'tx_status'
-          const hexResolved = utils.fromHex(response[meth2].hex)
-          resolve(hexResolved)
-          clearInterval(intval)
-        }
-      }).catch((e) => {
-        console.log(e)
-      })
-      if (counter === 30) {
-        clearInterval(intval)
-        resolve()
-      }
-      counter++
-    }, 5000)
-  })
-}
-**/
+
 const handleSetTradeInfo = function (baseUrl, asset, result, resolve) {
   asset.hexResp = (result && result.data) ? result.data : ''
   // if (asset.saleData.biddingEndTime && typeof asset.saleData.biddingEndTime === 'string' && asset.saleData.biddingEndTime.indexOf('-') > -1) {
@@ -106,20 +85,44 @@ const handleBuyNow = function (baseUrl, asset, result, resolve, purchaseInfo) {
   })
 }
 
-const captureResult = function (dispatch, assetHash, contractAddress, contractName) {
-  let counter = 0
-  const intval = setInterval(function () {
-    dispatch('lookupTokenByHash', { assetHash: assetHash, contractAddress: contractAddress, contractName: contractName }).then(() => {
-      clearInterval(intval)
-    }).catch((e) => {
-      // try again
+socket.onclose = function () {
+  console.log('close')
+  stompClient.disconnect()
+}
+
+const unsubscribeApiNews = function () {
+  if (socket && stompClient) {
+    stompClient.disconnect()
+  }
+}
+
+const subscribeApiNews = function (commit, connectUrl, assetHash, contractId) {
+  if (!socket) socket = new SockJS(connectUrl + '/api-news')
+  if (!stompClient) stompClient = Stomp.over(socket)
+  stompClient.connect({}, function () {
+    stompClient.subscribe('/queue/contract-news-' + contractId + '-' + assetHash, function (response) {
+      const token = JSON.parse(response.body)
+      commit('setToken', token)
+      // const data = { opcode: 'stx-contract-data', registry: registry }
+      // window.eventBus.$emit('rpayEvent', data)
     })
-    if (counter === 100) {
-      window.eventBus.$emit('rpayEvent', { opcode: 'stx-mint-error-timeout' })
-      clearInterval(intval)
-    }
-    counter++
-  }, 5000)
+  },
+  function (error) {
+    console.log(error)
+  })
+}
+
+const captureResult = function (commit, rootGetters, result) {
+  const configuration = rootGetters['rpayStore/getConfiguration']
+  const contractId = result.contractAddress + '.' + result.contractName
+  const useApi = configuration.risidioBaseApi + '/mesh/v2/register/' + contractId + '/' + result.assetHash
+  const connectUrl = configuration.risidioBaseApi + '/mesh'
+  subscribeApiNews(commit, connectUrl, contractId, result.assetHash)
+  axios.get(useApi).then(response => {
+    console.log(response)
+  }).catch((error) => {
+    console.log(error)
+  })
 }
 
 const resolveError = function (commit, reject, error) {
@@ -202,6 +205,12 @@ const rpayStacksStore = {
     }
   },
   actions: {
+    cleanup ({ state }) {
+      return new Promise((resolve, reject) => {
+        unsubscribeApiNews()
+        resolve(null)
+      })
+    },
     fetchMacSkyWalletInfo ({ commit, dispatch, rootGetters }) {
       return new Promise((resolve) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
@@ -241,7 +250,7 @@ const rpayStacksStore = {
         }
       })
     },
-    callContractBlockstack ({ state }, data) {
+    callContractBlockstack ({ dispatch, state }, data) {
       return new Promise((resolve, reject) => {
         const txOptions = {
           contractAddress: data.contractAddress,
@@ -257,8 +266,13 @@ const rpayStacksStore = {
             const result = {
               txId: response.txId,
               txRaw: response.txRaw,
-              network: 15
+              network: 15,
+              assetHash: data.assetHash,
+              contractAddress: data.contractAddress,
+              contractName: data.contractName,
+              functionName: data.functionName
             }
+            captureResult(dispatch, result)
             resolve(result)
           }
         }
@@ -288,6 +302,7 @@ const rpayStacksStore = {
         makeContractCall(txOptions).then((transaction) => {
           if (state.provider !== 'risidio') {
             broadcastTransaction(transaction, network).then((result) => {
+              captureResult(dispatch, result)
               resolve(result)
             }).catch((error) => {
               reject(error)
@@ -300,10 +315,14 @@ const rpayStacksStore = {
             axios.post(configuration.risidioBaseApi + '/mesh' + '/v2/broadcast', txdata, { headers: headers }).then(response => {
               const result = {
                 txId: response.data,
-                network: 15
+                network: 15,
+                assetHash: data.assetHash,
+                contractAddress: data.contractAddress,
+                contractName: data.contractName,
+                functionName: data.functionName
               }
               dispatch('fetchMacSkyWalletInfo')
-              captureResult(dispatch, data.assetHash, data.contractAddress, data.contractName)
+              captureResult(dispatch, result)
               resolve(result)
             }).catch((error) => {
               resolveError(commit, reject, error)
@@ -411,7 +430,7 @@ const rpayStacksStore = {
         })
       })
     },
-    lookupToken: function ({ dispatch }, data) {
+    lookupToken: function ({ dispatch, commit }, data) {
       return new Promise(function (resolve) {
         const functionArgs = [`0x${serializeCV(uintCV(data.nftIndex)).toString('hex')}`]
         const config = {
@@ -426,6 +445,7 @@ const rpayStacksStore = {
             result.network = 15
             result.opcode = 'stx-mint-success'
             resolve(result)
+            commit('rpayStacksContractStore/addContractWriteResult', result, { root: true })
             window.eventBus.$emit('rpayEvent', result)
           } else {
             resolve(null)
@@ -478,36 +498,36 @@ const rpayStacksStore = {
         })
       })
     },
-    setTradeInfo ({ state, dispatch, rootGetters }, asset) {
+    setTradeInfo ({ state, dispatch, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         // (asset-hash (buff 32)) (sale-type uint) (increment-stx uint) (reserve-stx uint) (amount-stx uint)
         // const buffer = bufferCV(Buffer.from(asset.assetHash, 'hex')) // Buffer.from(hash.toString(CryptoJS.enc.Hex), 'hex')
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const nftIndex = uintCV(asset.nftIndex)
-        const saleType = uintCV(asset.saleData.saleType)
-        const incrementPrice = uintCV(utils.toOnChainAmount(asset.saleData.incrementPrice))
-        const reservePrice = uintCV(utils.toOnChainAmount(asset.saleData.reservePrice))
-        const buyNowOrStartingPrice = uintCV(utils.toOnChainAmount(asset.saleData.buyNowOrStartingPrice))
-        const biddingEndTime = uintCV(asset.saleData.biddingEndTime)
+        const nftIndex = uintCV(data.nftIndex)
+        const saleType = uintCV(data.saleData.saleType)
+        const incrementPrice = uintCV(utils.toOnChainAmount(data.saleData.incrementPrice))
+        const reservePrice = uintCV(utils.toOnChainAmount(data.saleData.reservePrice))
+        const buyNowOrStartingPrice = uintCV(utils.toOnChainAmount(data.saleData.buyNowOrStartingPrice))
+        const biddingEndTime = uintCV(data.saleData.biddingEndTime)
         // const auctionId = uintCV(asset.saleData.biddingEndTime)
         const functionArgs = [nftIndex, saleType, incrementPrice, reservePrice, buyNowOrStartingPrice, biddingEndTime]
-        const data = {
-          contractAddress: asset.contractAddress,
-          contractName: asset.contractName,
+        const callData = {
+          contractAddress: data.contractAddress,
+          contractName: data.contractName,
           functionName: 'set-sale-data',
           functionArgs: functionArgs
         }
         const methos = (state.provider === 'risidio') ? 'callContractRisidio' : 'callContractBlockstack'
-        dispatch(methos, data).then((result) => {
-          handleSetTradeInfo(configuration.risidioBaseApi, asset, result, resolve)
+        dispatch(methos, callData).then((result) => {
+          handleSetTradeInfo(configuration.risidioBaseApi, data, result, resolve)
           pollTxStatus(result.txId).then(() => {
-            handleSetTradeInfo(configuration.risidioBaseApi, asset, result, resolve)
+            handleSetTradeInfo(configuration.risidioBaseApi, data, result, resolve)
           })
         }).catch(() => {
-          data.action = 'inc-nonce'
-          dispatch(methos, data).then((result) => {
+          callData.action = 'inc-nonce'
+          dispatch(methos, callData).then((result) => {
             pollTxStatus(result.txId).then(() => {
-              handleSetTradeInfo(configuration.risidioBaseApi, asset, result, resolve)
+              handleSetTradeInfo(configuration.risidioBaseApi, data, result, resolve)
             })
           }).catch((error) => {
             reject(error)
@@ -515,7 +535,7 @@ const rpayStacksStore = {
         })
       })
     },
-    mintToken ({ dispatch, rootGetters }, data) {
+    mintToken ({ dispatch }, data) {
       return new Promise((resolve) => {
         const postConditionAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
         const postConditionCode = FungibleConditionCode.GreaterEqual
@@ -547,6 +567,16 @@ const rpayStacksStore = {
         const shares = listCV(shareList)
         data.functionArgs = [bufferCV(buffer), gaiaUsername, editions, addresses, shares]
         dispatch(data.action, data).then((result) => {
+          resolve(result)
+        })
+      })
+    },
+    makeOffer ({ state, dispatch }, data) {
+      return new Promise((resolve) => {
+        data.functionName = 'make-offer'
+        data.functionArgs = [uintCV(data.nftIndex), uintCV(utils.toOnChainAmount(data.offerAmount)), uintCV(data.saleData.biddingEndTime)]
+        const methos = (state.provider === 'risidio') ? 'callContractRisidio' : 'callContractBlockstack'
+        dispatch(methos, data).then((result) => {
           resolve(result)
         })
       })

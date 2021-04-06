@@ -1,26 +1,23 @@
 <template>
 <div class="" v-if="loaded" id="rpay-pay-card">
-  <div class="col-6" v-if="!risidioCardMode" >
-    mode should be one of 'payment-flow' or 'minting-flow'
-  </div>
-  <div v-else-if="risidioCardMode === 'marketplace-flow'">
+  <div v-if="risidioCardMode === 'marketplace-flow'">
     <marketplace-flow class=""/>
   </div>
-  <div :class="(showDebug) ? 'col-6' : 'col-12'" v-else-if="risidioCardMode === 'payment-flow'">
+  <div :class="(showDebug) ? 'col-12' : 'col-12'" v-else-if="risidioCardMode === 'payment-flow'">
     <payment-flow/>
   </div>
-  <div :class="(showDebug) ? 'col-6' : 'col-12'" v-else-if="risidioCardMode === 'minting-flow'">
+  <div :class="(showDebug) ? 'col-12' : 'col-12'" v-else-if="risidioCardMode === 'minting-flow'">
     <minting-flow/>
   </div>
-  <div :class="(showDebug) ? 'col-6' : 'col-12'" v-else-if="risidioCardMode === 'selling-flow'">
+  <div :class="(showDebug) ? 'col-12' : 'col-12'" v-else-if="risidioCardMode === 'selling-flow'">
     <selling-flow/>
+  </div>
+  <div :class="(showDebug) ? 'col-12' : 'col-12'" v-else-if="risidioCardMode === 'purchase-flow'">
+    <purchase-flow v-if="gaiaAsset" :gaiaAsset="gaiaAsset"/>
   </div>
   <div class="col-6 text-white" v-if="showDebug">
     <debug-flow/>
   </div>
-</div>
-<div class="row" v-else>
-  Sorry - Internet connection troubles - maybe your in a train tunnel?
 </div>
 </template>
 
@@ -31,6 +28,7 @@ import PaymentFlow from './views/PaymentFlow'
 import MintingFlow from './views/MintingFlow'
 import MarketplaceFlow from './views/MarketplaceFlow'
 import SellingFlow from './views/SellingFlow'
+import PurchaseFlow from './views/PurchaseFlow'
 import rpayStore from './store/rpayStore'
 import rpaySearchStore from '@/store/rpaySearchStore'
 import rpayEthereumStore from './store/rpayEthereumStore'
@@ -38,6 +36,7 @@ import rpayAuthStore from './store/rpayAuthStore'
 import rpayCategoryStore from './store/rpayCategoryStore'
 import rpayStacksContractStore from './store/rpayStacksContractStore'
 import rpayStacksStore from './store/rpayStacksStore'
+import { APP_CONSTANTS } from '@/app-constants'
 
 if (!window.eventBus) {
   window.eventBus = new Vue()
@@ -48,6 +47,7 @@ export default {
     PaymentFlow,
     MintingFlow,
     SellingFlow,
+    PurchaseFlow,
     MarketplaceFlow,
     DebugFlow
   },
@@ -60,10 +60,14 @@ export default {
     }
   },
   beforeDestroy () {
-    this.$store.dispatch('rpayStore/stopCheckPayment')
-    this.$store.dispatch('rpayStore/stopListening')
+    this.$store.dispatch('rpayStacksContractStore/cleanup')
+    this.$store.dispatch('rpayStore/cleanup')
   },
   mounted () {
+    let configuration = this.configuration
+    if (!configuration) {
+      configuration = this.parseConfiguration()
+    }
     // only register the vuex store modules if not already registered..
     const urlParams = new URLSearchParams(window.location.search)
     const showDebug = urlParams.get('debug')
@@ -77,12 +81,9 @@ export default {
       this.$store.registerModule('rpayStacksStore', rpayStacksStore)
       this.$store.registerModule('rpayStacksContractStore', rpayStacksContractStore)
       this.$store.registerModule('rpayStore', rpayStore)
+      this.$store.commit('rpayStore/addConfiguration', configuration)
     }
     // parse and store the main configuration object
-    let configuration = this.configuration
-    if (!configuration) {
-      configuration = this.parseConfiguration()
-    }
     const lf = (configuration.lookAndFeel) ? configuration.lookAndFeel : this.defLF()
     if (!lf.variant) lf.variant = 'warning'
     if (!lf.variant1) lf.variant1 = 'danger'
@@ -97,6 +98,9 @@ export default {
     }).catch(() => {
       this.setPage()
     })
+    if (!agetter) {
+      window.eventBus.$emit('rpayEvent', { opcode: 'configured' })
+    }
   },
   methods: {
     parseConfiguration: function () {
@@ -132,6 +136,11 @@ export default {
     }
   },
   computed: {
+    gaiaAsset () {
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
+      return gaiaAsset
+    }
   }
 }
 </script>

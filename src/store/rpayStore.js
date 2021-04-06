@@ -29,6 +29,13 @@ const setAmounts = function (tickerRates, configuration) {
     return configuration
   }
 }
+const currencyWhiteList = function (currency) {
+  return currency === 'CNY' ||
+          currency === 'GBP' ||
+          currency === 'JPY' ||
+          currency === 'EUR' ||
+          currency === 'USD'
+}
 const getPaymentOptions = function (configuration) {
   const allowedOptions = []
   const options = configuration.payment.paymentOptions
@@ -70,6 +77,17 @@ const subscribeApiNews = function (commit, connectUrl, paymentId) {
   })
 }
 
+socket.onclose = function () {
+  console.log('close')
+  stompClient.disconnect()
+}
+
+const unsubscribeApiNews = function () {
+  if (socket && stompClient) {
+    stompClient.disconnect()
+  }
+}
+
 const checkPayment = function (resolve, reject, state, commit, paymentId) {
   // if (state.timer) {
   //  clearInterval(state.timer)
@@ -100,10 +118,8 @@ const rpayStore = {
   // rpayStacksStore: rpayStacksStore
   // },
   state: {
-    appMapContract: null,
     timer: null,
     xgeRates: null,
-    ratesNews: null,
     configuration: null,
     settledInvoice: null,
     invoice: null,
@@ -175,6 +191,11 @@ const rpayStore = {
     getInvoiceDuration: state => {
       return lsatHelper.lsatDuration(state.invoice)
     },
+    getTickerRates: state => {
+      if (!state.tickerRates) return []
+      const currencies = state.tickerRates.filter((o) => currencyWhiteList(o.currency))
+      return currencies
+    },
     getExchangeRates: state => {
       return state.xgeRates
     },
@@ -221,9 +242,6 @@ const rpayStore = {
       }
       state.configuration = configuration
     },
-    setTradeInfo (state, saleData) {
-      state.configuration.minter.item.saleData = saleData
-    },
     setMintingMessage (state, o) {
       state.mintingMessage = o
     },
@@ -253,10 +271,19 @@ const rpayStore = {
     }
   },
   actions: {
-    initialiseWebsockets ({ commit }, configuration) {
+    cleanup ({ state }) {
       return new Promise((resolve, reject) => {
+        unsubscribeApiNews()
+        resolve(null)
+      })
+    },
+    initialiseWebsockets ({ commit }, configuration) {
+      return new Promise(() => {
         try {
-          searchIndexService.setBaseUrl(configuration.risidioBaseApi)
+          MESH_API = configuration.risidioBaseApi + '/mesh'
+          axios.get(MESH_API + '/v1/rates/ticker').then(response => {
+            commit('setTickerRates', response.data)
+          })
           subscribeApiNews(commit, configuration.risidioBaseApi + '/mesh')
         } catch (err) {
           console.log(err)

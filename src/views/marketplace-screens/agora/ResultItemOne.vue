@@ -104,13 +104,13 @@ export default {
   },
   computed: {
     buyingPriceConversion () {
-      const saleData = this.$store.getters[APP_CONSTANTS.GET_TRADE_INFO_FROM_HASH](this.result.assetHash)
+      const saleData = this.$store.getters[APP_CONSTANTS.KEY_TRADE_INFO_FROM_HASH](this.result.assetHash)
       const buyNowOrStartingPrice = saleData.buyNowOrStartingPrice
       const rate = this.$store.getters[APP_CONSTANTS.KEY_EXCHANGE_RATE](buyNowOrStartingPrice)
       return rate
     },
     buyingPrice () {
-      const saleData = this.$store.getters[APP_CONSTANTS.GET_TRADE_INFO_FROM_HASH](this.result.assetHash)
+      const saleData = this.$store.getters[APP_CONSTANTS.KEY_TRADE_INFO_FROM_HASH](this.result.assetHash)
       return saleData.buyNowOrStartingPrice
     },
     assetUrl () {

@@ -4,7 +4,7 @@
     <b-card-group class="" :key="componentKey">
       <b-card header-tag="header" footer-tag="footer" class="rpay-card" v-if="minted">
         <selling-header :allowEdit="true"/>
-        <selling-options v-if="displayCard === 100"/>
+        <selling-options v-if="displayCard === 100" @updateSaleDataInfo="updateSaleDataInfo"/>
         <div class="text-center">
           <div class="text-danger" v-html="errorMessage"></div>
           <div class="text-info" v-html="sellingMessage"></div>
@@ -47,7 +47,7 @@
 import { APP_CONSTANTS } from '@/app-constants'
 import SellingOptions from './selling-screens/SellingOptions'
 import SellingHeader from './selling-screens/SellingHeader'
-// import moment from 'moment'
+// import utils from '@/services/utils'
 
 export default {
   name: 'SellingFlow',
@@ -65,13 +65,10 @@ export default {
   },
   mounted () {
     this.errorMessage = null
+    this.$store.commit('rpayCategoryStore/setModalMessage', '')
     this.$store.dispatch('rpayStacksStore/fetchMacSkyWalletInfo').then(() => {
-      this.$store.commit('setModalMessage', '')
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      if (!configuration.gaiaAsset) {
-        const asset = this.$store.getters[APP_CONSTANTS.GET_ASSET_FROM_CONTRACT_BY_HASH](configuration.minter.item.assetHash)
-        configuration.gaiaAsset = asset
-      }
+      configuration.gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
       this.$store.commit('rpayStore/addConfiguration', configuration)
       this.$store.commit('rpayStore/setDisplayCard', 100)
       this.loading = false
@@ -93,27 +90,24 @@ export default {
       window.eventBus.$emit('rpayEvent', configuration)
     },
     minted () {
-      return this.configuration.gaiaAsset && this.configuration.gaiaAsset.token && this.configuration.gaiaAsset.token.nftIndex > -1
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      return configuration.gaiaAsset && configuration.gaiaAsset.token && configuration.gaiaAsset.token.nftIndex > -1
     },
     setTradeInfo () {
       this.errorMessage = null
       if (!this.isValid()) return
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
-
-      const asset = {
-        assetHash: configuration.minter.item.assetHash,
-        nftIndex: configuration.minter.item.nftIndex,
-        saleData: configuration.minter.item.saleData,
-        contractAddress: networkConfig.contractAddress,
-        contractName: networkConfig.contractName
-      }
-      if (typeof configuration.minter.item.nftIndex === 'undefined') {
-        this.errorMessage = 'This item isn\'t registered on-chain.'
-        return
+      const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
+      const network = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
+      const data = {
+        contractAddress: network.contractAddress,
+        contractName: network.contractName,
+        assetHash: gaiaAsset.assetHash,
+        nftIndex: gaiaAsset.nftIndex,
+        saleData: gaiaAsset.saleData
       }
       this.sellingMessage = 'Calling wallet to sign and send... transactions can take a few minutes to confirm!'
-      this.$store.dispatch('rpayStacksStore/setTradeInfo', asset).then((result) => {
+      this.$store.dispatch('rpayStacksStore/setTradeInfo', data).then((result) => {
         this.result = result
         this.sellingMessage = 'Transaction sent! Check the explorer for progress - people will be able to buy this item once it completes!'
       }).catch((error) => {
@@ -125,7 +119,11 @@ export default {
     isValid: function () {
       this.errorMessage = null
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      const saleData = configuration.minter.item.saleData
+      const saleData = configuration.gaiaAsset.saleData
+      if (saleData.saleType < 0 || saleData.saleType > 3) {
+        this.errorMessage = 'Sale type outside of allowed range'
+        return false
+      }
       if (saleData.saleType === 2) {
         if (!saleData.biddingEndTime) {
           this.errorMessage = 'Please select end time for for bidding'
@@ -158,12 +156,27 @@ export default {
       if (!displayCard) {
         this.$store.commit('rpayStore/setDisplayCard', 100)
       }
+    },
+    updateSaleDataInfo (data) {
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
+      const saleDataTemp = gaiaAsset.saleData
+      if (data.moneyField) {
+        saleDataTemp[data.field] = data.value
+      } else {
+        saleDataTemp[data.field] = parseInt(data.value)
+      }
+      if (this.isValid()) {
+        configuration.gaiaAsset.saleData = saleDataTemp
+        this.$store.commit('rpayStore/addConfiguration', configuration)
+      }
     }
   },
   computed: {
     saleData () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      const saleData = configuration.minter.item.saleData
+      const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
+      const saleData = gaiaAsset.saleData
       return saleData
     },
     configuration () {

@@ -16,7 +16,7 @@
       <div role="group">
         <label for="input-live"><span class="text2">Offers End</span></label>
         <datetime type="datetime" input-id="biddingEndTime1" v-model="biddingEndTime">
-          <input @change="updateBiddingEndTime" id="biddingEndTime" style="border-radius: 24px !important;">
+          <input @change="updateBiddingEndTime()" id="biddingEndTime" style="border-radius: 24px !important;">
         </datetime>
         <!-- {{getLongTime()}} -->
       </div>
@@ -29,12 +29,18 @@
 <script>
 import { APP_CONSTANTS } from '@/app-constants'
 import moment from 'moment'
+import utils from '@/services/utils'
 import { Datetime } from 'vue-datetime'
 
 export default {
   name: 'OfferTradeInfo',
   components: {
     Datetime
+  },
+  watch: {
+    'biddingEndTime' () {
+      this.updateBiddingEndTime()
+    }
   },
   data () {
     return {
@@ -48,9 +54,9 @@ export default {
   },
   mounted () {
     const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-    configuration.gaiaAsset.saleData.saleType = 3
+    this.reservePrice = utils.toDecimals(utils.fromMicroAmount(configuration.gaiaAsset.saleData.reservePrice))
     if (configuration.gaiaAsset.saleData && configuration.gaiaAsset.saleData.biddingEndTime) {
-      let loaclEndM = moment(configuration.gaiaAsset.saleData.biddingEndTime * 1000)
+      let loaclEndM = moment(configuration.gaiaAsset.saleData.biddingEndTime)
       if (loaclEndM.isBefore(moment({}))) {
         loaclEndM = moment({}).add(2, 'days')
       }
@@ -62,34 +68,23 @@ export default {
       dd.minute(0)
       this.biddingEndTime = dd.format()
     }
+    this.$emit('updateSaleDataInfo', { field: 'saleType', value: 3 })
     this.loading = false
   },
   methods: {
-    toDecimals: function (field) {
-      if (this.offerAmount !== 0) this.offerAmount = Math.round(this.offerAmount * 1) / 1
+    toDecimals: function () {
+      if (this.reservePrice !== 0) this.reservePrice = Math.round(this.reservePrice * 100) / 100
     },
     saleDataDesc: function () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return configuration.gaiaAsset.offerCounter + ' offers so far'
     },
     updateBiddingEndTime: function () {
-      if (!this.biddingEndTime || this.biddingEndTime < 0) {
-        this.errorMessage = 'Please enter the bidding end time'
-        return
-      }
-      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const localTime = moment(this.biddingEndTime).valueOf()
-      configuration.gaiaAsset.saleData.biddingEndTime = localTime
-      this.$store.commit('rpayStore/addConfiguration', configuration)
+      this.$emit('updateSaleDataInfo', { field: 'biddingEndTime', value: localTime })
     },
     updateReservePrice: function () {
-      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      if (!this.reservePrice || this.reservePrice < 0) {
-        this.errorMessage = 'Please enter the reserve'
-        return
-      }
-      configuration.gaiaAsset.saleData.reservePrice = this.reservePrice
-      this.$store.commit('rpayStore/addConfiguration', configuration)
+      this.$emit('updateSaleDataInfo', { moneyField: true, field: 'reservePrice', value: this.reservePrice })
     }
   },
   computed: {

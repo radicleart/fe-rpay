@@ -60,9 +60,9 @@ export default {
       this.$store.commit('rpayStore/setDisplayCard', 104)
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
-      networkConfig.assetHash = configuration.minter.item.assetHash
-      networkConfig.editions = configuration.minter.item.editions
-      networkConfig.gaiaUsername = configuration.minter.item.gaiaUsername
+      networkConfig.assetHash = configuration.gaiaAsset.assetHash
+      networkConfig.editions = configuration.gaiaAsset.editions
+      networkConfig.gaiaUsername = configuration.gaiaAsset.gaiaUsername
       networkConfig.beneficiaries = configuration.minter.beneficiaries
       if (networkConfig.network === 'stacks connect') {
         networkConfig.action = 'callContractBlockstack'
@@ -82,7 +82,7 @@ export default {
       const mintConfig = {
         opcode: 'mint-token',
         ethContractAddress: networkConfig.contractAddress,
-        assetHash: configuration.minter.item.assetHash
+        assetHash: configuration.gaiaAsset.assetHash
       }
       this.$store.dispatch('rpayEthereumStore/transact', mintConfig)
       // this.$store.dispatch('rpayEthereumStore/transact', { ethContractAddress: mintConfig.ethContractAddress, opcode: 'eth-get-total-supply' }).then((result) => {

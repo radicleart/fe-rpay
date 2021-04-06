@@ -18,6 +18,7 @@ export const APP_CONSTANTS = {
   SET_DISPLAY_CARD: 'rpayStore/setDisplayCard',
   KEY_INVOICE: 'rpayStore/getInvoice',
   KEY_EXCHANGE_RATES: 'rpayStore/getExchangeRates',
+  KEY_TICKER_RATES: 'rpayStore/getTickerRates',
 
   KEY_CATEGORIES: 'rpayCategoryStore/getCategories',
   KEY_SECTION_HEIGHT: 'rpayCategoryStore/getSectionHeight',
@@ -26,9 +27,13 @@ export const APP_CONSTANTS = {
   KEY_EXCHANGE_RATE: 'rpayCategoryStore/getExchangeRateFormatted',
   KEY_STX_AMOUNT: 'rpayCategoryStore/getStxAmountFormatted',
 
-  GET_ASSET_FROM_CONTRACT_BY_HASH: 'rpayStacksContractStore/getAssetFromContractByHash',
-  GET_APP_MAP_CONTRACT: 'rpayStacksContractStore/getAppMapContract',
-  GET_TRADE_INFO_FROM_HASH: 'rpayStacksContractStore/getTradeInfoFromHash',
+  KEY_REGISTRY: 'rpayStacksContractStore/getRegistry',
+  KEY_REGISTRY_CONTRACT_ID: 'rpayStacksContractStore/getRegistryContractId',
+  KEY_TRADE_INFO_FROM_HASH: 'rpayStacksContractStore/getTradeInfoFromHash',
+  KEY_APPLICATION_FROM_REGISTRY_BY_CONTRACT_ID: 'rpayStacksContractStore/getApplicationFromRegistryByContractId',
+  KEY_ASSET_FROM_CONTRACT_BY_HASH: 'rpayStacksContractStore/getAssetFromContractByHash',
+  KEY_ASSETS_BY_CONTRACT_ID: 'getAssetsByContractId',
+  KEY_ASSETS_BY_CONTRACT_ID_AND_OWNER: 'getAssetsByContractIdAndOwner',
 
   SET_CURRENT_SEARCH: 'rpaySearchStore/setCurrentSearch',
   KEY_CURRENT_SEARCH: 'rpaySearchStore/getCurrentSearch',

@@ -27,7 +27,7 @@ export default {
   computed: {
     item: function () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      return configuration.minter.item
+      return configuration.gaiaAsset
     }
   }
 }
