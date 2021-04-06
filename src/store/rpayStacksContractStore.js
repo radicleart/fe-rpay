@@ -27,6 +27,23 @@ const tokenFromHash = function (state, ahash) {
   return myToken
 }
 
+const replaceTokenFromHash = function (state, token) {
+  let result = false
+  try {
+    state.registry.applications.forEach((app) => {
+      if (app.tokenContract && app.tokenContract.tokens) {
+        const index = app.tokenContract.tokens.findIndex((o) => o.tokenInfo.assetHash === token.tokenInfo.assetHash)
+        if (index > -1) {
+          app.tokenContract.tokens[index] = token
+          result = true
+        }
+      }
+    })
+  } catch (err) {
+  }
+  return result
+}
+
 const fetchGaiaData = function (commit, state, data, gaiaAppDomains) {
   try {
     const index = state.gaiaAssets.findIndex((o) => o.assetHash === data.assetHash)
@@ -80,6 +97,10 @@ const loadAssetsFromGaia = function (commit, state, gaiaAppDomains) {
 const subscribeApiNews = function (state, commit, connectUrl, gaiaAppDomains, contractId) {
   if (!socket) socket = new SockJS(connectUrl + '/api-news')
   if (!stompClient) stompClient = Stomp.over(socket)
+  socket.onclose = function () {
+    console.log('close')
+    stompClient.disconnect()
+  }
   stompClient.connect({}, function () {
     if (!contractId) {
       stompClient.subscribe('/queue/contract-news', function (response) {
@@ -102,11 +123,6 @@ const subscribeApiNews = function (state, commit, connectUrl, gaiaAppDomains, co
   function (error) {
     console.log(error)
   })
-}
-
-socket.onclose = function () {
-  console.log('close')
-  stompClient.disconnect()
 }
 
 const unsubscribeApiNews = function () {
@@ -179,6 +195,9 @@ const rpayStacksContractStore = {
     setRegistry (state, registry) {
       state.registry = registry
     },
+    setToken (state, token) {
+      replaceTokenFromHash(state, token)
+    },
     addGaiaAsset (state, gaiaAsset) {
       if (!state.gaiaAssets) return
       const index = state.gaiaAssets.findIndex((o) => o.assetHash === gaiaAsset.assetHash)
@@ -210,9 +229,9 @@ const rpayStacksContractStore = {
         const configuration = rootGetters['rpayStore/getConfiguration']
         // if project id is set in config then read search index of this
         // project. Otherwise search projects recursively
-        let path = configuration.risidioBaseApi + '/mesh/v2/appmap'
+        let path = configuration.risidioBaseApi + '/mesh/v2/registry'
         if (configuration.risidioProjectId) {
-          path = configuration.risidioBaseApi + '/mesh/v2/appmap/' + configuration.risidioProjectId
+          path = configuration.risidioBaseApi + '/mesh/v2/registry/' + configuration.risidioProjectId
         }
         axios.get(path).then(response => {
           subscribeApiNews(state, commit, configuration.risidioBaseApi + '/mesh', configuration.gaiaAppDomains, configuration.risidioProjectId)

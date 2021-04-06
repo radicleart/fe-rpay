@@ -85,24 +85,23 @@ const handleBuyNow = function (baseUrl, asset, result, resolve, purchaseInfo) {
   })
 }
 
-socket.onclose = function () {
-  console.log('close')
-  stompClient.disconnect()
-}
-
 const unsubscribeApiNews = function () {
   if (socket && stompClient) {
     stompClient.disconnect()
   }
 }
 
-const subscribeApiNews = function (commit, connectUrl, assetHash, contractId) {
+const subscribeApiNews = function (commit, connectUrl, contractId, assetHash) {
   if (!socket) socket = new SockJS(connectUrl + '/api-news')
   if (!stompClient) stompClient = Stomp.over(socket)
+  socket.onclose = function () {
+    console.log('close')
+    stompClient.disconnect()
+  }
   stompClient.connect({}, function () {
     stompClient.subscribe('/queue/contract-news-' + contractId + '-' + assetHash, function (response) {
       const token = JSON.parse(response.body)
-      commit('setToken', token)
+      commit('rpayStacksContractStore/setToken', token, { root: true })
       // const data = { opcode: 'stx-contract-data', registry: registry }
       // window.eventBus.$emit('rpayEvent', data)
     })
@@ -115,7 +114,7 @@ const subscribeApiNews = function (commit, connectUrl, assetHash, contractId) {
 const captureResult = function (commit, rootGetters, result) {
   const configuration = rootGetters['rpayStore/getConfiguration']
   const contractId = result.contractAddress + '.' + result.contractName
-  const useApi = configuration.risidioBaseApi + '/mesh/v2/register/' + contractId + '/' + result.assetHash
+  const useApi = configuration.risidioBaseApi + '/mesh/v2/registry/' + contractId + '/' + result.assetHash
   const connectUrl = configuration.risidioBaseApi + '/mesh'
   subscribeApiNews(commit, connectUrl, contractId, result.assetHash)
   axios.get(useApi).then(response => {
@@ -250,7 +249,7 @@ const rpayStacksStore = {
         }
       })
     },
-    callContractBlockstack ({ dispatch, state }, data) {
+    callContractBlockstack ({ commit, rootGetters, state }, data) {
       return new Promise((resolve, reject) => {
         const txOptions = {
           contractAddress: data.contractAddress,
@@ -272,7 +271,7 @@ const rpayStacksStore = {
               contractName: data.contractName,
               functionName: data.functionName
             }
-            captureResult(dispatch, result)
+            captureResult(commit, rootGetters, result)
             resolve(result)
           }
         }
@@ -302,7 +301,7 @@ const rpayStacksStore = {
         makeContractCall(txOptions).then((transaction) => {
           if (state.provider !== 'risidio') {
             broadcastTransaction(transaction, network).then((result) => {
-              captureResult(dispatch, result)
+              captureResult(commit, rootGetters, result)
               resolve(result)
             }).catch((error) => {
               reject(error)
@@ -322,7 +321,7 @@ const rpayStacksStore = {
                 functionName: data.functionName
               }
               dispatch('fetchMacSkyWalletInfo')
-              captureResult(dispatch, result)
+              captureResult(commit, rootGetters, result)
               resolve(result)
             }).catch((error) => {
               resolveError(commit, reject, error)

@@ -24,7 +24,7 @@
       <div class="col-2">API Base:</div><div class="col-10">{{configuration.risidioBaseApi}}</div>
       <div class="col-2">Mode:</div><div class="col-10">{{configuration.risidioCardMode}}</div>
       <div class="col-2">Item name:</div><div class="col-10">{{configuration.gaiaAsset.name}}</div>
-      <div class="col-2">Asset hash:</div><div class="col-10">{{configuration.gaiaAsset.assetHash}} <a href="#" @click.prevent="genHash()"><b-icon icon="alarm"/></a></div>
+      <div class="col-2">Asset hash:</div><div class="col-10"><a href="#" @click="lookupTokenByHash()">{{configuration.gaiaAsset.assetHash}}</a> <a href="#" @click.prevent="genHash()"><b-icon icon="alarm"/></a></div>
       <div class="col-2">Editions:</div><div class="col-10">{{configuration.gaiaAsset.editions}}</div>
       <div class="col-2">Royalties:</div>
       <div class="col-10">
@@ -179,6 +179,13 @@ export default {
         this.result = result
       })
     },
+    lookupTokenByHash: function () {
+      const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      this.$store.dispatch('rpayStacksStore/lookupTokenByHash', { assetHash: configuration.gaiaAsset.assetHash, contractAddress: networkConfig.contractAddress, contractName: networkConfig.contractName }).then((result) => {
+        this.result = result
+      })
+    },
     lookupApplicationByIndex: function () {
       const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
       this.$store.dispatch('rpayStacksStore/lookupApplicationByIndex', { appCounter: 0, contractAddress: networkConfig.contractAddress, contractName: 'appmap' }).then((result) => {
@@ -210,13 +217,6 @@ export default {
       const ranHash = crypto.createHash('sha256').update(ran).digest('hex')
       configuration.gaiaAsset.assetHash = ranHash
       this.$store.commit('rpayStore/addConfiguration', configuration)
-    },
-    lookupTokenByHash: function () {
-      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
-      this.$store.dispatch('rpayStacksStore/lookupTokenByHash', { assetHash: configuration.gaiaAsset.assetHash, contractAddress: networkConfig.contractAddress, contractName: networkConfig.contractName }).then((result) => {
-        this.result = result
-      })
     }
   },
   computed: {
