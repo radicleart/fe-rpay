@@ -85,7 +85,7 @@ const fetchGaiaData = function (commit, state, data, gaiaAppDomains) {
 const loadAssetsFromGaia = function (commit, state, gaiaAppDomains) {
   if (state.registry && state.registry.applications) {
     state.registry.applications.forEach((app) => {
-      if (app.tokenContract && app.tokenContract.tokens) {
+      if (app && app.tokenContract && app.tokenContract.tokens) {
         app.tokenContract.tokens.forEach((token) => {
           fetchGaiaData(commit, state, { gaiaFilename: app.gaiaFilename, gaiaUsername: token.tokenInfo.gaiaUsername, assetHash: token.tokenInfo.assetHash }, gaiaAppDomains)
         })
@@ -166,6 +166,7 @@ const rpayStacksContractStore = {
     getApplicationFromRegistryByContractId: state => contractId => {
       if (!state.registry || !state.registry.applications) return
       const index = state.registry.applications.findIndex((o) => o.contractId === contractId)
+      if (index < 0) return null
       return state.registry.applications[index]
     },
     getTradeInfoFromHash: state => ahash => {
@@ -182,11 +183,13 @@ const rpayStacksContractStore = {
     getAssetsByContractId: state => contractId => {
       if (!state.registry || !state.registry.applications) return
       const index = state.registry.applications.findIndex((o) => o.contractId === contractId)
+      if (index < 0) return []
       return state.registry.applications[index].tokenContract.tokens
     },
     getAssetsByContractIdAndOwner: state => data => {
       if (!state.registry || !state.registry.applications) return
       const index = state.registry.applications.findIndex((o) => o.contractId === data.contractId)
+      if (index < 0) return []
       const tokens = state.registry.applications[index].tokenContract.tokens
       return tokens.filter((o) => o.gaiaUsername === data.username)
     }
