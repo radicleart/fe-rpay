@@ -138,8 +138,7 @@ export default {
   computed: {
     gaiaAsset () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
-      return gaiaAsset
+      return configuration.gaiaAsset
     }
   }
 }
