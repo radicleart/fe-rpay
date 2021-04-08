@@ -1,18 +1,13 @@
 <template>
-<div class="mx-auto rpay-purchase-card d-flex justify-content-center" v-if="!loading">
-  <div class="" v-if="minted">
-    <purchase-offer-amount :offerData="offerData" v-if="gaiaAsset.saleData.saleType === 3 && offerStage === 0" @collectEmail="collectEmail"/>
-    <purchase-offer-email :offerData="offerData" v-else-if="gaiaAsset.saleData.saleType === 3 && offerStage === 1" @backStep="backStep" @makeOffer="makeOffer"/>
+<div class="mx-auto rpay-purchase-card d-flex justify-content-center" v-if="contractAsset">
+  <div class="">
+    <purchase-offer-amount :offerData="offerData" v-if="contractAsset.saleData.saleType === 3 && offerStage === 0" @collectEmail="collectEmail"/>
+    <purchase-offer-email :offerData="offerData" v-else-if="contractAsset.saleData.saleType === 3 && offerStage === 1" @backStep="backStep" @makeOffer="makeOffer"/>
     <div class="text-danger" v-html="errorMessage"></div>
-  </div>
-  <div header-tag="header" footer-tag="footer" class="rpay-purchase-card" v-else>
-    <div class="mt-5 mx-5 text-center">
-      <div class="text-danger">Please mint this item before setting up sale information</div>
-    </div>
   </div>
 </div>
 <div v-else>
-  Asset not passed.
+  Asset not in contract.
 </div>
 </template>
 
@@ -48,7 +43,6 @@ export default {
       this.loading = false
     }).catch(() => {
       this.loading = false
-      this.setPage()
     })
     const $self = this
     window.eventBus.$on('rpayEvent', function (data) {
@@ -59,12 +53,13 @@ export default {
   },
   methods: {
     setOfferData: function () {
-      this.minimumOffer = utils.fromMicroAmount(this.gaiaAsset.saleData.reservePrice)
+      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](this.gaiaAsset.assetHash)
+      this.minimumOffer = utils.fromMicroAmount(contractAsset.saleData.reservePrice)
       if (!this.offerData.offerAmount) {
         this.offerData.offerAmount = this.minimumOffer
       }
-      if (this.gaiaAsset.saleData && this.gaiaAsset.saleData.biddingEndTime) {
-        let loaclEndM = moment(this.gaiaAsset.saleData.biddingEndTime)
+      if (contractAsset.saleData && contractAsset.saleData.biddingEndTime) {
+        let loaclEndM = moment(contractAsset.saleData.biddingEndTime)
         if (loaclEndM.isBefore(moment({}))) {
           loaclEndM = moment({}).add(2, 'days')
         }
@@ -85,16 +80,16 @@ export default {
       this.offerStage = 1
     },
     makeOffer: function (data) {
+      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](this.gaiaAsset.assetHash)
       this.errorMessage = null
       this.offerData.biddingEndTime = moment(this.offerData.biddingEndTime).valueOf()
       this.offerData.email = data.email
-      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const network = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
-      const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
+      const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](this.gaiaAsset.assetHash)
       this.sellingMessage = 'Sending your request to the blockchain... this takes a few minutes to confirm!'
       this.offerData.contractAddress = network.contractAddress
       this.offerData.contractName = network.contractName
-      this.offerData.nftIndex = gaiaAsset.nftIndex
+      this.offerData.nftIndex = contractAsset.nftIndex
       this.offerData.assetHash = gaiaAsset.assetHash
 
       this.$store.dispatch('rpayStacksStore/makeOffer', this.offerData).then((result) => {
@@ -105,13 +100,16 @@ export default {
       })
     },
     minted () {
-      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
-      if (!gaiaAsset) return
-      return gaiaAsset.nftIndex > -1
+      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](this.gaiaAsset.assetHash)
+      if (!contractAsset) return
+      return contractAsset.nftIndex > -1
     }
   },
   computed: {
+    contractAsset () {
+      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](this.gaiaAsset.assetHash)
+      return contractAsset
+    }
   }
 }
 </script>

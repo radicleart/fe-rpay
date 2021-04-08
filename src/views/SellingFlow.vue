@@ -91,7 +91,8 @@ export default {
     },
     minted () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      return configuration.gaiaAsset && configuration.gaiaAsset.token && configuration.gaiaAsset.token.nftIndex > -1
+      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
+      return contractAsset
     },
     setTradeInfo () {
       this.errorMessage = null
@@ -99,11 +100,12 @@ export default {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
       const network = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
+      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](this.gaiaAsset.assetHash)
       const data = {
         contractAddress: network.contractAddress,
         contractName: network.contractName,
         assetHash: gaiaAsset.assetHash,
-        nftIndex: gaiaAsset.nftIndex,
+        nftIndex: contractAsset.nftIndex,
         saleData: gaiaAsset.saleData
       }
       this.sellingMessage = 'Calling wallet to sign and send... transactions can take a few minutes to confirm!'

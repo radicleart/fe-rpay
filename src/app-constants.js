@@ -27,6 +27,9 @@ export const APP_CONSTANTS = {
   KEY_EXCHANGE_RATE: 'rpayCategoryStore/getExchangeRateFormatted',
   KEY_STX_AMOUNT: 'rpayCategoryStore/getStxAmountFormatted',
 
+  KEY_GAIA_ASSET_BY_HASH: 'rpayStacksContractStore/getGaiaAssetByHash',
+  KEY_GAIA_ASSETS: 'rpayStacksContractStore/getGaiaAssets',
+  KEY_GAIA_ASSETS_BY_OWNER: 'rpayStacksContractStore/getGaiaAssetsByOwner',
   KEY_REGISTRY: 'rpayStacksContractStore/getRegistry',
   KEY_REGISTRY_CONTRACT_ID: 'rpayStacksContractStore/getRegistryContractId',
   KEY_TRADE_INFO_FROM_HASH: 'rpayStacksContractStore/getTradeInfoFromHash',

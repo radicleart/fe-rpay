@@ -10,7 +10,7 @@
     <minting-flow/>
   </div>
   <div :class="(showDebug) ? 'col-12' : 'col-12'" v-else-if="risidioCardMode === 'selling-flow'">
-    <selling-flow/>
+    <selling-flow v-if="gaiaAsset" :gaiaAsset="gaiaAsset"/>
   </div>
   <div :class="(showDebug) ? 'col-12' : 'col-12'" v-else-if="risidioCardMode === 'purchase-flow'">
     <purchase-flow v-if="gaiaAsset" :gaiaAsset="gaiaAsset"/>

@@ -36,6 +36,9 @@ const replaceTokenFromHash = function (state, token) {
         if (index > -1) {
           app.tokenContract.tokens[index] = token
           result = true
+        } else {
+          app.tokenContract.tokens.push(token)
+          result = true
         }
       }
     })
@@ -68,7 +71,7 @@ const fetchGaiaData = function (commit, state, data, gaiaAppDomains) {
           rootFile.records.forEach((gaiaAsset) => {
             const token = tokenFromHash(state, gaiaAsset.assetHash)
             if (token) {
-              gaiaAsset = Object.assign(gaiaAsset, token)
+              // gaiaAsset = Object.assign(gaiaAsset, token)
               commit('addGaiaAsset', gaiaAsset)
             }
           })
@@ -174,6 +177,9 @@ const rpayStacksContractStore = {
       return convertToTradeInfo(asset)
     },
     getAssetFromContractByHash: state => assetHash => {
+      return tokenFromHash(state, assetHash)
+    },
+    getGaiaAssetByHash: state => assetHash => {
       const index = state.gaiaAssets.findIndex((o) => o.assetHash === assetHash)
       if (index > -1) {
         return state.gaiaAssets[index]
@@ -192,6 +198,13 @@ const rpayStacksContractStore = {
       if (index < 0) return []
       const tokens = state.registry.applications[index].tokenContract.tokens
       return tokens.filter((o) => o.gaiaUsername === data.username)
+    },
+    getGaiaAssets: state => {
+      return state.gaiaAssets
+    },
+    getGaiaAssetsByOwner: state => data => {
+      if (!state.gaiaAssets) return
+      return state.gaiaAssets.filter((o) => o.owner === data.username)
     }
   },
   mutations: {

@@ -142,11 +142,12 @@ export default {
   methods: {
     loadToken: function (contractId, nftIndex, aHash) {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
       const cAddr = contractId.split('.')[0]
       const cName = contractId.split('.')[1]
       configuration.minter.networks[0].contractAddress = cAddr
       configuration.minter.networks[0].contractName = cName
-      configuration.gaiaAsset.nftIndex = nftIndex
+      contractAsset.nftIndex = nftIndex
       configuration.gaiaAsset.assetHash = aHash
       this.$store.commit('rpayStore/addConfiguration', configuration)
     },
