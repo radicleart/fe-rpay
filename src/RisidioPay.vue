@@ -10,10 +10,10 @@
     <minting-flow/>
   </div>
   <div :class="(showDebug) ? 'col-12' : 'col-12'" v-else-if="risidioCardMode === 'selling-flow'">
-    <selling-flow v-if="gaiaAsset" :gaiaAsset="gaiaAsset"/>
+    <selling-flow v-if="configured" :gaiaAsset="gaiaAsset"/>
   </div>
   <div :class="(showDebug) ? 'col-12' : 'col-12'" v-else-if="risidioCardMode === 'purchase-flow'">
-    <purchase-flow v-if="gaiaAsset" :gaiaAsset="gaiaAsset"/>
+    <purchase-flow v-if="configured" :gaiaAsset="gaiaAsset"/>
   </div>
   <div class="col-6 text-white" v-if="showDebug">
     <debug-flow/>
@@ -54,6 +54,7 @@ export default {
   props: ['configuration'],
   data () {
     return {
+      configured: false,
       loaded: false,
       showDebug: false,
       risidioCardMode: 'mode-payments'
@@ -83,6 +84,9 @@ export default {
       this.$store.registerModule('rpayStore', rpayStore)
       this.$store.commit('rpayStore/addConfiguration', configuration)
     }
+    this.$store.dispatch('rpayStacksContractStore/fetchContractData', configuration).then(() => {
+      this.configured = true
+    })
     // parse and store the main configuration object
     const lf = (configuration.lookAndFeel) ? configuration.lookAndFeel : this.defLF()
     if (!lf.variant) lf.variant = 'warning'

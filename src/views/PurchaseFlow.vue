@@ -1,13 +1,15 @@
 <template>
-<div class="mx-auto rpay-purchase-card d-flex justify-content-center" v-if="contractAsset">
-  <div class="">
-    <purchase-offer-amount :offerData="offerData" v-if="contractAsset.saleData.saleType === 3 && offerStage === 0" @collectEmail="collectEmail"/>
-    <purchase-offer-email :offerData="offerData" v-else-if="contractAsset.saleData.saleType === 3 && offerStage === 1" @backStep="backStep" @makeOffer="makeOffer"/>
-    <div class="text-danger" v-html="errorMessage"></div>
+<div v-if="!loading">
+  <div class="mx-auto rpay-purchase-card d-flex justify-content-center" v-if="contractAsset">
+    <div class="">
+      <purchase-offer-amount :offerData="offerData" v-if="contractAsset.saleData.saleType === 3 && offerStage === 0" @collectEmail="collectEmail"/>
+      <purchase-offer-email :offerData="offerData" v-else-if="contractAsset.saleData.saleType === 3 && offerStage === 1" @backStep="backStep" @makeOffer="makeOffer"/>
+      <div class="text-danger" v-html="errorMessage"></div>
+    </div>
   </div>
-</div>
-<div v-else>
-  Asset not in contract.
+  <div v-else>
+    Asset not in contract.
+  </div>
 </div>
 </template>
 
@@ -55,6 +57,7 @@ export default {
     setOfferData: function () {
       const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](this.gaiaAsset.assetHash)
       this.minimumOffer = utils.fromMicroAmount(contractAsset.saleData.reservePrice)
+      this.offerData.minimumOffer = this.minimumOffer
       if (!this.offerData.offerAmount) {
         this.offerData.offerAmount = this.minimumOffer
       }
@@ -82,19 +85,17 @@ export default {
     makeOffer: function (data) {
       const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](this.gaiaAsset.assetHash)
       this.errorMessage = null
-      this.offerData.biddingEndTime = moment(this.offerData.biddingEndTime).valueOf()
+      this.offerData.biddingEndTime = moment(contractAsset.saleData.biddingEndTime).valueOf()
       this.offerData.email = data.email
       const network = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
-      const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](this.gaiaAsset.assetHash)
       this.sellingMessage = 'Sending your request to the blockchain... this takes a few minutes to confirm!'
       this.offerData.contractAddress = network.contractAddress
       this.offerData.contractName = network.contractName
       this.offerData.nftIndex = contractAsset.nftIndex
-      this.offerData.assetHash = gaiaAsset.assetHash
+      this.offerData.assetHash = contractAsset.tokenInfo.assetHash
 
-      this.$store.dispatch('rpayStacksStore/makeOffer', this.offerData).then((result) => {
-        gaiaAsset.opcode = 'stx-purchase-offer-made'
-        window.eventBus.$emit('rpayEvent', gaiaAsset)
+      this.$store.dispatch('rpayStacksStore/makeOffer', this.offerData).then(() => {
+        this.message = 'okay'
       }).catch((err) => {
         this.errorMessage = err
       })

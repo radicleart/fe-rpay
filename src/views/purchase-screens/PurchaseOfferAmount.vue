@@ -40,7 +40,7 @@
       </div>
     </b-col>
     <b-col cols="3" style="font-size: 0.8em;">
-      <div class="mb-3 pb-3 border-bottom">Current Offer {{offerAmount}} STX</div>
+      <div class="mb-3 pb-3 border-bottom">Offers above {{minimumOffer}} STX will be considered</div>
       <div class="pl-0">
         <div v-for="(rate, index) in rates" :key="index" :class="(index % 2 === 0) ? 'bg-light text-black' : ''" class="py-1 d-flex justify-content-between">
           <div style="min-width: 100px;" class="text-right mr-4">{{rate.value}}</div>
@@ -86,6 +86,7 @@ export default {
   mounted () {
     const tickerRates = this.$store.getters[APP_CONSTANTS.KEY_TICKER_RATES]
     this.defaultRate = tickerRates[0].currency
+    this.minimumOffer = this.offerData.minimumOffer
     this.offerAmount = this.offerData.offerAmount
     this.$emit('updateSaleDataInfo', { field: 'saleType', value: 3 })
     this.loading = false

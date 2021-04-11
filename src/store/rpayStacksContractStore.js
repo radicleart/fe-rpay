@@ -1,12 +1,8 @@
 import axios from 'axios'
-import { AppConfig, UserSession } from '@stacks/connect'
-import { Storage } from '@stacks/storage'
 import SockJS from 'sockjs-client'
 import Stomp from '@stomp/stompjs'
+import utils from '@/services/utils'
 
-const appConfig = new AppConfig(['store_write', 'publish_data'])
-const userSession = new UserSession({ appConfig })
-const storage = new Storage({ userSession })
 let socket = null
 let stompClient = null
 
@@ -27,6 +23,26 @@ const tokenFromHash = function (state, ahash) {
   return myToken
 }
 
+/**
+export async function fetchAppGaiaHubUrl(username) {
+  const response = await fetch(`https://core.blockstack.org/v1/users/${username}`);
+  const zonefile = await response.json(); // the users zonefile
+
+  const app = APP_URL; // the app you're looking for, eg 'http://localhost:3000'
+  const zone_file = Object.values(zonefile)?.[0] as any;
+
+  // account for both legacy use and the new format from the extension
+  if (zone_file?.profile.apps || zone_file?.profile.appsMeta) {
+    if (zone_file.profile?.appsMeta?.[app]) {
+      return zone_file.profile?.appsMeta?.[app].storage;
+    }
+    if (zone_file.profile?.apps?.[app]) {
+      return zone_file.profile?.apps?.[app];
+    }
+  }
+  throw Error('Cannot find zonefile');
+}
+**/
 const replaceTokenFromHash = function (state, token) {
   let result = false
   try {
@@ -47,26 +63,13 @@ const replaceTokenFromHash = function (state, token) {
   return result
 }
 
-const fetchGaiaData = function (commit, state, data, gaiaAppDomains) {
-  try {
-    const index = state.gaiaAssets.findIndex((o) => o.assetHash === data.assetHash)
-    if (index > -1) return // already read this file in current page session
-    const options = {
-      decrypt: false,
-      username: data.gaiaUsername
-    }
-    if (!gaiaAppDomains) {
-      gaiaAppDomains = []
-    }
-    const index1 = gaiaAppDomains.findIndex((o) => o === location.origin)
-    if (index1 === -1) {
-      gaiaAppDomains.push(location.origin)
-    }
-
-    gaiaAppDomains.forEach((dom) => {
-      options.app = dom
-      storage.getFile(data.gaiaFilename, options).then((file) => {
-        const rootFile = JSON.parse(file)
+const fetchAllGaiaData = function (commit, state, apiPath, data) {
+  axios.post(apiPath, data).then(response => {
+    const appDataMap = response.data
+    if (appDataMap) {
+      const keySet = Object.keys(appDataMap)
+      keySet.forEach((thisKey) => {
+        const rootFile = JSON.parse(appDataMap[thisKey])
         if (rootFile && rootFile.records && rootFile.records.length > -1) {
           rootFile.records.forEach((gaiaAsset) => {
             const token = tokenFromHash(state, gaiaAsset.assetHash)
@@ -76,24 +79,60 @@ const fetchGaiaData = function (commit, state, data, gaiaAppDomains) {
             }
           })
         }
-      }).catch((error) => {
-        console.log(error)
       })
-    })
-  } catch (err) {
-    console.log(err)
-  }
+    }
+  })
 }
 
-const loadAssetsFromGaia = function (commit, state, gaiaAppDomains) {
+/**
+const fetchGaiaData = function (commit, state, data, apiPath) {
+  const path = apiPath + '/mesh/v2/gaia/rootfile'
+  const postData = {
+    appOrigin: data.appOrigin,
+    gaiaUsername: data.gaiaUsername
+  }
+  axios.post(path, postData).then(response => {
+    const rootFile = response.data // JSON.parse(response.data)
+    if (rootFile && rootFile.records && rootFile.records.length > -1) {
+      rootFile.records.forEach((gaiaAsset) => {
+        const token = tokenFromHash(state, gaiaAsset.assetHash)
+        if (token) {
+          // gaiaAsset = Object.assign(gaiaAsset, token)
+          commit('addGaiaAsset', gaiaAsset)
+        }
+      })
+    }
+  })
+}
+**/
+
+/**
+const loadAssetsFromGaia = function (commit, state, apiPath) {
   if (state.registry && state.registry.applications) {
     state.registry.applications.forEach((app) => {
       if (app && app.tokenContract && app.tokenContract.tokens) {
         app.tokenContract.tokens.forEach((token) => {
-          fetchGaiaData(commit, state, { gaiaFilename: app.gaiaFilename, gaiaUsername: token.tokenInfo.gaiaUsername, assetHash: token.tokenInfo.assetHash }, gaiaAppDomains)
+          fetchGaiaData(commit, state, { appOrigin: app.appOrigin, gaiaFilename: app.gaiaFilename, gaiaUsername: token.tokenInfo.gaiaUsername, assetHash: token.tokenInfo.assetHash }, apiPath)
         })
       }
     })
+  }
+}
+**/
+const loadAssetsFromGaia = function (commit, state, registry, connectUrl, contractId) {
+  let path = connectUrl + '/v2/gaia/rootFiles'
+  if (registry.applications && contractId) {
+    const index = registry.applications.findIndex((o) => o.contractId === contractId)
+    if (index > -1) {
+      const application = registry.applications[index]
+      path = connectUrl + '/v2/gaia/rootFilesByDomain'
+      const data = {
+        appOrigin: application.appOrigin
+      }
+      fetchAllGaiaData(commit, state, path, data)
+    }
+  } else {
+    fetchAllGaiaData(commit, state, path)
   }
 }
 
@@ -109,23 +148,46 @@ const subscribeApiNews = function (state, commit, connectUrl, gaiaAppDomains, co
       stompClient.subscribe('/queue/contract-news', function (response) {
         const registry = JSON.parse(response.body)
         commit('setRegistry', registry)
-        loadAssetsFromGaia(commit, state, gaiaAppDomains)
-        // const data = { opcode: 'stx-contract-data', registry: registry }
-        // window.eventBus.$emit('rpayEvent', data)
+        loadAssetsFromGaia(commit, state, registry, connectUrl, contractId)
       })
     } else {
       stompClient.subscribe('/queue/contract-news-' + contractId, function (response) {
         const registry = JSON.parse(response.body)
         commit('setRegistry', registry)
-        loadAssetsFromGaia(commit, state, gaiaAppDomains)
-        // const data = { opcode: 'stx-contract-data', registry: registry }
-        // window.eventBus.$emit('rpayEvent', data)
+        loadAssetsFromGaia(commit, state, registry, connectUrl, contractId)
       })
     }
   },
   function (error) {
     console.log(error)
   })
+}
+
+const resolvePrincipals = function (registry) {
+  if (!registry || !registry.administrator) return
+  registry.administrator = utils.convertAddress(registry.administrator)
+  if (registry.applications) {
+    registry.applications.forEach((app) => {
+      app.owner = utils.convertAddress(app.owner)
+      if (app.tokenContract) {
+        app.tokenContract.administrator = utils.convertAddress(app.tokenContract.administrator)
+        app.tokenContract.tokens.forEach((token) => {
+          token.owner = utils.convertAddress(token.owner)
+          if (token.offerHistory) {
+            token.offerHistory.forEach((offer) => {
+              offer.offerer = utils.convertAddress(offer.offerer)
+            })
+          }
+          if (token.bidHistory) {
+            token.bidHistory.forEach((bid) => {
+              bid.bidder = utils.convertAddress(bid.bidder)
+            })
+          }
+        })
+      }
+    })
+  }
+  return registry
 }
 
 const unsubscribeApiNews = function () {
@@ -209,6 +271,7 @@ const rpayStacksContractStore = {
   },
   mutations: {
     setRegistry (state, registry) {
+      registry = resolvePrincipals(registry)
       state.registry = registry
     },
     setToken (state, token) {
@@ -250,9 +313,9 @@ const rpayStacksContractStore = {
           path = configuration.risidioBaseApi + '/mesh/v2/registry/' + configuration.risidioProjectId
         }
         axios.get(path).then(response => {
+          loadAssetsFromGaia(commit, state, response.data, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId)
           subscribeApiNews(state, commit, configuration.risidioBaseApi + '/mesh', configuration.gaiaAppDomains, configuration.risidioProjectId)
           commit('setRegistry', response.data)
-          loadAssetsFromGaia(commit, state, configuration.gaiaAppDomains)
           resolve(response.data)
         }).catch((error) => {
           reject(error)

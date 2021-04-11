@@ -12,7 +12,6 @@ import {
   intCV,
   standardPrincipalCV,
   serializeCV,
-  // standardPrincipalCV,
   makeStandardSTXPostCondition,
   FungibleConditionCode
 } from '@stacks/transactions'
@@ -22,9 +21,9 @@ import {
 } from '@stacks/network'
 import axios from 'axios'
 import BigNum from 'bn.js'
-import searchIndexService from '@/services/searchIndexService'
 import SockJS from 'sockjs-client'
 import Stomp from '@stomp/stompjs'
+// import { connectWebSocketClient } from '@stacks/blockchain-api-client'
 
 let socket = null
 let stompClient = null
@@ -32,58 +31,17 @@ let stompClient = null
 const network = new StacksTestnet()
 const precision = 1000000
 const contractDeployFee = 20000
+const STACKS_API = process.env.VUE_APP_STACKS_API
 
-// const STACKS_API_EXT = process.env.VUE_APP_API_STACKS_EXT
-// const STACKS_POLLING = process.env.VUE_APP_API_POLLING
-// const network = new StacksTestnet()
-// network.coreApiUrl = STACKS_API
+/**
+const client = await connectWebSocketClient('ws://stacks-node-api.blockstack.org/')
+const sub = await client.subscribeAddressTransactions(contractCall.txId, event => {
+  console.log(event)
+})
+await sub.unsubscribe()
+**/
+
 const provider = 'risidio'
-
-const pollTxStatus = function (txId) {
-  return new Promise((resolve) => {
-    // let sub
-    const subscribe = async txId => {
-      // const client = await connectWebSocketClient('wss://stacks-node-api.blockstack.org/')
-      // sub = await client.subscribeTxUpdates(txId, update => {
-      //  resolve(update)
-      // })
-      // console.log({ client, sub })
-    }
-    subscribe(txId)
-  })
-}
-
-const handleSetTradeInfo = function (baseUrl, asset, result, resolve) {
-  asset.hexResp = (result && result.data) ? result.data : ''
-  // if (asset.saleData.biddingEndTime && typeof asset.saleData.biddingEndTime === 'string' && asset.saleData.biddingEndTime.indexOf('-') > -1) {
-  //  asset.saleData.biddingEndTime = moment(asset.saleData.biddingEndTime).valueOf()
-  // }
-  searchIndexService.addTradeInfo(baseUrl, asset).then(() => {
-    console.log(asset)
-    resolve(asset)
-  }).catch((error) => {
-    console.log(error)
-    resolve(asset)
-  })
-}
-const handleBuyNow = function (baseUrl, asset, result, resolve, purchaseInfo) {
-  asset.owner = purchaseInfo.buyer
-  if (asset.saleData) {
-    asset.saleData.saleType = 0
-    asset.saleData.buyNowOrStartingPrice = 0
-    asset.saleData.incrementPrice = 0
-    asset.saleData.reservePrice = 0
-    asset.saleData.biddingEndTime = 0
-  }
-  asset.hexResp = (result && result.data) ? result.data : ''
-  searchIndexService.addRecord(baseUrl, asset).then(() => {
-    console.log(asset)
-    resolve(asset)
-  }).catch((error) => {
-    console.log(error)
-    resolve(asset)
-  })
-}
 
 const unsubscribeApiNews = function () {
   if (socket && stompClient) {
@@ -102,12 +60,38 @@ const subscribeApiNews = function (commit, connectUrl, contractId, assetHash) {
     stompClient.subscribe('/queue/contract-news-' + contractId + '-' + assetHash, function (response) {
       const token = JSON.parse(response.body)
       commit('rpayStacksContractStore/setToken', token, { root: true })
-      // const data = { opcode: 'stx-contract-data', registry: registry }
-      // window.eventBus.$emit('rpayEvent', data)
     })
   },
   function (error) {
     console.log(error)
+  })
+}
+
+const pollTxStatus = function (result) {
+  return new Promise((resolve) => {
+    let counter = 0
+    const intval = setInterval(function () {
+      axios.get(STACKS_API + 'extended/v1/tx/' + result.txId).then(response => {
+        const meth1 = 'tx_status'
+        if (response[meth1] === 'success') {
+          const meth2 = 'tx_status'
+          const hexResolved = utils.fromHex(response[meth2].hex)
+          resolve(hexResolved)
+          clearInterval(intval)
+          result.opcode = 'stx-contract-data'
+          result.response = response
+          window.eventBus.$emit('rpayEvent', result)
+        }
+      }).catch((e) => {
+        console.log(e)
+        clearInterval(intval)
+      })
+      if (counter === 90) {
+        clearInterval(intval)
+        resolve()
+      }
+      counter++
+    }, 2000)
   })
 }
 
@@ -116,6 +100,13 @@ const captureResult = function (commit, rootGetters, result) {
   const contractId = result.contractAddress + '.' + result.contractName
   const useApi = configuration.risidioBaseApi + '/mesh/v2/registry/' + contractId + '/' + result.assetHash
   const connectUrl = configuration.risidioBaseApi + '/mesh'
+  if (STACKS_API.indexOf('stacks-node-api') > -1) {
+    pollTxStatus(result)
+  } else {
+    result.opcode = 'stx-contract-txdata'
+    result.response = 'unknown - please wait'
+    window.eventBus.$emit('rpayEvent', result)
+  }
   subscribeApiNews(commit, connectUrl, contractId, result.assetHash)
   axios.get(useApi).then(response => {
     console.log(response)
@@ -189,8 +180,8 @@ const rpayStacksStore = {
     setMacsWallet (state, newMac) {
       state.macsWallet = newMac
     },
-    setSkysWallet (state, newMac) {
-      state.macsWallet = newMac
+    setSkysWallet (state, newSky) {
+      state.skysWallet = newSky
     },
     setResult (state, result) {
       state.result = result
@@ -269,7 +260,8 @@ const rpayStacksStore = {
               assetHash: data.assetHash,
               contractAddress: data.contractAddress,
               contractName: data.contractName,
-              functionName: data.functionName
+              functionName: data.functionName,
+              functionArgs: data.functionArgs
             }
             captureResult(commit, rootGetters, result)
             resolve(result)
@@ -283,9 +275,13 @@ const rpayStacksStore = {
     callContractRisidio ({ commit, state, dispatch, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        let nonce = new BigNum(state.macsWallet.nonce)
+        let sender = state.macsWallet
+        if (data.sendAsSky) {
+          sender = state.skysWallet
+        }
+        let nonce = new BigNum(sender.nonce)
         if (data && data.action === 'inc-nonce') {
-          nonce = new BigNum(state.macsWallet.nonce + 1)
+          nonce = new BigNum(sender.nonce + 1)
         }
         const txOptions = {
           contractAddress: data.contractAddress,
@@ -293,7 +289,7 @@ const rpayStacksStore = {
           functionName: data.functionName,
           functionArgs: (data.functionArgs) ? data.functionArgs : [],
           fee: new BigNum(1800),
-          senderKey: state.macsWallet.keyInfo.privateKey,
+          senderKey: sender.keyInfo.privateKey,
           nonce: new BigNum(nonce),
           network,
           postConditions: (data.postConditions) ? data.postConditions : []
@@ -318,7 +314,8 @@ const rpayStacksStore = {
                 assetHash: data.assetHash,
                 contractAddress: data.contractAddress,
                 contractName: data.contractName,
-                functionName: data.functionName
+                functionName: data.functionName,
+                functionArgs: data.functionArgs
               }
               dispatch('fetchMacSkyWalletInfo')
               captureResult(commit, rootGetters, result)
@@ -501,7 +498,6 @@ const rpayStacksStore = {
       return new Promise((resolve, reject) => {
         // (asset-hash (buff 32)) (sale-type uint) (increment-stx uint) (reserve-stx uint) (amount-stx uint)
         // const buffer = bufferCV(Buffer.from(asset.assetHash, 'hex')) // Buffer.from(hash.toString(CryptoJS.enc.Hex), 'hex')
-        const configuration = rootGetters['rpayStore/getConfiguration']
         const nftIndex = uintCV(data.nftIndex)
         const saleType = uintCV(data.saleData.saleType)
         const incrementPrice = uintCV(utils.toOnChainAmount(data.saleData.incrementPrice))
@@ -518,19 +514,7 @@ const rpayStacksStore = {
         }
         const methos = (state.provider === 'risidio') ? 'callContractRisidio' : 'callContractBlockstack'
         dispatch(methos, callData).then((result) => {
-          handleSetTradeInfo(configuration.risidioBaseApi, data, result, resolve)
-          pollTxStatus(result.txId).then(() => {
-            handleSetTradeInfo(configuration.risidioBaseApi, data, result, resolve)
-          })
-        }).catch(() => {
-          callData.action = 'inc-nonce'
-          dispatch(methos, callData).then((result) => {
-            pollTxStatus(result.txId).then(() => {
-              handleSetTradeInfo(configuration.risidioBaseApi, data, result, resolve)
-            })
-          }).catch((error) => {
-            reject(error)
-          })
+          resolve(result)
         })
       })
     },
@@ -573,7 +557,30 @@ const rpayStacksStore = {
     makeOffer ({ state, dispatch }, data) {
       return new Promise((resolve) => {
         data.functionName = 'make-offer'
-        data.functionArgs = [uintCV(data.nftIndex), uintCV(utils.toOnChainAmount(data.offerAmount)), uintCV(data.saleData.biddingEndTime)]
+        data.functionArgs = [uintCV(data.nftIndex), uintCV(utils.toOnChainAmount(data.offerAmount)), uintCV(data.biddingEndTime)]
+        const methos = (state.provider === 'risidio') ? 'callContractRisidio' : 'callContractBlockstack'
+        dispatch(methos, data).then((result) => {
+          resolve(result)
+        })
+      })
+    },
+    transferAsset ({ state, dispatch, rootGetters }, data) {
+      return new Promise((resolve) => {
+        const profile = rootGetters['rpayAuthStore/getMyProfile']
+        const recipient = utils.convertAddress(data.recipient)
+        const owner = utils.convertAddress(profile.stxAddress)
+        data.functionName = 'transfer'
+        data.functionArgs = [uintCV(data.nftIndex), standardPrincipalCV(owner), standardPrincipalCV(recipient)]
+        const methos = (state.provider === 'risidio') ? 'callContractRisidio' : 'callContractBlockstack'
+        dispatch(methos, data).then((result) => {
+          resolve(result)
+        })
+      })
+    },
+    acceptOffer ({ state, dispatch }, data) {
+      return new Promise((resolve) => {
+        data.functionName = 'accept-offer'
+        data.functionArgs = [uintCV(data.nftIndex), uintCV(data.offerIndex), standardPrincipalCV(data.owner), standardPrincipalCV(data.recipient)]
         const methos = (state.provider === 'risidio') ? 'callContractRisidio' : 'callContractBlockstack'
         dispatch(methos, data).then((result) => {
           resolve(result)
@@ -583,7 +590,6 @@ const rpayStacksStore = {
     buyNow ({ state, dispatch, rootGetters }, purchaseInfo) {
       return new Promise((resolve, reject) => {
         // (asset-hash (buff 32)) (sale-type uint) (increment-stx uint) (reserve-stx uint) (amount-stx uint)
-        const configuration = rootGetters['rpayStore/getConfiguration']
         const asset = purchaseInfo.asset
         const profile = rootGetters['rpayAuthStore/getMyProfile']
         // const amount = new BigNum(utils.toOnChainAmount(asset.saleData.buyNowOrStartingPrice + 1))
@@ -606,21 +612,9 @@ const rpayStacksStore = {
           functionArgs: functionArgs,
           wallet: (state.provider === 'risidio' && purchaseInfo.useWallet && purchaseInfo.useWallet === 'sky') ? state.skysWallet : state.macsWallet
         }
-
         const methos = (state.provider === 'risidio') ? 'callContractRisidio' : 'callContractBlockstack'
         dispatch(methos, data).then((result) => {
-          handleBuyNow(configuration.risidioBaseApi, asset, result, resolve, purchaseInfo)
-          pollTxStatus(result.txId).then(() => {
-            handleBuyNow(configuration.risidioBaseApi, asset, result, resolve, purchaseInfo)
-          })
-        }).catch(() => {
-          data.action = 'inc-nonce'
-          dispatch(methos, data).then((result) => {
-            handleBuyNow(configuration.risidioBaseApi, asset, result, resolve, purchaseInfo)
-            pollTxStatus(result.txId)
-          }).catch((error) => {
-            reject(error)
-          })
+          resolve(result)
         })
       })
     },
@@ -781,13 +775,7 @@ const rpayStacksStore = {
       return new Promise((resolve, reject) => {
         const methos = (state.provider === 'risidio') ? 'deployContractRisidio' : 'deployContractConnect'
         dispatch(methos, datum).then((result) => {
-          resolve(null)
-          pollTxStatus(result.txId).then(() => {
-            dispatch('projectStore/updateProject', { projectId: datum.projectId, contractId: datum.projectId, txId: result.txId }, { root: true }).then((project) => {
-              // dispatch('fetchMacSkyWalletInfo')
-              resolve(project)
-            })
-          })
+          resolve(result)
         }).catch((error) => {
           reject(error)
         })

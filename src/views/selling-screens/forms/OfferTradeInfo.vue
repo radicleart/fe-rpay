@@ -54,7 +54,7 @@ export default {
   },
   mounted () {
     const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-    this.reservePrice = utils.toDecimals(utils.fromMicroAmount(configuration.gaiaAsset.saleData.reservePrice))
+    this.reservePrice = (utils.fromMicroAmount(configuration.gaiaAsset.saleData.reservePrice))
     if (configuration.gaiaAsset.saleData && configuration.gaiaAsset.saleData.biddingEndTime) {
       let loaclEndM = moment(configuration.gaiaAsset.saleData.biddingEndTime)
       if (loaclEndM.isBefore(moment({}))) {

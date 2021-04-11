@@ -1,5 +1,5 @@
 <template>
-<div class="p-2">
+<div class="p-2" v-if="loaded">
   <div class="text-small text-white upload-preview">
     <div class="mb-4 d-flex justify-content-between">
       <div class="">
@@ -25,6 +25,7 @@
       <div class="col-2">Mode:</div><div class="col-10">{{configuration.risidioCardMode}}</div>
       <div class="col-2">Item name:</div><div class="col-10">{{configuration.gaiaAsset.name}}</div>
       <div class="col-2">Asset hash:</div><div class="col-10"><a href="#" @click="lookupTokenByHash()">{{configuration.gaiaAsset.assetHash}}</a> <a href="#" @click.prevent="genHash()"><b-icon icon="alarm"/></a></div>
+      <div class="col-2">Asset Name:</div><div class="col-10">{{gaiaAsset.name}}</div>
       <div class="col-2">Editions:</div><div class="col-10">{{configuration.gaiaAsset.editions}}</div>
       <div class="col-2">Royalties:</div>
       <div class="col-10">
@@ -78,11 +79,12 @@
       </div>
       <div class="row border-bottom mb-3 pb-2" v-for="(application, index) in registry.applications" :key="index">
         <div class="col-2">Contract Id</div><div class="col-10">{{application.contractId}}</div>
+        <div class="col-2">Owner</div><div class="col-10">{{application.owner}}</div>
         <div class="col-2">App-Index</div><div class="col-10">{{application.appIndex}}</div>
         <div class="col-2">Storage</div><div class="col-10">{{application.storageModel}}</div>
         <div class="col-2">Status</div><div class="col-10">{{application.status}}</div>
           <div class="row ml-3 p-3" v-if="application.tokenContract">
-            <div class="col-2">Token</div><div class="col-10 text-bold">{{application.tokenContract.tokenSymbol}} - {{application.tokenContract.tokenName}}</div>
+            <div class="col-2">Token Contract</div><div class="col-10 text-bold">{{application.tokenContract.tokenSymbol}} - {{application.tokenContract.tokenName}}</div>
             <div class="col-2">Base URL</div><div class="col-10">{{application.tokenContract.baseTokenUri}}</div>
             <div class="col-2">administrator</div><div class="col-10">{{application.tokenContract.administrator}}</div>
             <div class="col-2">Platform</div><div class="col-10">{{application.tokenContract.platformFee}}</div>
@@ -91,7 +93,14 @@
               <div class="col-2">NFT</div><div class="col-10">#<a href="#" class="text-small text-info" @click.prevent="loadToken(application.contractId, token.nftIndex)">{{token.nftIndex}}</a></div>
               <div class="col-2">TokenInfo</div><div class="col-10"><a href="#" class="text-small text-info" @click.prevent="loadToken(application.contractId, token.nftIndex, token.tokenInfo.assetHash)">{{token.tokenInfo.assetHash}}</a></div>
               <div class="col-2">Owner</div><div class="col-10">{{token.owner}}</div>
-              <div class="col-2">Offers</div><div class="col-10">{{token.offers}}</div>
+              <div class="col-2">Offers</div><div class="col-10">{{token.offerCounter}}</div>
+              <div class="col-2"></div>
+              <div class="col-10">
+                <div v-for="(offer, index1) in token.offerHistory" :key="index1">
+                  <div>{{offer}}</div>
+                  <div><a href="#" @click.prevent="acceptOffer(offer, index1)">accept</a></div>
+                </div>
+              </div>
               <div class="col-2">SaleData</div><div class="col-10">Type={{token.saleData.saleType}}, Amount {{token.saleData.buyNowOrStartingPrice}}</div>
               <div class="col-2">Reserve</div><div class="col-10">{{token.saleData.reservePrice}}, Increment {{token.saleData.incrementPrice}}</div>
               <div class="col-2">End time</div><div class="col-10">{{token.saleData.biddingEndTime}}</div>
@@ -109,8 +118,6 @@
 
 <script>
 import { APP_CONSTANTS } from '@/app-constants'
-// import utils from '@/services/utils'
-// import crypto from 'crypto'
 
 export default {
   name: 'MintingFlow',
@@ -119,7 +126,8 @@ export default {
   data () {
     return {
       nifty: 0,
-      loading: true,
+      loaded: false,
+      profile: {},
       message: null,
       result: null,
       globalEvent: null,
@@ -128,12 +136,16 @@ export default {
   },
   mounted () {
     this.$store.dispatch('rpayStacksContractStore/fetchContractData')
+    this.$store.dispatch('rpayAuthStore/fetchMyAccount').then((profile) => {
+      this.profile = profile
+      this.loaded = true
+    })
     const $self = this
     const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-    const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
+    const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_GAIA_ASSET_BY_HASH](configuration.gaiaAsset.assetHash)
     if (gaiaAsset) {
-      configuration.gaiaAsset = gaiaAsset
-      this.$store.commit('rpayStore/addConfiguration', configuration)
+      // configuration.gaiaAsset = gaiaAsset
+      // his.$store.commit('rpayStore/addConfiguration', configuration)
     }
     window.eventBus.$on('rpayEvent', function (data) {
       $self.globalEvent = data
@@ -150,6 +162,23 @@ export default {
       contractAsset.nftIndex = nftIndex
       configuration.gaiaAsset.assetHash = aHash
       this.$store.commit('rpayStore/addConfiguration', configuration)
+    },
+    acceptOffer: function (offer, index) {
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
+      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
+      const offerData = {
+        contractAddress: networkConfig.contractAddress,
+        contractName: networkConfig.contractName,
+        sendAsSky: true,
+        owner: contractAsset.owner,
+        recipient: offer.offerer,
+        offerIndex: index,
+        nftIndex: contractAsset.nftIndex
+      }
+      return this.$store.dispatch('rpayStacksStore/acceptOffer', offerData).then((result) => {
+        this.result = result
+      })
     },
     startLogout: function () {
       this.$store.dispatch('rpayAuthStore/startLogout').then((result) => {
@@ -226,13 +255,14 @@ export default {
       const currentAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
       return currentAsset
     },
+    gaiaAsset () {
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_GAIA_ASSET_BY_HASH](configuration.gaiaAsset.assetHash) | {}
+      return gaiaAsset
+    },
     configuration () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return configuration
-    },
-    profile () {
-      const profile = this.$store.getters[APP_CONSTANTS.KEY_PROFILE]
-      return profile
     },
     registry () {
       const registry = this.$store.getters[APP_CONSTANTS.KEY_REGISTRY]

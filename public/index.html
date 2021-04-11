@@ -101,7 +101,7 @@
         // assetHash: '5dd6d4318967820c49c1c83831ca17390a83776d183f44b21b55d5ff92653c7c',
         // assetHash: '1c0b7b80e72eebf0f60a3ba6c53a99ba7bd5ef2ac4fec3be3e659fd1d6a1b44b',
         // assetHash: '8d2c4c44ad131300b8d7ac86b14fa1e321f362e9d20c6dd2881c64abf26ff30f',
-        assetHash: '1c0b7b80e72eebf0f60a3ba6c53a99ba7bd5ef2ac4fec3be3e659fd1d6a1b44b',
+        assetHash: 'bd890ccc7427d47b4b86b734c919feb1b64ce088271e315964c32f0dd10efd04',
         name: 'My Non Funginble Token',
         editions: 100,
         imageUrl: 'https://images.prismic.io/risidio-journal/5757dd30-d293-4586-a99b-bdce237f7a69_alexander-sinn-KgLtFCgfC28-unsplash.png?auto=compress,format',
@@ -124,7 +124,7 @@
             enabled: true,
             functionName: 'mint-token',
             contractAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW',
-            contractName: 'thisisnumberone-v2'
+            contractName: 'thisisnumberone-v1'
           },
           {
             network: 'stacks connect',
@@ -155,7 +155,8 @@
         **/
       }
       const configuration = {
-        gaiaAppDomains: ['http://localhost:8080', 'http://localhost:8081', 'http://localhost:8082'],
+        // gaiaAppDomains: ['http://localhost:8080', 'http://localhost:8081', 'http://localhost:8082'],
+        gaiaAppDomains: [],
         gaiaAsset: gaiaAsset,
         lookAndFeel: lookAndFeel,
         payment: payment,
@@ -163,7 +164,7 @@
         selling: selling,
         minter: minter,
         network: useNetwork,
-        risidioProjectId: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW.thisisnumberone-v2',
+        risidioProjectId: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW.thisisnumberone-v1',
         risidioBaseApi: risidioBaseApi,
         risidioStacksApi: 'http://localhost:20443',
         risidioWalletMac: '{"label": "MacMock", "mnemonic": "","keyInfo": {"privateKey": "4790db90a48e51bdbbc62a37fdc535719c22e195dc1aa6e1725b30bffc569ce501","address": "ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW","btcAddress": "","index": 0}}',

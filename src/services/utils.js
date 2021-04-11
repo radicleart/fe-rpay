@@ -3,10 +3,23 @@ import {
   hexToCV
 } from '@stacks/transactions'
 import crypto from 'crypto'
+import { c32address, c32addressDecode } from 'c32check'
 
 const precision = 1000000
+const NETWORK = process.env.VUE_APP_NETWORK
 
 const utils = {
+  convertAddress: function (b160Address) {
+    let version = 26
+    if (NETWORK === 'mainnet') version = 22
+    const address = c32address(version, b160Address) // 22 for mainnet
+    return address
+  },
+  convertAddressFrom: function (stxAddress) {
+    if (!stxAddress) return '?'
+    const decoded = c32addressDecode(stxAddress)
+    return decoded
+  },
   buildHash: function (hashable) {
     return crypto.createHash('sha256').update(hashable).digest('hex')
   },

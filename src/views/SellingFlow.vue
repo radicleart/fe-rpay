@@ -27,9 +27,8 @@
         <template v-slot:footer>
           <div class="footer-container">
             <div>
-              <div class="d-flex justify-content-between">
+              <div class="d-flex justify-content-end">
                 <b-button class="round-btn mx-1" :variant="$globalLookAndFeel.variant3" @click.prevent="back()">Back</b-button>
-                <b-button class="round-btn mx-1" :variant="$globalLookAndFeel.variant0" @click.prevent="setTradeInfo()">Save</b-button>
               </div>
             </div>
           </div>
@@ -65,22 +64,17 @@ export default {
   },
   mounted () {
     this.errorMessage = null
+    const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+    const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
+    configuration.gaiaAsset.saleData = contractAsset.saleData
+    this.$store.commit('rpayStore/addConfiguration', configuration)
     this.$store.commit('rpayCategoryStore/setModalMessage', '')
     this.$store.dispatch('rpayStacksStore/fetchMacSkyWalletInfo').then(() => {
-      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      configuration.gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
-      this.$store.commit('rpayStore/addConfiguration', configuration)
       this.$store.commit('rpayStore/setDisplayCard', 100)
       this.loading = false
     }).catch(() => {
       this.loading = false
       this.setPage()
-    })
-    const $self = this
-    window.eventBus.$on('rpayEvent', function (data) {
-      if (data.opcode.indexOf('-mint-success') > -1) {
-        $self.$store.commit('rpayStore/setDisplayCard', 106)
-      }
     })
   },
   methods: {
@@ -98,15 +92,14 @@ export default {
       this.errorMessage = null
       if (!this.isValid()) return
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
+      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
       const network = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
-      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](this.gaiaAsset.assetHash)
       const data = {
         contractAddress: network.contractAddress,
         contractName: network.contractName,
-        assetHash: gaiaAsset.assetHash,
+        assetHash: configuration.gaiaAsset.assetHash,
         nftIndex: contractAsset.nftIndex,
-        saleData: gaiaAsset.saleData
+        saleData: configuration.gaiaAsset.saleData
       }
       this.sellingMessage = 'Calling wallet to sign and send... transactions can take a few minutes to confirm!'
       this.$store.dispatch('rpayStacksStore/setTradeInfo', data).then((result) => {
@@ -161,8 +154,7 @@ export default {
     },
     updateSaleDataInfo (data) {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
-      const saleDataTemp = gaiaAsset.saleData
+      const saleDataTemp = configuration.gaiaAsset.saleData
       if (data.moneyField) {
         saleDataTemp[data.field] = data.value
       } else {
