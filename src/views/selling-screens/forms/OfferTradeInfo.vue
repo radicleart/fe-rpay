@@ -29,7 +29,6 @@
 <script>
 import { APP_CONSTANTS } from '@/app-constants'
 import moment from 'moment'
-import utils from '@/services/utils'
 import { Datetime } from 'vue-datetime'
 
 export default {
@@ -54,7 +53,7 @@ export default {
   },
   mounted () {
     const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-    this.reservePrice = (utils.fromMicroAmount(configuration.gaiaAsset.saleData.reservePrice))
+    this.reservePrice = configuration.gaiaAsset.saleData.reservePrice
     if (configuration.gaiaAsset.saleData && configuration.gaiaAsset.saleData.biddingEndTime) {
       let loaclEndM = moment(configuration.gaiaAsset.saleData.biddingEndTime)
       if (loaclEndM.isBefore(moment({}))) {

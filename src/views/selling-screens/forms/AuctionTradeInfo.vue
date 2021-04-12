@@ -41,7 +41,6 @@
 import moment from 'moment'
 import { Datetime } from 'vue-datetime'
 import { APP_CONSTANTS } from '@/app-constants'
-import utils from '@/services/utils'
 
 export default {
   name: 'SellAuction',
@@ -67,9 +66,9 @@ export default {
   },
   mounted () {
     const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-    this.buyNowOrStartingPrice = (utils.fromMicroAmount(configuration.gaiaAsset.saleData.buyNowOrStartingPrice))
-    this.incrementPrice = utils.fromMicroAmount(configuration.gaiaAsset.saleData.incrementPrice)
-    this.reservePrice = (utils.fromMicroAmount(configuration.gaiaAsset.saleData.reservePrice))
+    this.buyNowOrStartingPrice = configuration.gaiaAsset.saleData.buyNowOrStartingPrice
+    this.incrementPrice = configuration.gaiaAsset.saleData.incrementPrice
+    this.reservePrice = configuration.gaiaAsset.saleData.reservePrice
     if (configuration.gaiaAsset.saleData && configuration.gaiaAsset.saleData.biddingEndTime) {
       let loaclEndM = moment(configuration.gaiaAsset.saleData.biddingEndTime)
       if (loaclEndM.isBefore(moment({}))) {
@@ -87,15 +86,6 @@ export default {
     this.loading = false
   },
   methods: {
-    toDecimals: function (field) {
-      if (field === 'incrementPrice') {
-        this.incrementPrice = utils.toDecimals(this.incrementPrice)
-      } else if (field === 'reservePrice') {
-        this.reservePrice = utils.toDecimals(this.reservePrice)
-      } else {
-        this.buyNowOrStartingPrice = utils.toDecimals(this.buyNowOrStartingPrice)
-      }
-    },
     updateBuyNowOrStartingPrice: function () {
       this.$emit('updateSaleDataInfo', { moneyField: true, field: 'buyNowOrStartingPrice', value: this.buyNowOrStartingPrice })
     },

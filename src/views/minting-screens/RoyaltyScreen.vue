@@ -52,7 +52,7 @@ export default {
     },
     saveData: function () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      configuration.opcode = 'save-mint-data'
+      configuration.opcode = 'cancel-minting'
       window.eventBus.$emit('rpayEvent', configuration)
     },
     mintToken: function () {

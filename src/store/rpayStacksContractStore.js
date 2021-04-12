@@ -84,41 +84,6 @@ const fetchAllGaiaData = function (commit, state, apiPath, data) {
   })
 }
 
-/**
-const fetchGaiaData = function (commit, state, data, apiPath) {
-  const path = apiPath + '/mesh/v2/gaia/rootfile'
-  const postData = {
-    appOrigin: data.appOrigin,
-    gaiaUsername: data.gaiaUsername
-  }
-  axios.post(path, postData).then(response => {
-    const rootFile = response.data // JSON.parse(response.data)
-    if (rootFile && rootFile.records && rootFile.records.length > -1) {
-      rootFile.records.forEach((gaiaAsset) => {
-        const token = tokenFromHash(state, gaiaAsset.assetHash)
-        if (token) {
-          // gaiaAsset = Object.assign(gaiaAsset, token)
-          commit('addGaiaAsset', gaiaAsset)
-        }
-      })
-    }
-  })
-}
-**/
-
-/**
-const loadAssetsFromGaia = function (commit, state, apiPath) {
-  if (state.registry && state.registry.applications) {
-    state.registry.applications.forEach((app) => {
-      if (app && app.tokenContract && app.tokenContract.tokens) {
-        app.tokenContract.tokens.forEach((token) => {
-          fetchGaiaData(commit, state, { appOrigin: app.appOrigin, gaiaFilename: app.gaiaFilename, gaiaUsername: token.tokenInfo.gaiaUsername, assetHash: token.tokenInfo.assetHash }, apiPath)
-        })
-      }
-    })
-  }
-}
-**/
 const loadAssetsFromGaia = function (commit, state, registry, connectUrl, contractId) {
   let path = connectUrl + '/v2/gaia/rootFiles'
   if (registry.applications && contractId) {

@@ -86,13 +86,14 @@
           <div class="row ml-3 p-3" v-if="application.tokenContract">
             <div class="col-2">Token Contract</div><div class="col-10 text-bold">{{application.tokenContract.tokenSymbol}} - {{application.tokenContract.tokenName}}</div>
             <div class="col-2">Base URL</div><div class="col-10">{{application.tokenContract.baseTokenUri}}</div>
+            <div class="col-2">Mint Fee</div><div class="col-10">{{application.tokenContract.mintPrice}}</div>
             <div class="col-2">administrator</div><div class="col-10">{{application.tokenContract.administrator}}</div>
             <div class="col-2">Platform</div><div class="col-10">{{application.tokenContract.platformFee}}</div>
             <div class="col-2">Minted</div><div class="col-10">{{application.tokenContract.mintCounter}}</div>
             <div class="row text-danger ml-4 mt-3 border-bottom mb-3 pb-2" v-for="(token, index) in application.tokenContract.tokens" :key="index">
               <div class="col-2">NFT</div><div class="col-10">#<a href="#" class="text-small text-info" @click.prevent="loadToken(application.contractId, token.nftIndex)">{{token.nftIndex}}</a></div>
               <div class="col-2">TokenInfo</div><div class="col-10"><a href="#" class="text-small text-info" @click.prevent="loadToken(application.contractId, token.nftIndex, token.tokenInfo.assetHash)">{{token.tokenInfo.assetHash}}</a></div>
-              <div class="col-2">Owner</div><div class="col-10">{{token.owner}}</div>
+              <div class="col-2">Owner</div><div class="col-10">{{token.owner}} <a href="#" @click.prevent="transferAsset(token.nftIndex, token.owner)">transfer</a></div>
               <div class="col-2">Offers</div><div class="col-10">{{token.offerCounter}}</div>
               <div class="col-2"></div>
               <div class="col-10">
@@ -162,6 +163,21 @@ export default {
       contractAsset.nftIndex = nftIndex
       configuration.gaiaAsset.assetHash = aHash
       this.$store.commit('rpayStore/addConfiguration', configuration)
+    },
+    transferAsset: function (index, owner) {
+      const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
+      const data = {
+        sendAsSky: true,
+        contractAddress: networkConfig.contractAddress,
+        contractName: networkConfig.contractName,
+        nftIndex: index,
+        owner: owner,
+        // recipient: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW'
+        recipient: 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
+      }
+      return this.$store.dispatch('rpayStacksStore/transferAsset', data).then((result) => {
+        this.result = result
+      })
     },
     acceptOffer: function (offer, index) {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]

@@ -13,7 +13,11 @@ import {
   standardPrincipalCV,
   serializeCV,
   makeStandardSTXPostCondition,
-  FungibleConditionCode
+  FungibleConditionCode,
+  NonFungibleConditionCode,
+  createAssetInfo,
+  PostConditionMode,
+  makeStandardNonFungiblePostCondition
 } from '@stacks/transactions'
 import { openSTXTransfer, openContractDeploy, openContractCall } from '@stacks/connect'
 import {
@@ -152,7 +156,7 @@ const resolveError = function (commit, reject, error) {
 }
 const handleFetchWalletInternal = function (wallet, response, commit, resolve) {
   wallet.nonce = response.data.nonce
-  wallet.balance = utils.fromOnChainAmount(response.data.balance)
+  wallet.balance = utils.fromMicroAmount(response.data.balance)
   resolve(wallet)
 }
 
@@ -292,6 +296,7 @@ const rpayStacksStore = {
           senderKey: sender.keyInfo.privateKey,
           nonce: new BigNum(nonce),
           network,
+          postConditionMode: PostConditionMode.Allow,
           postConditions: (data.postConditions) ? data.postConditions : []
         }
         makeContractCall(txOptions).then((transaction) => {
@@ -521,8 +526,8 @@ const rpayStacksStore = {
     mintToken ({ dispatch }, data) {
       return new Promise((resolve) => {
         const postConditionAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
-        const postConditionCode = FungibleConditionCode.GreaterEqual
-        const postConditionAmount = new BigNum(10000)
+        const postConditionCode = FungibleConditionCode.LessEqual
+        const postConditionAmount = new BigNum(100000000)
 
         const standardSTXPostCondition = makeStandardSTXPostCondition(
           postConditionAddress,
@@ -550,7 +555,17 @@ const rpayStacksStore = {
         const shares = listCV(shareList)
         data.functionArgs = [bufferCV(buffer), gaiaUsername, editions, addresses, shares]
         dispatch(data.action, data).then((result) => {
+          result.opcode = 'stx-transaction-mint'
+          result.assetHash = data.assetHash
+          window.eventBus.$emit('rpayEvent', result)
           resolve(result)
+        }).catch((err) => {
+          const result = {
+            opcode: 'stx-transaction-mint-error',
+            assetHash: data.assetHash,
+            error: err
+          }
+          window.eventBus.$emit('rpayEvent', result)
         })
       })
     },
@@ -566,11 +581,23 @@ const rpayStacksStore = {
     },
     transferAsset ({ state, dispatch, rootGetters }, data) {
       return new Promise((resolve) => {
-        const profile = rootGetters['rpayAuthStore/getMyProfile']
-        const recipient = utils.convertAddress(data.recipient)
-        const owner = utils.convertAddress(profile.stxAddress)
+        const nonFungibleAssetInfo = createAssetInfo(
+          data.contractAddress,
+          data.contractName,
+          'my-nft'
+        )
+        // Post-condition check failure on non-fungible asset ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW.thisisnumberone-v1::my-nft owned by STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG: UInt(3) Sent
+        const standardNonFungiblePostCondition = makeStandardNonFungiblePostCondition(
+          data.owner, // postConditionAddress
+          NonFungibleConditionCode.DoesNotOwn,
+          nonFungibleAssetInfo, // contract and nft info
+          uintCV(data.nftIndex) // nft value as clarity type
+        )
+        // const profile = rootGetters['rpayAuthStore/getMyProfile']
+        // const owner = profile.stxAddress
         data.functionName = 'transfer'
-        data.functionArgs = [uintCV(data.nftIndex), standardPrincipalCV(owner), standardPrincipalCV(recipient)]
+        data.postConditions = [standardNonFungiblePostCondition]
+        data.functionArgs = [uintCV(data.nftIndex), standardPrincipalCV(data.owner), standardPrincipalCV(data.recipient)]
         const methos = (state.provider === 'risidio') ? 'callContractRisidio' : 'callContractBlockstack'
         dispatch(methos, data).then((result) => {
           resolve(result)
