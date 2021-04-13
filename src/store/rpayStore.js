@@ -133,14 +133,70 @@ const rpayStore = {
         role: 'Donations',
         email: 'info@charity1.com',
         royalty: 10,
-        chainAddress: 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
+        chainAddress: 'ST18PE05NG1YN7X6VX9SN40NZYP7B6NQY6C96ZFRC'
       },
       {
         username: 'fullerenes.id',
         role: 'Sustainability and Carbon Capture',
         email: 'info@fullerenes.com',
-        royalty: 3,
+        royalty: 10,
         chainAddress: 'STMYA5EANW6C0HNS1S57VX52M0B795HHFDBW2XBE'
+      },
+      {
+        username: 'seller1.id',
+        role: 'Sustainability and Carbon Capture',
+        email: 'info@seller.com',
+        royalty: 10,
+        chainAddress: 'STBENNG3VJR8JQVVMRD9AK56GP2WFYDFSG6N1MH7'
+      },
+      {
+        username: 'seller2.id',
+        role: 'Sustainability and Carbon Capture',
+        email: 'info@seller.com',
+        royalty: 10,
+        chainAddress: 'ST18PE05NG1YN7X6VX9SN40NZYP7B6NQY6C96ZFRC'
+      },
+      {
+        username: 'seller3.id',
+        role: 'Sustainability and Carbon Capture',
+        email: 'info@seller.com',
+        royalty: 10,
+        chainAddress: 'STBENNG3VJR8JQVVMRD9AK56GP2WFYDFSG6N1MH7'
+      },
+      {
+        username: 'seller4.id',
+        role: 'Sustainability and Carbon Capture',
+        email: 'info@seller.com',
+        royalty: 10,
+        chainAddress: 'STBENNG3VJR8JQVVMRD9AK56GP2WFYDFSG6N1MH7'
+      },
+      {
+        username: 'seller5.id',
+        role: 'Sustainability and Carbon Capture',
+        email: 'info@seller.com',
+        royalty: 10,
+        chainAddress: 'STBENNG3VJR8JQVVMRD9AK56GP2WFYDFSG6N1MH7'
+      },
+      {
+        username: 'seller6.id',
+        role: 'Sustainability and Carbon Capture',
+        email: 'info@seller.com',
+        royalty: 10,
+        chainAddress: 'STBENNG3VJR8JQVVMRD9AK56GP2WFYDFSG6N1MH7'
+      },
+      {
+        username: 'seller7.id',
+        role: 'Sustainability and Carbon Capture',
+        email: 'info@seller.com',
+        royalty: 10,
+        chainAddress: 'STBENNG3VJR8JQVVMRD9AK56GP2WFYDFSG6N1MH7'
+      },
+      {
+        username: 'seller8.id',
+        role: 'Sustainability and Carbon Capture',
+        email: 'info@seller.com',
+        royalty: 10,
+        chainAddress: 'STBENNG3VJR8JQVVMRD9AK56GP2WFYDFSG6N1MH7'
       }
     ],
     mintingMessage: null

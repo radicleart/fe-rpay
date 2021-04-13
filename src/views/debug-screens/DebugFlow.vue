@@ -90,23 +90,21 @@
             <div class="col-2">administrator</div><div class="col-10">{{application.tokenContract.administrator}}</div>
             <div class="col-2">Platform</div><div class="col-10">{{application.tokenContract.platformFee}}</div>
             <div class="col-2">Minted</div><div class="col-10">{{application.tokenContract.mintCounter}}</div>
-            <div class="row text-danger ml-4 mt-3 border-bottom mb-3 pb-2" v-for="(token, index) in application.tokenContract.tokens" :key="index">
+            <div class="row ml-4 mt-3 border-bottom mb-3 pb-2" v-for="(token, index) in application.tokenContract.tokens" :key="index">
               <div class="col-2">NFT</div><div class="col-10">#<a href="#" class="text-small text-info" @click.prevent="loadToken(application.contractId, token.nftIndex)">{{token.nftIndex}}</a></div>
               <div class="col-2">TokenInfo</div><div class="col-10"><a href="#" class="text-small text-info" @click.prevent="loadToken(application.contractId, token.nftIndex, token.tokenInfo.assetHash)">{{token.tokenInfo.assetHash}}</a></div>
-              <div class="col-2">Owner</div><div class="col-10">{{token.owner}} <a href="#" @click.prevent="transferAsset(token.nftIndex, token.owner)">transfer</a></div>
+              <div class="col-2">Owner</div><div class="col-10">{{token.owner}} <a href="#" @click.prevent="transferAsset(token.nftIndex, token.owner)">transfer</a> <a href="#" @click.prevent="confirmBuyNow(token.nftIndex, token.owner)">buy now</a></div>
+              <div class="col-2">Beneficiaries</div><div class="col-10">{{token.beneficiaries}}</div>
               <div class="col-2">Offers</div><div class="col-10">{{token.offerCounter}}</div>
               <div class="col-2"></div>
               <div class="col-10">
                 <div v-for="(offer, index1) in token.offerHistory" :key="index1">
-                  <div>{{offer}}</div>
+                  <div>Amount: {{offer.amount}} Made: {{offer.amount}}  Cycle: {{offer.saleCycle}} Offerer: {{offer.offerer}}</div>
                   <div><a href="#" @click.prevent="acceptOffer(offer, index1)">accept</a></div>
                 </div>
               </div>
-              <div class="col-2">SaleData</div><div class="col-10">Type={{token.saleData.saleType}}, Amount {{token.saleData.buyNowOrStartingPrice}}</div>
-              <div class="col-2">Reserve</div><div class="col-10">{{token.saleData.reservePrice}}, Increment {{token.saleData.incrementPrice}}</div>
-              <div class="col-2">End time</div><div class="col-10">{{token.saleData.biddingEndTime}}</div>
-              <div class="col-2">Max Eds.</div><div class="col-10">{{token.tokenInfo.maxEditions}}</div>
-              <div class="col-2">Eds.</div><div class="col-10">{{token.tokenInfo.edition}}</div>
+              <div class="col-2">SaleData</div><div class="col-10">Type: {{token.saleData.saleType}}, Cycle {{token.saleData.saleCycleIndex}}, Amount: {{token.saleData.buyNowOrStartingPrice}} Reserve: {{token.saleData.reservePrice}}, Increment: {{token.saleData.incrementPrice}} Ends: {{token.saleData.biddingEndTime}}</div>
+              <div class="col-2">Edition</div><div class="col-10">{{token.tokenInfo.edition}} / {{token.tokenInfo.maxEditions}}</div>
               <div class="col-2">Block-height</div><div class="col-10">{{token.tokenInfo.date}}</div>
               <div class="col-2">Original</div><div class="col-10">{{token.tokenInfo.seriesOriginal}}</div>
             </div>
@@ -164,16 +162,34 @@ export default {
       configuration.gaiaAsset.assetHash = aHash
       this.$store.commit('rpayStore/addConfiguration', configuration)
     },
-    transferAsset: function (index, owner) {
+    confirmBuyNow (index, owner) {
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
+      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
       const data = {
-        sendAsSky: true,
+        sendAsSky: (owner === 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW'),
         contractAddress: networkConfig.contractAddress,
         contractName: networkConfig.contractName,
         nftIndex: index,
         owner: owner,
-        // recipient: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW'
-        recipient: 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
+        amount: contractAsset.saleData.buyNowOrStartingPrice,
+        recipient: (owner === 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG') ? 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW' : 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
+      }
+      this.$store.dispatch('rpayStacksStore/buyNow', data).then((result) => {
+        this.result = result
+      }).catch((error) => {
+        this.result = error
+      })
+    },
+    transferAsset: function (index, owner) {
+      const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
+      const data = {
+        sendAsSky: (owner === 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'),
+        contractAddress: networkConfig.contractAddress,
+        contractName: networkConfig.contractName,
+        nftIndex: index,
+        owner: owner,
+        recipient: (owner === 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG') ? 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW' : 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
       }
       return this.$store.dispatch('rpayStacksStore/transferAsset', data).then((result) => {
         this.result = result

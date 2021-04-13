@@ -543,9 +543,8 @@ const rpayStacksStore = {
         for (let i = 0; i < 10; i++) {
           const beneficiary = data.beneficiaries[i]
           if (beneficiary) {
-            const convertedValue = beneficiary.royalty * 100
             addressList.push(standardPrincipalCV(beneficiary.chainAddress))
-            shareList.push(uintCV(convertedValue))
+            shareList.push(uintCV(utils.toOnChainAmount(beneficiary.royalty * 100))) // allows 2 d.p.
           } else {
             addressList.push(standardPrincipalCV(data.contractAddress))
             shareList.push(uintCV(0))
@@ -614,33 +613,26 @@ const rpayStacksStore = {
         })
       })
     },
-    buyNow ({ state, dispatch, rootGetters }, purchaseInfo) {
-      return new Promise((resolve, reject) => {
-        // (asset-hash (buff 32)) (sale-type uint) (increment-stx uint) (reserve-stx uint) (amount-stx uint)
-        const asset = purchaseInfo.asset
-        const profile = rootGetters['rpayAuthStore/getMyProfile']
-        // const amount = new BigNum(utils.toOnChainAmount(asset.saleData.buyNowOrStartingPrice + 1))
-        const amount = new BigNum(asset.saleData.buyNowOrStartingPrice + 1)
+    buyNow ({ state, dispatch }, data) {
+      return new Promise((resolve) => {
+        const amount = new BigNum(utils.toOnChainAmount(data.buyNowOrStartingPrice))
+        const functionArgs = [uintCV(data.nftIndex), standardPrincipalCV(data.owner), standardPrincipalCV(data.recipient)]
         const standardSTXPostCondition = makeStandardSTXPostCondition(
-          profile.stxAddress,
+          data.owner,
           FungibleConditionCode.LessEqual,
           amount
         )
-
-        const nftIndex = uintCV(asset.nftIndex)
-        // const spCV = standardPrincipalCV(mac.keyInfo.address)
-        // const functionArgs = [spCV, nftIndex]
-        const functionArgs = [nftIndex]
-        const data = {
+        const callData = {
           postConditions: [standardSTXPostCondition],
-          contractAddress: asset.projectId.split('.')[0],
-          contractName: asset.projectId.split('.')[1],
-          functionName: 'transfer-from',
+          contractAddress: data.contractAddress,
+          contractName: data.contractName,
+          functionName: 'buy-now',
           functionArgs: functionArgs,
-          wallet: (state.provider === 'risidio' && purchaseInfo.useWallet && purchaseInfo.useWallet === 'sky') ? state.skysWallet : state.macsWallet
+          sendAsSky: data.sendAsSky
+
         }
         const methos = (state.provider === 'risidio') ? 'callContractRisidio' : 'callContractBlockstack'
-        dispatch(methos, data).then((result) => {
+        dispatch(methos, callData).then((result) => {
           resolve(result)
         })
       })

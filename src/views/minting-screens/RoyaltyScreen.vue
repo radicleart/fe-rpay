@@ -75,6 +75,7 @@ export default {
       }
     },
     mintTokenStacks: function (data) {
+      data.sendAsSky = true
       this.$store.dispatch('rpayStacksStore/mintToken', data)
     },
     mintTokenEthereum: function (networkConfig) {
