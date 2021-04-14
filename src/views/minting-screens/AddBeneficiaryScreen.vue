@@ -162,7 +162,7 @@ export default {
         configuration.minter.beneficiaries.push(this.beneficiary)
       }
       this.$store.commit('rpayStore/addConfiguration', configuration)
-      configuration.opcode = 'save-mint-data'
+      configuration.opcode = 'stx-update-mint-data'
       window.eventBus.$emit('rpayEvent', configuration)
       this.$store.commit('rpayStore/setDisplayCard', 100)
     }

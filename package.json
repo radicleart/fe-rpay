@@ -1,6 +1,6 @@
 {
   "name": "risidio-pay",
-  "version": "0.1.51",
+  "version": "0.2.7",
   "private": false,
   "files": [
     "dist"
@@ -46,6 +46,7 @@
     "qrcode": "^1.4.4",
     "risidio-rates": "^1.0.10",
     "sockjs-client": "^1.5.0",
+    "video.js": "^7.11.8",
     "vue": "^2.6.12",
     "vue-cookies": "^1.7.4",
     "vue-datetime": "^1.0.0-beta.14",

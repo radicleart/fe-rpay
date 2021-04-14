@@ -8,7 +8,7 @@
 
 <script>
 import { APP_CONSTANTS } from '@/app-constants'
-import ProjectListItem from '@/views/marketplace-screens/agora/ProjectListItem'
+import ProjectListItem from '@/views/marketplace-screens/ProjectListItem'
 
 export default {
   name: 'SideMenu',

@@ -2,6 +2,18 @@
 import searchIndexService from '@/services/searchIndexService'
 import { APP_CONSTANTS } from '@/app-constants'
 
+const matchContractAssets = function (rootGetters, resultSet) {
+  const matched = []
+  resultSet.forEach((result) => {
+    const contractAsset = rootGetters['rpayStacksContractStore/getAssetFromContractByHash'](result.assetHash)
+    if (contractAsset) {
+      result.contractAsset = contractAsset
+      matched.push(result)
+    }
+  })
+  return matched
+}
+
 const sortResults = function (state, resultSet) {
   const currentSearch = (state.currentSearch) ? state.currentSearch : { filter: 'recent' }
   resultSet = resultSet.sort(function compare (a, b) {
@@ -104,9 +116,9 @@ const rpaySearchStore = {
     findAssetByHash ({ commit, rootGetters }, assetHash) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        searchIndexService.findAssetByHash(configuration.risidioBaseApi, assetHash).then((response) => {
-          commit('addSearchResult', response.data)
-          resolve(response.data)
+        searchIndexService.findAssetByHash(configuration.risidioBaseApi, assetHash).then((resultSet) => {
+          commit('addSearchResult', matchContractAssets(rootGetters, resultSet))
+          resolve(resultSet)
         }).catch((error) => {
           reject(new Error('Unable index record: ' + error))
         })
@@ -116,37 +128,39 @@ const rpaySearchStore = {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         searchIndexService.findAssets(configuration.risidioBaseApi).then((resultSet) => {
-          commit('setSearchResults', resultSet)
+          commit('setSearchResults', matchContractAssets(rootGetters, resultSet))
           resolve(resultSet)
         }).catch((error) => {
           reject(new Error('Unable index record: ' + error))
         })
       })
     },
-    findUsers ({ commit }) {
+    findUsers ({ commit, rootGetters }) {
       return new Promise((resolve, reject) => {
-        searchIndexService.fetchAllNamesIndex().then((resultSet) => {
-          commit('setUsers', resultSet)
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        searchIndexService.fetchAllNamesIndex(configuration.risidioBaseApi).then((resultSet) => {
+          commit('setUsers', matchContractAssets(rootGetters, resultSet))
           resolve(resultSet)
         }).catch((error) => {
           reject(new Error('Unable index record: ' + error))
         })
       })
     },
-    findBySearchTerm ({ commit }, query) {
+    findBySearchTerm ({ commit, rootGetters }, query) {
       return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
         if (query && query.length > 0) {
           query += '*'
-          searchIndexService.findByTitleOrDescriptionOrCategoryOrKeyword(query).then((resultSet) => {
-            commit('setSearchResults', resultSet)
+          searchIndexService.findByTitleOrDescriptionOrCategoryOrKeyword(configuration.risidioBaseApi, query).then((resultSet) => {
+            commit('setSearchResults', matchContractAssets(rootGetters, resultSet))
             resolve(resultSet)
           }).catch((error) => {
             reject(new Error('Unable index record: ' + error))
           })
         } else {
           query += '*'
-          searchIndexService.findAssets().then((resultSet) => {
-            commit('setSearchResults', resultSet)
+          searchIndexService.findAssets(configuration.risidioBaseApi).then((resultSet) => {
+            commit('setSearchResults', matchContractAssets(rootGetters, resultSet))
             resolve(resultSet)
           }).catch((error) => {
             reject(new Error('Unable index record: ' + error))
@@ -154,47 +168,44 @@ const rpaySearchStore = {
         }
       })
     },
-    findByProjectId ({ commit }, projectId) {
+    findByProjectId ({ commit, rootGetters }, projectId) {
       return new Promise((resolve, reject) => {
-        searchIndexService.findByProjectId(projectId).then((resultSet) => {
-          if (resultSet.length < 4) {
-            commit('setSearchResults', resultSet.slice(0, 1))
-          } else if (resultSet.length > 4 && resultSet.length < 9) {
-            commit('setSearchResults', resultSet.slice(0, 4))
-          } else {
-            commit('setSearchResults', resultSet.slice(0, 10))
-          }
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        searchIndexService.findByProjectId(configuration.risidioBaseApi, projectId).then((resultSet) => {
+          commit('setSearchResults', matchContractAssets(rootGetters, resultSet))
+        }).catch((error) => {
+          reject(new Error('Unable index record: ' + error))
+        })
+      })
+    },
+    findBySaleType ({ commit, rootGetters }, saleType) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        searchIndexService.findBySaleType(configuration.risidioBaseApi, saleType).then((resultSet) => {
+          commit('setSearchResults', matchContractAssets(rootGetters, resultSet))
           resolve(resultSet)
         }).catch((error) => {
           reject(new Error('Unable index record: ' + error))
         })
       })
     },
-    findBySaleType ({ commit }, saleType) {
+    findByObject ({ commit, rootGetters }, category) {
       return new Promise((resolve, reject) => {
-        searchIndexService.findBySaleType(saleType).then((resultSet) => {
-          commit('setSearchResults', resultSet)
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        searchIndexService.findByObject(configuration.risidioBaseApi, category.name).then((resultSet) => {
+          commit('setSearchResults', matchContractAssets(rootGetters, resultSet))
           resolve(resultSet)
         }).catch((error) => {
           reject(new Error('Unable index record: ' + error))
         })
       })
     },
-    findByObject ({ commit }, category) {
+    findByOwner ({ commit, rootGetters }) {
       return new Promise((resolve, reject) => {
-        searchIndexService.findByObject(category.name).then((resultSet) => {
-          commit('setSearchResults', resultSet)
-          resolve(resultSet)
-        }).catch((error) => {
-          reject(new Error('Unable index record: ' + error))
-        })
-      })
-    },
-    findByOwner ({ commit, rootGtters }) {
-      return new Promise((resolve, reject) => {
-        const profile = rootGtters[APP_CONSTANTS.KEY_PROFILE]
-        searchIndexService.findByOwner(profile.username).then((resultSet) => {
-          commit('setSearchResults', resultSet)
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
+        searchIndexService.findByOwner(configuration.risidioBaseApi, profile.username).then((resultSet) => {
+          commit('setSearchResults', matchContractAssets(rootGetters, resultSet))
           resolve(resultSet)
         }).catch((error) => {
           reject(new Error('Unable index record: ' + error))

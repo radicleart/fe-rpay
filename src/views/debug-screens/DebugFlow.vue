@@ -80,6 +80,8 @@
       <div class="row border-bottom mb-3 pb-2" v-for="(application, index) in registry.applications" :key="index">
         <div class="col-2">Contract Id</div><div class="col-10">{{application.contractId}}</div>
         <div class="col-2">Owner</div><div class="col-10">{{application.owner}}</div>
+        <div class="col-2">Gaia Json</div><div class="col-10">{{application.gaiaFilename}}</div>
+        <div class="col-2">App origin</div><div class="col-10">{{application.appOrigin}}</div>
         <div class="col-2">App-Index</div><div class="col-10">{{application.appIndex}}</div>
         <div class="col-2">Storage</div><div class="col-10">{{application.storageModel}}</div>
         <div class="col-2">Status</div><div class="col-10">{{application.status}}</div>

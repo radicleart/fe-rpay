@@ -44,7 +44,7 @@
 </template>
 
 <script>
-import SearchBar from '@/views/marketplace-screens/agora/SearchBar'
+import SearchBar from '@/views/marketplace-screens/SearchBar'
 
 export default {
   name: 'MarketplaceFilterBar',

@@ -7,7 +7,6 @@
   <b-card-text class="text-center mx-4">
     <div class="mb-4 text-two text-success"><b-icon width="4em" height="4em" scale="1" icon="check-circle"></b-icon></div>
     <h2 class="text-h2 mb-3" v-html="getPendingMessage"></h2>
-    <p class="mt-4 text-bold text-small">Thanks for coming!</p>
   </b-card-text>
   <template v-slot:footer>
     <div class="footer-container">
@@ -42,6 +41,9 @@ export default {
   methods: {
     backData: function () {
       this.$store.commit('rpayStore/setDisplayCard', 100)
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      configuration.opcode = 'stx-save-and-close-mint-data'
+      window.eventBus.$emit('rpayEvent', configuration)
     }
   },
   computed: {

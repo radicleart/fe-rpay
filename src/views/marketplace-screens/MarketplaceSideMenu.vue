@@ -24,8 +24,8 @@
 
 <script>
 import { APP_CONSTANTS } from '@/app-constants'
-import ProjectList from '@/views/marketplace-screens/agora/ProjectList'
-import CategoryList from '@/views/marketplace-screens/agora/CategoryList'
+import ProjectList from '@/views/marketplace-screens/ProjectList'
+import CategoryList from '@/views/marketplace-screens/CategoryList'
 
 export default {
   name: 'MarketplaceSideMenu',

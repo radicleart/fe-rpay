@@ -63,41 +63,40 @@ const replaceTokenFromHash = function (state, token) {
   return result
 }
 
-const fetchAllGaiaData = function (commit, state, apiPath, data) {
-  axios.post(apiPath, data).then(response => {
-    const appDataMap = response.data
-    if (appDataMap) {
-      const keySet = Object.keys(appDataMap)
-      keySet.forEach((thisKey) => {
-        const rootFile = JSON.parse(appDataMap[thisKey])
-        if (rootFile && rootFile.records && rootFile.records.length > -1) {
-          rootFile.records.forEach((gaiaAsset) => {
-            const token = tokenFromHash(state, gaiaAsset.assetHash)
-            if (token) {
-              // gaiaAsset = Object.assign(gaiaAsset, token)
-              commit('addGaiaAsset', gaiaAsset)
-            }
-          })
-        }
-      })
-    }
-  })
+const fetchAllGaiaData = function (commit, state, appDataMap) {
+  if (appDataMap) {
+    const keySet = Object.keys(appDataMap)
+    keySet.forEach((thisKey) => {
+      const rootFile = JSON.parse(appDataMap[thisKey])
+      if (rootFile && rootFile.records && rootFile.records.length > -1) {
+        rootFile.records.forEach((gaiaAsset) => {
+          const token = tokenFromHash(state, gaiaAsset.assetHash)
+          if (token) {
+            // gaiaAsset = Object.assign(gaiaAsset, token)
+            commit('addGaiaAsset', gaiaAsset)
+          }
+        })
+      }
+    })
+  }
 }
 
 const loadAssetsFromGaia = function (commit, state, registry, connectUrl, contractId) {
-  let path = connectUrl + '/v2/gaia/rootFiles'
   if (registry.applications && contractId) {
     const index = registry.applications.findIndex((o) => o.contractId === contractId)
     if (index > -1) {
       const application = registry.applications[index]
-      path = connectUrl + '/v2/gaia/rootFilesByDomain'
       const data = {
         appOrigin: application.appOrigin
       }
-      fetchAllGaiaData(commit, state, path, data)
+      axios.post(connectUrl + '/v2/gaia/rootFilesByDomain', data).then((response) => {
+        fetchAllGaiaData(commit, state, response.data)
+      })
     }
   } else {
-    fetchAllGaiaData(commit, state, path)
+    axios.get(connectUrl + '/v2/gaia/rootFiles').then((response) => {
+      fetchAllGaiaData(commit, state, response.data)
+    })
   }
 }
 

@@ -1,27 +1,19 @@
 <template>
-<div v-if="marketConfig.oneLayout">
-  <div class="vh-100 market-container">
-    <div class="mx-auto">
-      <result-grid style="height: 250px; width: 250px;" :resultSet="resultSet" v-if="resultSet && resultSet.length > 0"/>
-      <div v-else v-html="currentSearch">No results: {{currentSearch}}</div>
-    </div>
-  </div>
-</div>
-<div id="marketplace" v-else class="container-fluid px-0" style="margin-top: 0px;">
+<div id="marketplace">
   <div class="d-flex justify-content-start">
-    <div class="mp-nav w-25 p-4 px-5" v-if="marketConfig.searchMenu">
+    <div class="mp-nav w-25 p-4 px-5" v-if="grid === 'risidio'">
       <marketplace-side-menu v-on="$listeners" style="min-height: 100vh;"/>
     </div>
-    <div class="w-75 p-2" v-if="marketConfig.sideMenu">
+    <div class="w-75 p-2" v-if="grid === 'risidio'">
       <marketplace-filter-bar v-on="$listeners"/>
       <div class="p-5">
-        <result-grid :resultSet="resultSet" :gridClasses="gridClasses" v-if="resultSet && resultSet.length > 0"/>
+        <result-grid-risidio :resultSet="resultSet" :gridClasses="gridClasses" v-if="resultSet && resultSet.length > 0"/>
         <div v-else v-html="currentSearch">No results: {{currentSearch}}</div>
       </div>
     </div>
-    <div class="w-100 p-2" v-else>
-      <div class="p-5">
-        <result-grid :resultSet="resultSet" :gridClasses="gridClasses" v-if="resultSet && resultSet.length > 0"/>
+    <div class="w-100 p-2 d-flex justify-content-center" v-if="grid !== 'risidio'">
+      <div class="p-5 w-100">
+        <result-grid-one :resultSet="resultSet" v-if="resultSet && resultSet.length > 0"/>
         <div v-else v-html="currentSearch">No results: {{currentSearch}}</div>
       </div>
     </div>
@@ -32,26 +24,33 @@
 <script>
 import moment from 'moment'
 import { APP_CONSTANTS } from '@/app-constants'
-import ResultGrid from '@/views/marketplace-screens/agora/ResultGrid'
-import MarketplaceSideMenu from '@/views/marketplace-screens/agora/MarketplaceSideMenu'
-import MarketplaceFilterBar from '@/views/marketplace-screens/agora/MarketplaceFilterBar'
+import ResultGridOne from '@/views/marketplace-screens/one/ResultGridOne'
+import ResultGridRisidio from '@/views/marketplace-screens/risidio/ResultGridRisidio'
+import MarketplaceSideMenu from '@/views/marketplace-screens/MarketplaceSideMenu'
+import MarketplaceFilterBar from '@/views/marketplace-screens/MarketplaceFilterBar'
 
 export default {
   name: 'MarketplaceFlow',
   components: {
-    ResultGrid,
+    ResultGridOne,
+    ResultGridRisidio,
     MarketplaceSideMenu,
     MarketplaceFilterBar
   },
   data () {
     return {
       results: null,
+      grid: 'one',
       query: null,
       gridClasses: ['col-lg-3', 'col-md-4', 'col-sm-6', 'col-12']
     }
   },
   mounted () {
     this.loading = false
+    const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+    if (configuration.risidioProjectId && configuration.risidioProjectId.indexOf('numberone') > -1) {
+      this.grid = 'one'
+    }
     if (this.$route.query && !this.$route.query.filter) {
       this.findAssets()
     }
@@ -66,9 +65,9 @@ export default {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       let searchKey = 'rpaySearchStore/findBySearchTerm'
       let arg = Object.assign({}, this.$route.query)
-      if (configuration.marketConfig.projectId) {
+      if (configuration.risidioProjectId) {
         searchKey = 'rpaySearchStore/findByProjectId'
-        arg = configuration.marketConfig.projectId
+        arg = configuration.risidioProjectId
       }
       this.$store.dispatch(searchKey, arg).then((results) => {
         this.results = results

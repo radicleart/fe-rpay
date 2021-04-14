@@ -2,6 +2,22 @@
 <div>
 <router-link :to="assetUrl">
   <div ref="lndQrcode" class="result-item0 mb-4 bg-light" :style="calcHeight()">
+    <!-- <img style="max-width: 300px;" width="100%" :src="result.assetUrl"/> -->
+    <!-- <div style="position: absolute; top: -20px; left: 15px; font-size: 2rem;"><b-badge variant="light">{{result.nftIndex}} <span class="sr-only">NFT</span></b-badge></div> -->
+    <div><a style="position: absolute; top: 0px; right: 0; font-size: 2rem; z-index: 10;" @click.prevent="toggleFavourite()" href="#"><img ref="lndQrcode" :src="(amIOwner()) ? likeIconPurple : likeIconTurquoise" alt="like-icon"></a></div>
+    <!--<div class="result__item--description" v-if="dHover[index]" v-html="item.b1_text1[0].text"></div>-->
+    <div class="result__item--overlay">
+      <div class="result__item--description">
+        <div class="d-flex justify-content-between">
+          <div class="result__item--title">#{{result.nftIndex}} {{result.title}}</div>
+          <div class="result__item--amount">Σ {{buyingPrice}}</div>
+        </div>
+        <div class="d-flex justify-content-between">
+          <div class="result__item--by">By <span class="result__item--artist">{{owner(result.owner)}}</span></div>
+          <div class="result__item--price">{{buyingPriceConversion}}</div>
+        </div>
+      </div>
+    </div>
   </div>
 </router-link>
 <!-- {{created(result.created)}} / {{created(result.updated)}} -->
@@ -15,7 +31,7 @@ import utils from '@/services/utils'
 import Vue from 'vue'
 
 export default {
-  name: 'ResultGrid',
+  name: 'ResultItemRisidio',
   components: {
   },
   props: ['result'],

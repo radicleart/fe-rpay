@@ -64,7 +64,7 @@ export default {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       configuration.gaiaAsset.editions = this.editions
       this.$store.commit('rpayStore/addConfiguration', configuration)
-      configuration.opcode = 'save-mint-data'
+      configuration.opcode = 'stx-update-mint-data'
       window.eventBus.$emit('rpayEvent', configuration)
     }
   },

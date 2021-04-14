@@ -82,7 +82,7 @@ const pollTxStatus = function (result) {
           const hexResolved = utils.fromHex(response[meth2].hex)
           resolve(hexResolved)
           clearInterval(intval)
-          result.opcode = 'stx-contract-data'
+          result.opcode = 'stx-transaction-finished'
           result.response = response
           window.eventBus.$emit('rpayEvent', result)
         }
@@ -104,12 +104,10 @@ const captureResult = function (commit, rootGetters, result) {
   const contractId = result.contractAddress + '.' + result.contractName
   const useApi = configuration.risidioBaseApi + '/mesh/v2/registry/' + contractId + '/' + result.assetHash
   const connectUrl = configuration.risidioBaseApi + '/mesh'
+  result.opcode = 'stx-transaction-sent'
+  window.eventBus.$emit('rpayEvent', result)
   if (STACKS_API.indexOf('stacks-node-api') > -1) {
     pollTxStatus(result)
-  } else {
-    result.opcode = 'stx-contract-txdata'
-    result.response = 'unknown - please wait'
-    window.eventBus.$emit('rpayEvent', result)
   }
   subscribeApiNews(commit, connectUrl, contractId, result.assetHash)
   axios.get(useApi).then(response => {
@@ -627,9 +625,7 @@ const rpayStacksStore = {
           contractAddress: data.contractAddress,
           contractName: data.contractName,
           functionName: 'buy-now',
-          functionArgs: functionArgs,
-          sendAsSky: data.sendAsSky
-
+          functionArgs: functionArgs
         }
         const methos = (state.provider === 'risidio') ? 'callContractRisidio' : 'callContractBlockstack'
         dispatch(methos, callData).then((result) => {

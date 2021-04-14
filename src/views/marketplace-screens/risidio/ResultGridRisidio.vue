@@ -1,21 +1,21 @@
 <template>
-<div class="">
-  <div v-for="(result, index) in resultSet" :key="index" :class="gridClasses">
-    <result-item-one :result="result" />
+<div class="row mb-4">
+  <div v-for="(result, index) in resultSet" :key="index">
+    <result-item-risidio :result="result" />
   </div>
 </div>
 </template>
 
 <script>
 import { APP_CONSTANTS } from '@/app-constants'
-import ResultItemOne from '@/views/marketplace-screens/agora/ResultItemOne'
+import ResultItemRisidio from './ResultItemRisidio'
 
 export default {
-  name: 'ResultGrid',
+  name: 'ResultGridRisidio',
   components: {
-    ResultItemOne
+    ResultItemRisidio
   },
-  props: ['resultSet', 'gridClasses'],
+  props: ['resultSet'],
   data () {
     return {
     }
