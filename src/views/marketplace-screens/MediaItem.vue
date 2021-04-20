@@ -2,7 +2,7 @@
 <div>
   <div id="video-demo-container" v-if="isVideo(mediaItem())">
     <video-player :options="videoOptions"/>
-    <div class="d-flex justify-content-between" v-if="!hideMeta">
+    <div class="d-flex justify-content-between" v-if="videoOptions.showMeta">
       <div class="text-small text-info">{{mediaItem().type}}  ({{getSizeMeg(mediaItem().size)}})</div>
       <div @click="deleteMediaItem()" v-if="mediaItem().id === 'artworkClip' || mediaItem().id === 'coverImage'" class="text-small text-danger"><b-icon icon="trash"/></div>
     </div>
@@ -45,7 +45,7 @@ export default {
     VideoPlayer
     // BFormFile
   },
-  props: ['videoOptions', 'targetItem', 'nftMedia', 'dims', 'autoplay', 'hideMeta'],
+  props: ['videoOptions', 'targetItem', 'nftMedia', 'dims', 'autoplay'],
   data () {
     return {
       mediaObjects: [],

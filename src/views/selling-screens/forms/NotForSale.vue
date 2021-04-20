@@ -22,7 +22,7 @@ export default {
   },
   mounted () {
     const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-    this.buyNowOrStartingPrice = utils.toDecimals(utils.fromMicroAmount(configuration.gaiaAsset.saleData.buyNowOrStartingPrice))
+    this.buyNowOrStartingPrice = utils.toDecimals(configuration.gaiaAsset.saleData.buyNowOrStartingPrice)
     this.$emit('updateSaleDataInfo', { moneyField: true, field: 'buyNowOrStartingPrice', value: 0 })
     this.$emit('updateSaleDataInfo', { moneyField: true, field: 'reservePrice', value: 0 })
     this.$emit('updateSaleDataInfo', { moneyField: true, field: 'incrementPrice', value: 0 })

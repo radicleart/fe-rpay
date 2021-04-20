@@ -18,7 +18,6 @@ import { APP_CONSTANTS } from '@/app-constants'
 import PurchaseOfferAmount from './purchase-screens/PurchaseOfferAmount'
 import PurchaseOfferEmail from './purchase-screens/PurchaseOfferEmail'
 import moment from 'moment'
-import utils from '@/services/utils'
 
 export default {
   name: 'PurchaseFlow',
@@ -56,7 +55,7 @@ export default {
   methods: {
     setOfferData: function () {
       const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](this.gaiaAsset.assetHash)
-      this.minimumOffer = utils.fromMicroAmount(contractAsset.saleData.reservePrice)
+      this.minimumOffer = (contractAsset.saleData.reservePrice)
       this.offerData.minimumOffer = this.minimumOffer
       if (!this.offerData.offerAmount) {
         this.offerData.offerAmount = this.minimumOffer

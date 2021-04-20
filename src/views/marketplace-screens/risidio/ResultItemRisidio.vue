@@ -1,27 +1,35 @@
 <template>
 <div>
-<router-link :to="assetUrl">
-  <div ref="lndQrcode" class="result-item0 mb-4 bg-light" :style="calcHeight()">
-    <!-- <img style="max-width: 300px;" width="100%" :src="result.assetUrl"/> -->
-    <!-- <div style="position: absolute; top: -20px; left: 15px; font-size: 2rem;"><b-badge variant="light">{{result.nftIndex}} <span class="sr-only">NFT</span></b-badge></div> -->
-    <div><a style="position: absolute; top: 0px; right: 0; font-size: 2rem; z-index: 10;" @click.prevent="toggleFavourite()" href="#"><img ref="lndQrcode" :src="(amIOwner()) ? likeIconPurple : likeIconTurquoise" alt="like-icon"></a></div>
-    <!--<div class="result__item--description" v-if="dHover[index]" v-html="item.b1_text1[0].text"></div>-->
-    <div class="result__item--overlay">
-      <div class="result__item--description">
-        <div class="d-flex justify-content-between">
-          <div class="result__item--title">#{{result.nftIndex}} {{result.title}}</div>
-          <div class="result__item--amount">Σ {{buyingPrice}}</div>
-        </div>
-        <div class="d-flex justify-content-between">
-          <div class="result__item--by">By <span class="result__item--artist">{{owner(result.owner)}}</span></div>
-          <div class="result__item--price">{{buyingPriceConversion}}</div>
-        </div>
-      </div>
+  <div v-if="video">
+    <div @mouseover="transme()" @mouseout="transbackme()" :style="dimensions()" class="">
+      <router-link :style="'opacity: ' + opacity + ';'" style="padding: 3px; position: absolute; top: 5px; right: 25px; z-index: 100; width: 40px; height: 40px;" :to="assetUrl"><b-icon style="width: 40px; height: 40px;" icon="arrow-right-circle"/></router-link>
+      <media-item :videoOptions="videoOptions" :nftMedia="result.nftMedia" :targetItem="targetItem()"/>
     </div>
   </div>
-</router-link>
-<!-- {{created(result.created)}} / {{created(result.updated)}} -->
+  <div v-else>
+    <router-link :to="assetUrl">
+      <div ref="lndQrcode" class="result-item0 mb-4 bg-light" :style="calcHeight()">
+        <img style="max-width: 300px;" width="100%" :src="coverImageSrc"/>
+        <!-- <div style="position: absolute; top: -20px; left: 15px; font-size: 2rem;"><b-badge variant="light">{{result.nftIndex}} <span class="sr-only">NFT</span></b-badge></div> -->
+        <div><a style="position: absolute; top: 0px; right: 0; font-size: 2rem; z-index: 10;" @click.prevent="toggleFavourite()" href="#"><img ref="lndQrcode" :src="(amIOwner()) ? likeIconPurple : likeIconTurquoise" alt="like-icon"></a></div>
+        <!--<div class="result__item--description" v-if="dHover[index]" v-html="item.b1_text1[0].text"></div>-->
+        <div class="result__item--overlay">
+          <div class="result__item--description">
+            <div class="d-flex justify-content-between">
+              <div class="result__item--title">#{{contractAsset.nftIndex}} {{result.name}}</div>
+              <div class="result__item--amount">Σ {{buyingPrice}}</div>
+            </div>
+            <div class="d-flex justify-content-between">
+              <div class="result__item--by">By <span class="result__item--artist">{{owner(result.owner)}}</span></div>
+              <div class="result__item--price">{{buyingPriceConversion}}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </router-link>
+  </div>
 </div>
+<!-- {{created(result.created)}} / {{created(result.updated)}} -->
 </template>
 
 <script>
@@ -29,15 +37,22 @@ import { APP_CONSTANTS } from '@/app-constants'
 import moment from 'moment'
 import utils from '@/services/utils'
 import Vue from 'vue'
+import MediaItem from '../MediaItem'
 
 export default {
   name: 'ResultItemRisidio',
   components: {
+    MediaItem
   },
   props: ['result'],
   data () {
     return {
       height: 300,
+      video: true,
+      opacity: 0,
+      logo: require('@/assets/img/logo.svg'),
+      dims: { width: '100%', height: '100%' },
+      background: require('@/assets/img/main-navbar-bg.svg'),
       likeIconTurquoise: require('@/assets/img/Favorite_button_turquoise_empty.png'),
       likeIconPurple: require('@/assets/img/Favorite_button_purple_empty.png')
     }
@@ -53,9 +68,21 @@ export default {
     }, this)
   },
   methods: {
+    targetItem: function () {
+      return this.$store.getters[APP_CONSTANTS.KEY_TARGET_FILE_FOR_DISPLAY](this.result)
+    },
     hoverIn (index) {
       this.dHover[index] = true
       this.componentKey += 1
+    },
+    transme () {
+      this.opacity = 1
+    },
+    transbackme () {
+      this.opacity = 0
+    },
+    dimensions () {
+      return 'width: ' + this.dims.width / 2 + '; height: ' + this.dims.width / 2 + ';'
     },
     hoverOut () {
       this.dHover = [false, false, false, false, false, false, false, false, false, false, false, false]
@@ -65,9 +92,9 @@ export default {
       utils.makeFlasher(this.$refs.lndQrcode)
       this.$store.dispatch('projectStore/toggleFavourite', this.result).then((index) => {
         if (index < 0) {
-          this.$notify({ type: 'info', title: 'Favourites', text: this.result.title + ' has been added to your favourites - you can access them in your account.' })
+          this.$notify({ type: 'info', title: 'Favourites', text: this.result.name + ' has been added to your favourites - you can access them in your account.' })
         } else {
-          this.$notify({ type: 'info', title: 'Favourites', text: this.result.title + ' has been removed from your favourites.' })
+          this.$notify({ type: 'info', title: 'Favourites', text: this.result.name + ' has been removed from your favourites.' })
         }
       })
     },
@@ -104,13 +131,14 @@ export default {
       return (id && id.indexOf('.') > -1) ? id.split('.')[0] : '?'
     },
     saleType () {
-      if (this.result.saleData && this.result.saleData.saleType === 0) {
+      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](this.result.assetHash)
+      if (contractAsset.saleData && contractAsset.saleData.saleType === 0) {
         return 'not selling'
-      } else if (this.result.saleData && this.result.saleData.saleType === 1) {
+      } else if (contractAsset.saleData && contractAsset.saleData.saleType === 1) {
         return 'buy now'
-      } else if (this.result.saleData && this.result.saleData.saleType === 2) {
+      } else if (contractAsset.saleData && contractAsset.saleData.saleType === 2) {
         return 'place bid'
-      } else if (this.result.saleData && this.result.saleData.saleType === 3) {
+      } else if (contractAsset.saleData && contractAsset.saleData.saleType === 3) {
         return 'make offer'
       }
     },
@@ -119,20 +147,46 @@ export default {
     }
   },
   computed: {
+    videoOptions () {
+      const videoOptions = {
+        assetHash: this.result.assetHash,
+        autoplay: false,
+        showMeta: false,
+        controls: true,
+        aspectRatio: '1:1',
+        poster: (this.result.nftMedia.coverImage) ? this.result.nftMedia.coverImage.fileUrl : null,
+        sources: [
+          { src: this.result.nftMedia.artworkFile.fileUrl, type: this.result.nftMedia.artworkFile.type }
+        ],
+        fluid: true
+      }
+      return videoOptions
+    },
+    coverImageSrc () {
+      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](this.result.assetHash)
+      if (contractAsset && contractAsset.nftMedia && contractAsset.nftMedia.coverImage && contractAsset.nftMedia.coverImage.fileUrl) {
+        return contractAsset.nftMedia.coverImage.fileUrl
+      }
+      return this.background
+    },
+    contractAsset () {
+      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](this.result.assetHash)
+      return contractAsset
+    },
     buyingPriceConversion () {
-      const saleData = this.$store.getters[APP_CONSTANTS.KEY_TRADE_INFO_FROM_HASH](this.result.assetHash)
-      const buyNowOrStartingPrice = saleData.buyNowOrStartingPrice
+      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](this.result.assetHash)
+      const buyNowOrStartingPrice = contractAsset.saleData.buyNowOrStartingPrice
       const rate = this.$store.getters[APP_CONSTANTS.KEY_EXCHANGE_RATE](buyNowOrStartingPrice)
       return rate
     },
     buyingPrice () {
-      const saleData = this.$store.getters[APP_CONSTANTS.KEY_TRADE_INFO_FROM_HASH](this.result.assetHash)
-      return saleData.buyNowOrStartingPrice
+      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](this.result.assetHash)
+      return contractAsset.saleData.buyNowOrStartingPrice
     },
     assetUrl () {
       let assetUrl = '/assets/' + this.result.assetHash
-      if (this.$route.name === 'my-assets') {
-        assetUrl = '/my-assets/' + this.result.assetHash
+      if (this.$route.name === 'my-items') {
+        assetUrl = '/my-items/' + this.result.assetHash
       }
       return assetUrl
     }

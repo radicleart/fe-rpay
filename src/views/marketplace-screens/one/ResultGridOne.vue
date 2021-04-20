@@ -26,6 +26,7 @@
 
 <script>
 import ResultItemOne from './ResultItemOne'
+import { APP_CONSTANTS } from '@/app-constants'
 
 export default {
   name: 'One',
@@ -35,46 +36,30 @@ export default {
   props: ['resultSet'],
   data () {
     return {
-      gridSize: 2,
       showControls: false
     }
   },
-  mounted () {
-    const numbs = this.resultSet.length
-    if (numbs <= 4) {
-      this.gridSize = 2
-    } else if (numbs <= 9) {
-      this.gridSize = 3
-    } else if (numbs <= 16) {
-      this.gridSize = 4
-    }
-  },
   methods: {
-    breakLine: function (index) {
-      return (index % 2 === 1) ? '<br/>' : ''
-    },
-    cols: function () {
-      if (this.resultSet.length < 4) return 12
-      else if (this.resultSet.length < 9) return 6
-      else return 4
-    },
-    results (i) {
-      const results = this.resultSet
-      try {
-        const start = i * this.gridSize
-        const end = this.gridSize * (i + 1)
-        return results.slice(start, end)
-      } catch (e) {
-        return null
+    gridSize: function () {
+      const searchResults = this.$store.getters[APP_CONSTANTS.KEY_SEARCH_RESULTS]
+      const numbs = searchResults.length
+      if (numbs <= 4) {
+        this.gridSize = 2
+      } else if (numbs <= 9) {
+        this.gridSize = 3
+      } else if (numbs <= 16) {
+        this.gridSize = 4
       }
     }
   },
   computed: {
     assets1 () {
-      return this.resultSet.slice(0, 2)
+      const searchResults = this.$store.getters[APP_CONSTANTS.KEY_SEARCH_RESULTS]
+      return searchResults.slice(0, 2)
     },
     assets2 () {
-      return this.resultSet.slice(2)
+      const searchResults = this.$store.getters[APP_CONSTANTS.KEY_SEARCH_RESULTS]
+      return searchResults.slice(2)
     }
   }
 }

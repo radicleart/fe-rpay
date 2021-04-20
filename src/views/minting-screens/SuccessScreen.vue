@@ -50,10 +50,10 @@ export default {
     getPendingMessage () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const assetHash = configuration.gaiaAsset.assetHash
-      const asset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](assetHash)
+      const asset = this.$store.getters[APP_CONSTANTS.KEY_ASSET](assetHash)
 
       const preferredNetwork = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
-      let message = 'This NFT (#' + asset.nftIndex + ') has been minted on the Stacks Blockchain!'
+      let message = 'This NFT (#' + asset.contractAsset.nftIndex + ') has been minted on the Stacks Blockchain!'
       if (preferredNetwork.network === 'ethereum') {
         message = 'This NFT (#' + asset.tokenId + ') has been minted on the Ethereum Blockchain'
       }

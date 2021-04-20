@@ -38,7 +38,7 @@
   </div>
 </div>
 <div v-else>
-  Asset not passed.
+  Waiting for asset.
 </div>
 </template>
 
@@ -46,7 +46,6 @@
 import { APP_CONSTANTS } from '@/app-constants'
 import SellingOptions from './selling-screens/SellingOptions'
 import SellingHeader from './selling-screens/SellingHeader'
-import utils from '@/services/utils'
 
 export default {
   name: 'SellingFlow',
@@ -67,9 +66,9 @@ export default {
     const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
     const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
     configuration.gaiaAsset.saleData = contractAsset.saleData
-    configuration.gaiaAsset.saleData.buyNowOrStartingPrice = utils.fromMicroAmount(configuration.gaiaAsset.saleData.buyNowOrStartingPrice)
-    configuration.gaiaAsset.saleData.incrementPrice = utils.fromMicroAmount(configuration.gaiaAsset.saleData.incrementPrice)
-    configuration.gaiaAsset.saleData.reservePrice = utils.fromMicroAmount(configuration.gaiaAsset.saleData.reservePrice)
+    // configuration.gaiaAsset.saleData.buyNowOrStartingPrice = utils.fromMicroAmount(configuration.gaiaAsset.saleData.buyNowOrStartingPrice)
+    // configuration.gaiaAsset.saleData.incrementPrice = utils.fromMicroAmount(configuration.gaiaAsset.saleData.incrementPrice)
+    // configuration.gaiaAsset.saleData.reservePrice = utils.fromMicroAmount(configuration.gaiaAsset.saleData.reservePrice)
 
     this.$store.commit('rpayStore/addConfiguration', configuration)
     this.$store.commit('rpayCategoryStore/setModalMessage', '')
@@ -101,6 +100,7 @@ export default {
       const data = {
         contractAddress: network.contractAddress,
         contractName: network.contractName,
+        owner: contractAsset.owner,
         assetHash: configuration.gaiaAsset.assetHash,
         nftIndex: contractAsset.nftIndex,
         saleData: configuration.gaiaAsset.saleData

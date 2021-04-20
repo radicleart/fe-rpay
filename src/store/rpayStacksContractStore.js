@@ -82,22 +82,26 @@ const fetchAllGaiaData = function (commit, state, appDataMap) {
 }
 
 const loadAssetsFromGaia = function (commit, state, registry, connectUrl, contractId) {
-  if (registry.applications && contractId) {
-    const index = registry.applications.findIndex((o) => o.contractId === contractId)
-    if (index > -1) {
-      const application = registry.applications[index]
-      const data = {
-        appOrigin: application.appOrigin
+  return new Promise((resolve) => {
+    if (registry.applications && contractId) {
+      const index = registry.applications.findIndex((o) => o.contractId === contractId)
+      if (index > -1) {
+        const application = registry.applications[index]
+        const data = {
+          appOrigin: application.appOrigin
+        }
+        axios.post(connectUrl + '/v2/gaia/rootFilesByDomain', data).then((response) => {
+          fetchAllGaiaData(commit, state, response.data)
+          resolve(response.data)
+        })
       }
-      axios.post(connectUrl + '/v2/gaia/rootFilesByDomain', data).then((response) => {
+    } else {
+      axios.get(connectUrl + '/v2/gaia/rootFiles').then((response) => {
         fetchAllGaiaData(commit, state, response.data)
+        resolve(response.data)
       })
     }
-  } else {
-    axios.get(connectUrl + '/v2/gaia/rootFiles').then((response) => {
-      fetchAllGaiaData(commit, state, response.data)
-    })
-  }
+  })
 }
 
 const subscribeApiNews = function (state, commit, connectUrl, gaiaAppDomains, contractId) {
@@ -135,11 +139,25 @@ const resolvePrincipals = function (registry) {
       app.owner = utils.convertAddress(app.owner)
       if (app.tokenContract) {
         app.tokenContract.administrator = utils.convertAddress(app.tokenContract.administrator)
+        app.tokenContract.mintPrice = utils.fromMicroAmount(app.tokenContract.mintPrice)
         app.tokenContract.tokens.forEach((token) => {
           token.owner = utils.convertAddress(token.owner)
           if (token.offerHistory) {
             token.offerHistory.forEach((offer) => {
               offer.offerer = utils.convertAddress(offer.offerer)
+            })
+          }
+          if (token.saleData) {
+            token.saleData.buyNowOrStartingPrice = utils.fromMicroAmount(token.saleData.buyNowOrStartingPrice)
+            token.saleData.incrementPrice = utils.fromMicroAmount(token.saleData.incrementPrice)
+            token.saleData.reservePrice = utils.fromMicroAmount(token.saleData.reservePrice)
+          }
+          if (token.beneficiaries) {
+            let idx = 0
+            token.beneficiaries.shares.forEach((share) => {
+              token.beneficiaries.shares[idx].value = utils.fromMicroAmount(share.value) / 100
+              token.beneficiaries.addresses[idx].valueHex = utils.convertAddress(token.beneficiaries.addresses[idx].valueHex)
+              idx++
             })
           }
           if (token.bidHistory) {
@@ -160,34 +178,27 @@ const unsubscribeApiNews = function () {
   }
 }
 
-const convertToTradeInfo = function (asset) {
-  const saleData = {
-    saleType: 0,
-    buyNowOrStartingPrice: 0,
-    reservePrice: 0,
-    biddingEndTime: 0,
-    incrementPrice: 0
-  }
-  if (asset && asset.saleData) {
-    saleData.saleType = asset.saleData['sale-type'].value
-    saleData.buyNowOrStartingPrice = asset.saleData['amount-stx'].value
-    saleData.reservePrice = asset.saleData['reserve-stx'].value
-    saleData.biddingEndTime = asset.saleData['bidding-end-time'].value
-    saleData.incrementPrice = asset.saleData['increment-stx'].value
-  }
-  return saleData
-}
-
 const rpayStacksContractStore = {
   namespaced: true,
   state: {
     registry: null,
     registryContractId: process.env.VUE_APP_REGISTRY_CONTRACT_ADDRESS + '.' + process.env.VUE_APP_REGISTRY_CONTRACT_NAME,
-    gaiaAssets: []
+    gaiaAssets: [],
+    stacksTransactions: []
   },
   getters: {
     getRegistry: state => {
       return state.registry
+    },
+    getTargetFileForDisplay: state => item => {
+      if (item === null) return
+      const af = item.nftMedia.artworkFile
+      if (af && af.type && af.type.length > 0 && af.type !== 'threed') {
+        return 'artworkFile'
+      } else if (item.nftMedia.artworkClip && item.nftMedia.artworkClip.fileUrl) {
+        return 'artworkClip'
+      }
+      return 'coverImage'
     },
     getRegistryContractId: state => {
       return state.registryContractId
@@ -200,7 +211,16 @@ const rpayStacksContractStore = {
     },
     getTradeInfoFromHash: state => ahash => {
       const asset = tokenFromHash(state, ahash)
-      return convertToTradeInfo(asset)
+      if (!asset || !asset.contractAsset || !asset.contractAsset.saleData) {
+        return {
+          saleType: 0,
+          buyNowOrStartingPrice: 0,
+          reservePrice: 0,
+          biddingEndTime: 0,
+          incrementPrice: 0
+        }
+      }
+      return asset.contractAsset.saleData
     },
     getAssetFromContractByHash: state => assetHash => {
       return tokenFromHash(state, assetHash)
@@ -211,6 +231,27 @@ const rpayStacksContractStore = {
         return state.gaiaAssets[index]
       }
       return null
+    },
+    getAssetLastTransaction: (state, getters) => (assetHash) => {
+      if (state.stacksTransactions && state.stacksTransactions.length > 0) {
+        const matches = state.stacksTransactions.find((o) => o.assetHash === assetHash)
+        if (matches && matches.length > 0) return matches[0]
+      }
+      return {}
+    },
+    getAssetTransaction: (state, getters) => (data) => {
+      if (state.stacksTransactions && state.stacksTransactions.length > 0) {
+        const matches = state.stacksTransactions.find((o) => o.assetHash === data.assetHash && o.txId === data.txId)
+        if (matches && matches.length > 0) return matches[0]
+      }
+      return {}
+    },
+    getAssetTransactions: (state, getters) => (data) => {
+      if (state.stacksTransactions && state.stacksTransactions.length > 0) {
+        const matches = state.stacksTransactions.find((o) => o.assetHash === data.assetHash)
+        if (matches && matches.length > 0) return matches
+      }
+      return []
     },
     getAssetsByContractId: state => contractId => {
       if (!state.registry || !state.registry.applications) return
@@ -258,9 +299,38 @@ const rpayStacksContractStore = {
       } else {
         state.gaiaAssets.splice(index, 1, asset)
       }
+    },
+    addStacksTransactions: (state, stacksTransaction) => {
+      if (!state.stacksTransactions) state.stacksTransactions = []
+      state.stacksTransactions.splice(0, 0, stacksTransaction)
+    },
+    setStacksTransactions: (state, stacksTransactions) => {
+      state.stacksTransactions = stacksTransactions
     }
   },
   actions: {
+    postStacksTransaction ({ commit, rootGetters }, stacksTransaction) {
+      return new Promise(function (resolve, reject) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.post(configuration.risidioBaseApi + '/mesh/v2/register/transaction', stacksTransaction).then((result) => {
+          commit('addStacksTransactions', stacksTransaction)
+          resolve(stacksTransaction)
+        }).catch((error) => {
+          reject(new Error('Unable index record: ' + error))
+        })
+      })
+    },
+    fetchStacksTransactions ({ commit, rootGetters }, stacksTransaction) {
+      return new Promise(function (resolve, reject) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.post(configuration.risidioBaseApi + '/mesh/v2/register/transaction', stacksTransaction).then((result) => {
+          commit('setStacksTransactions', stacksTransaction)
+          resolve(stacksTransaction)
+        }).catch((error) => {
+          reject(new Error('Unable index record: ' + error))
+        })
+      })
+    },
     cleanup ({ state, commit, rootGetters }) {
       return new Promise((resolve, reject) => {
         unsubscribeApiNews()
@@ -277,10 +347,12 @@ const rpayStacksContractStore = {
           path = configuration.risidioBaseApi + '/mesh/v2/registry/' + configuration.risidioProjectId
         }
         axios.get(path).then(response => {
-          loadAssetsFromGaia(commit, state, response.data, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId)
-          subscribeApiNews(state, commit, configuration.risidioBaseApi + '/mesh', configuration.gaiaAppDomains, configuration.risidioProjectId)
-          commit('setRegistry', response.data)
-          resolve(response.data)
+          loadAssetsFromGaia(commit, state, response.data, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId).then((appDataMap) => {
+            console.log(appDataMap)
+            subscribeApiNews(state, commit, configuration.risidioBaseApi + '/mesh', configuration.gaiaAppDomains, configuration.risidioProjectId)
+            commit('setRegistry', response.data)
+            resolve(response.data)
+          })
         }).catch((error) => {
           reject(error)
         })

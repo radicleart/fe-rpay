@@ -27,6 +27,7 @@ export const APP_CONSTANTS = {
   KEY_EXCHANGE_RATE: 'rpayCategoryStore/getExchangeRateFormatted',
   KEY_STX_AMOUNT: 'rpayCategoryStore/getStxAmountFormatted',
 
+  KEY_TARGET_FILE_FOR_DISPLAY: 'rpayStacksContractStore/getTargetFileForDisplay',
   KEY_GAIA_ASSET_BY_HASH: 'rpayStacksContractStore/getGaiaAssetByHash',
   KEY_GAIA_ASSETS: 'rpayStacksContractStore/getGaiaAssets',
   KEY_GAIA_ASSETS_BY_OWNER: 'rpayStacksContractStore/getGaiaAssetsByOwner',
@@ -37,6 +38,9 @@ export const APP_CONSTANTS = {
   KEY_ASSET_FROM_CONTRACT_BY_HASH: 'rpayStacksContractStore/getAssetFromContractByHash',
   KEY_ASSETS_BY_CONTRACT_ID: 'getAssetsByContractId',
   KEY_ASSETS_BY_CONTRACT_ID_AND_OWNER: 'getAssetsByContractIdAndOwner',
+  KEY_ASSET_TRANSACTIONS: 'rpayStacksContractStore/getAssetTransactions',
+  KEY_ASSET_LAST_TRANSACTION: 'rpayStacksContractStore/getAssetLastTransaction',
+  KEY_ASSET_TRANSACTION: 'rpayStacksContractStore/getAssetTransaction',
 
   SET_CURRENT_SEARCH: 'rpaySearchStore/setCurrentSearch',
   KEY_CURRENT_SEARCH: 'rpaySearchStore/getCurrentSearch',

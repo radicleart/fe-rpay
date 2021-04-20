@@ -16,17 +16,16 @@
       <a v-else class="text-white" href="#" @click.prevent="startLogout">logout</a>
     </div>
 
-    <div class="row">
+    <div class="row" v-if="getGaiaAsset">
       <div class="col-12"><h6>Current Item</h6></div>
       <div class="col-2">Lookup App:</div><div class="col-10"><a class="text-info" href="#" @click.prevent="lookupAppmapContractData()" size="sm" variant="info">Appmap contract data</a></div>
       <div class="col-2">Base URI:</div><div class="col-10"><a class="text-info" href="#" @click.prevent="lookupTokenContractData()" size="sm" variant="info">Token contract data</a></div>
       <div class="col-2">Address:</div><div class="col-10"><a target="_blank" class="text-warning" :href="contractUrl()">{{configuration.minter.networks[0].contractAddress}}.{{configuration.minter.networks[0].contractName}}</a></div>
       <div class="col-2">API Base:</div><div class="col-10">{{configuration.risidioBaseApi}}</div>
       <div class="col-2">Mode:</div><div class="col-10">{{configuration.risidioCardMode}}</div>
-      <div class="col-2">Item name:</div><div class="col-10">{{configuration.gaiaAsset.name}}</div>
       <div class="col-2">Asset hash:</div><div class="col-10"><a href="#" @click="lookupTokenByHash()">{{configuration.gaiaAsset.assetHash}}</a> <a href="#" @click.prevent="genHash()"><b-icon icon="alarm"/></a></div>
-      <div class="col-2">Asset Name:</div><div class="col-10">{{gaiaAsset.name}}</div>
-      <div class="col-2">Editions:</div><div class="col-10">{{configuration.gaiaAsset.editions}}</div>
+      <div class="col-2">Asset Name:</div><div class="col-10">{{getGaiaAsset.name}}</div>
+      <div class="col-2">Editions:</div><div class="col-10">{{getGaiaAsset.contractAsset.tokenInfo.edition}} / {{getGaiaAsset.contractAsset.tokenInfo.maxEditions}}</div>
       <div class="col-2">Royalties:</div>
       <div class="col-10">
         <div class="row" v-for="(beneficiary, index) in configuration.minter.beneficiaries" :key="index">
@@ -62,7 +61,7 @@
         <div class="col-10">{{currentAsset.nftIndex}}</div>
       </div>
       <div class="row mt-2">
-        <div class="col-2">Edition # {{currentAsset.edition}}</div>
+        <div class="col-2" v-if="currentAsset.tokenInfo">Edition # {{currentAsset.tokenInfo.edition}}</div>
         <div class="col-10">of {{currentAsset.maxEditions}} and {{currentAsset.editionCounter}} minted so far</div>
       </div>
       <div class="row mt-2">
@@ -95,8 +94,10 @@
             <div class="row ml-4 mt-3 border-bottom mb-3 pb-2" v-for="(token, index) in application.tokenContract.tokens" :key="index">
               <div class="col-2">NFT</div><div class="col-10">#<a href="#" class="text-small text-info" @click.prevent="loadToken(application.contractId, token.nftIndex)">{{token.nftIndex}}</a></div>
               <div class="col-2">TokenInfo</div><div class="col-10"><a href="#" class="text-small text-info" @click.prevent="loadToken(application.contractId, token.nftIndex, token.tokenInfo.assetHash)">{{token.tokenInfo.assetHash}}</a></div>
-              <div class="col-2">Owner</div><div class="col-10">{{token.owner}} <a href="#" @click.prevent="transferAsset(token.nftIndex, token.owner)">transfer</a> <a href="#" @click.prevent="confirmBuyNow(token.nftIndex, token.owner)">buy now</a></div>
-              <div class="col-2">Beneficiaries</div><div class="col-10">{{token.beneficiaries}}</div>
+              <div class="col-2">Owner</div><div class="col-10">{{token.owner}} </div>
+              <div class="col-2">User</div><div class="col-10">{{token.tokenInfo.gaiaUsername}} </div>
+              <div class="col-2"></div><div class="text-small col-10"><a href="#" @click.prevent="transferAsset(token.nftIndex)">transfer</a> <a href="#" @click.prevent="confirmBuyNow(token.nftIndex, token.owner)">buy now</a> <a href="#" @click.prevent="mintNextEdition(token.tokenInfo.assetHash, token.nftIndex)">mint edition</a></div>
+              <!-- <div class="col-2">Beneficiaries</div><div class="col-10">{{token.beneficiaries}}</div> -->
               <div class="col-2">Offers</div><div class="col-10">{{token.offerCounter}}</div>
               <div class="col-2"></div>
               <div class="col-10">
@@ -143,10 +144,9 @@ export default {
     })
     const $self = this
     const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-    const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_GAIA_ASSET_BY_HASH](configuration.gaiaAsset.assetHash)
-    if (gaiaAsset) {
-      // configuration.gaiaAsset = gaiaAsset
-      // his.$store.commit('rpayStore/addConfiguration', configuration)
+    let gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_GAIA_ASSET_BY_HASH](configuration.gaiaAsset.assetHash)
+    if (!gaiaAsset) {
+      gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET](configuration.gaiaAsset.assetHash)
     }
     window.eventBus.$on('rpayEvent', function (data) {
       $self.globalEvent = data
@@ -183,10 +183,25 @@ export default {
         this.result = error
       })
     },
+    mintNextEdition (assetHash) {
+      const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
+      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](assetHash)
+      const data = {
+        owner: contractAsset.owner,
+        contractAddress: networkConfig.contractAddress,
+        contractName: networkConfig.contractName,
+        nftIndex: contractAsset.nftIndex,
+        buyNowOrStartingPrice: contractAsset.saleData.buyNowOrStartingPrice
+      }
+      this.$store.dispatch('rpayStacksStore/mintEdition', data).then((result) => {
+        this.result = result
+      }).catch((error) => {
+        this.result = error
+      })
+    },
     transferAsset: function (index, owner) {
       const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
       const data = {
-        sendAsSky: (owner === 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'),
         contractAddress: networkConfig.contractAddress,
         contractName: networkConfig.contractName,
         nftIndex: index,
@@ -286,12 +301,12 @@ export default {
   computed: {
     currentAsset () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      const currentAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
+      const currentAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET](configuration.gaiaAsset.assetHash)
       return currentAsset
     },
-    gaiaAsset () {
+    getGaiaAsset () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_GAIA_ASSET_BY_HASH](configuration.gaiaAsset.assetHash) | {}
+      const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET](configuration.gaiaAsset.assetHash)
       return gaiaAsset
     },
     configuration () {

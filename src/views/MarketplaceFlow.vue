@@ -12,8 +12,8 @@
       </div>
     </div>
     <div class="w-100 p-2 d-flex justify-content-center" v-if="grid !== 'risidio'">
-      <div class="p-5 w-100">
-        <result-grid-one :resultSet="resultSet" v-if="resultSet && resultSet.length > 0"/>
+      <div class="w-100">
+        <result-grid-risidio :gridClasses="gridClasses" :resultSet="resultSet" v-if="resultSet && resultSet.length > 0"/>
         <div v-else v-html="currentSearch">No results: {{currentSearch}}</div>
       </div>
     </div>
@@ -24,7 +24,6 @@
 <script>
 import moment from 'moment'
 import { APP_CONSTANTS } from '@/app-constants'
-import ResultGridOne from '@/views/marketplace-screens/one/ResultGridOne'
 import ResultGridRisidio from '@/views/marketplace-screens/risidio/ResultGridRisidio'
 import MarketplaceSideMenu from '@/views/marketplace-screens/MarketplaceSideMenu'
 import MarketplaceFilterBar from '@/views/marketplace-screens/MarketplaceFilterBar'
@@ -32,7 +31,6 @@ import MarketplaceFilterBar from '@/views/marketplace-screens/MarketplaceFilterB
 export default {
   name: 'MarketplaceFlow',
   components: {
-    ResultGridOne,
     ResultGridRisidio,
     MarketplaceSideMenu,
     MarketplaceFilterBar
@@ -40,9 +38,9 @@ export default {
   data () {
     return {
       results: null,
-      grid: 'one',
+      grid: 'risidio',
       query: null,
-      gridClasses: ['col-lg-3', 'col-md-4', 'col-sm-6', 'col-12']
+      gridClasses: ['col-lg-6', 'col-md-6', 'col-sm-6', 'col-12']
     }
   },
   mounted () {
@@ -85,8 +83,6 @@ export default {
       const addr = assetHash.substring(0, 4)
       return addr + '...' + assetHash.substring(assetHash.length - 4)
     },
-    // 91208c24998e8e264f5a8be992d80538b5e8bab9874863f816d603c6df0dca0d
-    // b696f04cb51e99953f792703bfabd353b197643f024e7309b27074099ef69eab
     owner (id) {
       return id.split('.')[0]
     },

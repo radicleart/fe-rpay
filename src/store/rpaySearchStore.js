@@ -7,11 +7,23 @@ const matchContractAssets = function (rootGetters, resultSet) {
   resultSet.forEach((result) => {
     const contractAsset = rootGetters['rpayStacksContractStore/getAssetFromContractByHash'](result.assetHash)
     if (contractAsset) {
+      const gaiaAsset = rootGetters[APP_CONSTANTS.KEY_GAIA_ASSET_BY_HASH](result.assetHash)
+      if (gaiaAsset && gaiaAsset.nftMedia) result = gaiaAsset
       result.contractAsset = contractAsset
       matched.push(result)
     }
   })
   return matched
+}
+
+const matchContractAsset = function (rootGetters, result) {
+  const contractAsset = rootGetters['rpayStacksContractStore/getAssetFromContractByHash'](result.assetHash)
+  if (contractAsset) {
+    const gaiaAsset = rootGetters[APP_CONSTANTS.KEY_GAIA_ASSET_BY_HASH](result.assetHash)
+    if (gaiaAsset && gaiaAsset.nftMedia) result = gaiaAsset
+    result.contractAsset = contractAsset
+  }
+  return result
 }
 
 const sortResults = function (state, resultSet) {
@@ -42,24 +54,30 @@ const rpaySearchStore = {
   state: {
     searchResults: null,
     projects: null,
-    currentSearch: null
+    currentSearch: null,
+    doSorting: false
   },
   getters: {
     getSearchResults: (state) => {
-      if (state.searchResults) {
+      if (state.searchResults && state.doSorting) {
         return sortResults(state, state.searchResults)
       }
-      // return state.searchResults
+      return state.searchResults
     },
     getCurrentSearch: (state) => {
       return state.currentSearch
     },
-    getAsset: (state) => (assetHash) => {
+    getAsset: (state, getters, rootState, rootGetters) => (assetHash) => {
+      let item = null
+      const contractAsset = rootGetters['rpayStacksContractStore/getAssetFromContractByHash'](assetHash)
       if (assetHash && state.searchResults && state.searchResults.length > 0) {
         const asset = state.searchResults.find(o => o.assetHash === assetHash)
-        return asset
+        item = asset
+      } if (item === null) {
+        item = rootGetters['rpayStacksContractStore/getGaiaAssetByHash'](assetHash)
       }
-      return null
+      if (item !== null) item.contractAsset = contractAsset
+      return item
     },
     getProjects: (state) => {
       return state.projects
@@ -116,9 +134,9 @@ const rpaySearchStore = {
     findAssetByHash ({ commit, rootGetters }, assetHash) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        searchIndexService.findAssetByHash(configuration.risidioBaseApi, assetHash).then((resultSet) => {
-          commit('addSearchResult', matchContractAssets(rootGetters, resultSet))
-          resolve(resultSet)
+        searchIndexService.findAssetByHash(configuration.risidioBaseApi, assetHash).then((response) => {
+          commit('addSearchResult', matchContractAsset(rootGetters, response.data))
+          resolve(response.data)
         }).catch((error) => {
           reject(new Error('Unable index record: ' + error))
         })
@@ -172,7 +190,9 @@ const rpaySearchStore = {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         searchIndexService.findByProjectId(configuration.risidioBaseApi, projectId).then((resultSet) => {
-          commit('setSearchResults', matchContractAssets(rootGetters, resultSet))
+          const contractResults = matchContractAssets(rootGetters, resultSet)
+          commit('setSearchResults', contractResults)
+          resolve(contractResults)
         }).catch((error) => {
           reject(new Error('Unable index record: ' + error))
         })

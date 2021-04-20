@@ -4,7 +4,6 @@ import lsatHelper from './lsatHelper'
 import axios from 'axios'
 import SockJS from 'sockjs-client'
 import Stomp from '@stomp/stompjs'
-import searchIndexService from '@/services/searchIndexService'
 
 // Vue.use(Vuex)
 let MESH_API = null
@@ -347,7 +346,6 @@ const rpayStore = {
     },
     initialiseApp ({ state, commit }, configuration) {
       return new Promise((resolve, reject) => {
-        searchIndexService.setBaseUrl(configuration.risidioBaseApi)
         MESH_API = configuration.risidioBaseApi + '/mesh'
         axios.get(MESH_API + '/v1/rates/ticker').then(response => {
           commit('setTickerRates', response.data)

@@ -1,13 +1,14 @@
 <template>
 <div @mouseover="transme()" @mouseout="transbackme()" :style="dimensions()" class="">
   <router-link :style="'opacity: ' + opacity + ';'" style="padding: 3px; position: absolute; top: 5px; right: 25px; z-index: 100; width: 40px; height: 40px;" :to="assetUrl"><b-icon style="width: 40px; height: 40px;" icon="arrow-right-circle"/></router-link>
-  <media-item :videoOptions="videoOptions" :hideMeta="true" :nftMedia="result.nftMedia" :targetItem="'artworkFile'"/>
+  <media-item :videoOptions="videoOptions" :nftMedia="result.nftMedia" :targetItem="targetItem()"/>
 </div>
 </template>
 
 <script>
 import Vue from 'vue'
 import MediaItem from '../MediaItem'
+import { APP_CONSTANTS } from '@/app-constants'
 
 export default {
   name: 'ResultItemOne',
@@ -35,6 +36,9 @@ export default {
     }, this)
   },
   methods: {
+    targetItem: function () {
+      return this.$store.getters[APP_CONSTANTS.KEY_TARGET_FILE_FOR_DISPLAY](this.result)
+    },
     transme () {
       this.opacity = 1
     },
@@ -48,6 +52,8 @@ export default {
   computed: {
     videoOptions () {
       const videoOptions = {
+        assetHash: this.result.assetHash,
+        showMeta: false,
         autoplay: false,
         controls: true,
         aspectRatio: '1:1',
@@ -61,8 +67,8 @@ export default {
     },
     assetUrl () {
       let assetUrl = '/assets/' + this.result.assetHash
-      if (this.$route.name === 'my-assets') {
-        assetUrl = '/my-assets/' + this.result.assetHash
+      if (this.$route.name === 'my-items') {
+        assetUrl = '/my-items/' + this.result.assetHash
       }
       return assetUrl
     }

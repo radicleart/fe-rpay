@@ -10,19 +10,6 @@ const appConfig = new AppConfig(['store_write', 'publish_data'])
 const userSession = new UserSession({ appConfig })
 const NETWORK = process.env.VUE_APP_NETWORK
 const BLOCKSTACK_LOGIN = Number(process.env.VUE_APP_BLOCKSTACK_LOGIN)
-const authFinished = function (session) {
-  window.eventBus.$emit('rpayEvent', { opcode: 'configured-logged-in', session: session })
-}
-const authOptions = {
-  sendToSignIn: false,
-  redirectTo: '/',
-  manifestPath: '/manifest.json',
-  finished: authFinished,
-  appDetails: {
-    name: 'Risidio Music NFTs',
-    icon: origin + '/img/logo.png'
-  }
-}
 const getProfile = function () {
   let myProfile = {}
   try {
@@ -59,7 +46,10 @@ const rpayAuthStore = {
     myProfile: {
       username: null,
       loggedIn: false,
-      showAdmin: false
+      showAdmin: false,
+      userData: null,
+      authResponse: null,
+      appPrivateKey: null
     },
     appName: 'Risidio Music NFTs',
     appLogo: '/img/sticksnstones_logo.8217b8f7.png'
@@ -99,8 +89,28 @@ const rpayAuthStore = {
         }
       })
     },
-    startLogin () {
-      return new Promise(() => {
+    startLogin ({ state, commit }) {
+      return new Promise((resolve) => {
+        const authOptions = {
+          sendToSignIn: false,
+          userSession: userSession,
+          redirectTo: '/create',
+          manifestPath: '/manifest.json',
+          finished: ({ userSession, authResponse }) => {
+            window.eventBus.$emit('rpayEvent', { opcode: 'configured-logged-in', session: userSession })
+            const userData = userSession.loadUserData()
+            state.appPrivateKey = userSession.loadUserData().appPrivateKey
+            state.authResponse = authResponse
+            state.userData = userData
+            commit('myProfile', getProfile())
+            resolve(getProfile())
+            location.assign('/')
+          },
+          appDetails: {
+            name: 'Risidio #1 in NFTs',
+            icon: origin + '/img/logo/logo.png'
+          }
+        }
         if (BLOCKSTACK_LOGIN === 1) {
           showConnect(authOptions)
         } else {
@@ -108,10 +118,11 @@ const rpayAuthStore = {
         }
       })
     },
-    startLogout ({ commit }) {
+    startLogout ({ state, commit }) {
       return new Promise((resolve) => {
         if (userSession.isUserSignedIn()) {
-          userSession.signUserOut(window.location.origin)
+          userSession.signUserOut()
+          state.userData = null
           commit('myProfile', getProfile())
         }
         resolve(getProfile())
