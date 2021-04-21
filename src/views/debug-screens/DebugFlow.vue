@@ -138,6 +138,7 @@ export default {
   },
   mounted () {
     this.$store.dispatch('rpayStacksContractStore/fetchContractData')
+    this.$store.dispatch('rpaySearchStore/findAssets')
     this.$store.dispatch('rpayAuthStore/fetchMyAccount').then((profile) => {
       this.profile = profile
       this.loaded = true

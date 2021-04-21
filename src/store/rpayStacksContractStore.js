@@ -96,6 +96,8 @@ const loadAssetsFromGaia = function (commit, state, registry, connectUrl, contra
         })
       }
     } else {
+      // the risidio xchange does not pass a contractId as its interested in all connected projects
+      // however there needs to be a way to screen out projects with status=1
       axios.get(connectUrl + '/v2/gaia/rootFiles').then((response) => {
         fetchAllGaiaData(commit, state, response.data)
         resolve(response.data)
@@ -115,13 +117,13 @@ const subscribeApiNews = function (state, commit, connectUrl, gaiaAppDomains, co
     if (!contractId) {
       stompClient.subscribe('/queue/contract-news', function (response) {
         const registry = JSON.parse(response.body)
-        commit('setRegistry', registry)
+        commit('setRegistry', { registry: registry, contractId: contractId })
         loadAssetsFromGaia(commit, state, registry, connectUrl, contractId)
       })
     } else {
       stompClient.subscribe('/queue/contract-news-' + contractId, function (response) {
         const registry = JSON.parse(response.body)
-        commit('setRegistry', registry)
+        commit('setRegistry', { registry: registry, contractId: contractId })
         loadAssetsFromGaia(commit, state, registry, connectUrl, contractId)
       })
     }
@@ -168,6 +170,19 @@ const resolvePrincipals = function (registry) {
         })
       }
     })
+  }
+  return registry
+}
+
+const removeStatusOneApps = function (registry, contractId) {
+  // if no project id is passed then the client must be the marketplace
+  // screen out application which have their own curated gallery (#1!)
+  if (!contractId) {
+    if (!registry || !registry.administrator) return
+    const allowed = registry.applications.filter((o) => o.status !== 1)
+    const notAllowed = registry.applications.filter((o) => o.status === 1)
+    registry.applications = allowed
+    registry.notAllowed = notAllowed
   }
   return registry
 }
@@ -275,7 +290,9 @@ const rpayStacksContractStore = {
     }
   },
   mutations: {
-    setRegistry (state, registry) {
+    setRegistry (state, data) {
+      let registry = data.registry
+      registry = removeStatusOneApps(registry, data.contractId)
       registry = resolvePrincipals(registry)
       state.registry = registry
     },
@@ -350,7 +367,7 @@ const rpayStacksContractStore = {
           loadAssetsFromGaia(commit, state, response.data, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId).then((appDataMap) => {
             console.log(appDataMap)
             subscribeApiNews(state, commit, configuration.risidioBaseApi + '/mesh', configuration.gaiaAppDomains, configuration.risidioProjectId)
-            commit('setRegistry', response.data)
+            commit('setRegistry', { registry: response.data, contractId: configuration.risidioProjectId })
             resolve(response.data)
           })
         }).catch((error) => {
