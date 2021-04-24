@@ -6,10 +6,11 @@ import utils from '@/services/utils'
 let socket = null
 let stompClient = null
 
-const tokenFromHash = function (state, ahash) {
+const tokenFromHash = function (registry, ahash) {
   let myToken = null
   try {
-    state.registry.applications.forEach((app) => {
+    if (!registry || !registry.applications) return
+    registry.applications.forEach((app) => {
       if (app.tokenContract && app.tokenContract.tokens) {
         const index = app.tokenContract.tokens.findIndex((o) => o.tokenInfo.assetHash === ahash)
         if (index > -1) {
@@ -46,6 +47,7 @@ export async function fetchAppGaiaHubUrl(username) {
 const replaceTokenFromHash = function (state, token) {
   let result = false
   try {
+    if (!state.registry || !state.registry.applications) return
     state.registry.applications.forEach((app) => {
       if (app.tokenContract && app.tokenContract.tokens) {
         const index = app.tokenContract.tokens.findIndex((o) => o.tokenInfo.assetHash === token.tokenInfo.assetHash)
@@ -63,14 +65,14 @@ const replaceTokenFromHash = function (state, token) {
   return result
 }
 
-const fetchAllGaiaData = function (commit, state, appDataMap) {
+const fetchAllGaiaData = function (commit, registry, appDataMap) {
   if (appDataMap) {
     const keySet = Object.keys(appDataMap)
     keySet.forEach((thisKey) => {
       const rootFile = JSON.parse(appDataMap[thisKey])
       if (rootFile && rootFile.records && rootFile.records.length > -1) {
         rootFile.records.forEach((gaiaAsset) => {
-          const token = tokenFromHash(state, gaiaAsset.assetHash)
+          const token = tokenFromHash(registry, gaiaAsset.assetHash)
           if (token) {
             // gaiaAsset = Object.assign(gaiaAsset, token)
             commit('addGaiaAsset', gaiaAsset)
@@ -81,8 +83,9 @@ const fetchAllGaiaData = function (commit, state, appDataMap) {
   }
 }
 
-const loadAssetsFromGaia = function (commit, state, registry, connectUrl, contractId) {
+const loadAssetsFromGaia = function (commit, registry, connectUrl, contractId) {
   return new Promise((resolve) => {
+    if (!registry) return
     if (registry.applications && contractId) {
       const index = registry.applications.findIndex((o) => o.contractId === contractId)
       if (index > -1) {
@@ -91,7 +94,7 @@ const loadAssetsFromGaia = function (commit, state, registry, connectUrl, contra
           appOrigin: application.appOrigin
         }
         axios.post(connectUrl + '/v2/gaia/rootFilesByDomain', data).then((response) => {
-          fetchAllGaiaData(commit, state, response.data)
+          fetchAllGaiaData(commit, registry, response.data)
           resolve(response.data)
         })
       }
@@ -99,14 +102,14 @@ const loadAssetsFromGaia = function (commit, state, registry, connectUrl, contra
       // the risidio xchange does not pass a contractId as its interested in all connected projects
       // however there needs to be a way to screen out projects with status=1
       axios.get(connectUrl + '/v2/gaia/rootFiles').then((response) => {
-        fetchAllGaiaData(commit, state, response.data)
+        fetchAllGaiaData(commit, registry, response.data)
         resolve(response.data)
       })
     }
   })
 }
 
-const subscribeApiNews = function (state, commit, connectUrl, gaiaAppDomains, contractId) {
+const subscribeApiNews = function (commit, connectUrl, contractId) {
   if (!socket) socket = new SockJS(connectUrl + '/api-news')
   if (!stompClient) stompClient = Stomp.over(socket)
   socket.onclose = function () {
@@ -118,13 +121,13 @@ const subscribeApiNews = function (state, commit, connectUrl, gaiaAppDomains, co
       stompClient.subscribe('/queue/contract-news', function (response) {
         const registry = JSON.parse(response.body)
         commit('setRegistry', { registry: registry, contractId: contractId })
-        loadAssetsFromGaia(commit, state, registry, connectUrl, contractId)
+        loadAssetsFromGaia(commit, registry, connectUrl, contractId)
       })
     } else {
       stompClient.subscribe('/queue/contract-news-' + contractId, function (response) {
         const registry = JSON.parse(response.body)
         commit('setRegistry', { registry: registry, contractId: contractId })
-        loadAssetsFromGaia(commit, state, registry, connectUrl, contractId)
+        loadAssetsFromGaia(commit, registry, connectUrl, contractId)
       })
     }
   },
@@ -178,7 +181,7 @@ const removeStatusOneApps = function (registry, contractId) {
   // if no project id is passed then the client must be the marketplace
   // screen out application which have their own curated gallery (#1!)
   if (!contractId) {
-    if (!registry || !registry.administrator) return
+    if (!registry || !registry.administrator || !registry.applications) return registry
     const allowed = registry.applications.filter((o) => o.status !== 1)
     const notAllowed = registry.applications.filter((o) => o.status === 1)
     registry.applications = allowed
@@ -225,7 +228,7 @@ const rpayStacksContractStore = {
       return state.registry.applications[index]
     },
     getTradeInfoFromHash: state => ahash => {
-      const asset = tokenFromHash(state, ahash)
+      const asset = tokenFromHash(state.registry, ahash)
       if (!asset || !asset.contractAsset || !asset.contractAsset.saleData) {
         return {
           saleType: 0,
@@ -238,7 +241,7 @@ const rpayStacksContractStore = {
       return asset.contractAsset.saleData
     },
     getAssetFromContractByHash: state => assetHash => {
-      return tokenFromHash(state, assetHash)
+      return tokenFromHash(state.registry, assetHash)
     },
     getGaiaAssetByHash: state => assetHash => {
       const index = state.gaiaAssets.findIndex((o) => o.assetHash === assetHash)
@@ -364,11 +367,24 @@ const rpayStacksContractStore = {
           path = configuration.risidioBaseApi + '/mesh/v2/registry/' + configuration.risidioProjectId
         }
         axios.get(path).then(response => {
-          loadAssetsFromGaia(commit, state, response.data, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId).then((appDataMap) => {
+          commit('setRegistry', { registry: response.data, contractId: configuration.risidioProjectId })
+          loadAssetsFromGaia(commit, state.registry, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId).then((appDataMap) => {
             console.log(appDataMap)
-            subscribeApiNews(state, commit, configuration.risidioBaseApi + '/mesh', configuration.gaiaAppDomains, configuration.risidioProjectId)
-            commit('setRegistry', { registry: response.data, contractId: configuration.risidioProjectId })
-            resolve(response.data)
+            subscribeApiNews(commit, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId)
+            resolve(state.registry)
+          })
+        }).catch(() => {
+          resolve(null)
+        })
+      })
+    },
+    indexGaiaData ({ state, commit, rootGetters }) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const path = configuration.risidioBaseApi + '/mesh/v2/gaia/indexFiles'
+        axios.get(path).then(response => {
+          loadAssetsFromGaia(commit, state.registry, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId).then((appDataMap) => {
+            resolve(appDataMap)
           })
         }).catch((error) => {
           reject(error)

@@ -25,7 +25,7 @@
       <div class="col-2">Mode:</div><div class="col-10">{{configuration.risidioCardMode}}</div>
       <div class="col-2">Asset hash:</div><div class="col-10"><a href="#" @click="lookupTokenByHash()">{{configuration.gaiaAsset.assetHash}}</a> <a href="#" @click.prevent="genHash()"><b-icon icon="alarm"/></a></div>
       <div class="col-2">Asset Name:</div><div class="col-10">{{getGaiaAsset.name}}</div>
-      <div class="col-2">Editions:</div><div class="col-10">{{getGaiaAsset.contractAsset.tokenInfo.edition}} / {{getGaiaAsset.contractAsset.tokenInfo.maxEditions}}</div>
+      <div class="col-2">Editions:</div><div class="col-10" v-if="getGaiaAsset.contractAsset">{{getGaiaAsset.contractAsset.tokenInfo.edition}} / {{getGaiaAsset.contractAsset.tokenInfo.maxEditions}}</div>
       <div class="col-2">Royalties:</div>
       <div class="col-10">
         <div class="row" v-for="(beneficiary, index) in configuration.minter.beneficiaries" :key="index">

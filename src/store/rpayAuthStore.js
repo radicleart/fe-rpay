@@ -22,6 +22,9 @@ const getProfile = function () {
       }
       const isAdmin =
         uname === 'mike.personal.id' ||
+        // celine
+        account.identityAddress.indexOf('1FwYY6Xjp2xDBn62WvTvX9LY6PH2EvQSJ1') > -1 ||
+        uname.indexOf('1FwYY6Xjp2xDBn62WvTvX9LY6PH2EvQSJ1') > -1 ||
         uname.indexOf('radicle') > -1 ||
         uname.indexOf('mijoco') > -1
       myProfile = {
@@ -51,6 +54,7 @@ const rpayAuthStore = {
       authResponse: null,
       appPrivateKey: null
     },
+    session: null,
     appName: 'Risidio Music NFTs',
     appLogo: '/img/sticksnstones_logo.8217b8f7.png'
   },
@@ -67,6 +71,9 @@ const rpayAuthStore = {
   mutations: {
     myProfile (state, myProfile) {
       state.myProfile = myProfile
+    },
+    setAuthResponse (state, session) {
+      state.session = session
     }
   },
   actions: {

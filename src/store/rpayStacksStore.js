@@ -34,7 +34,7 @@ let stompClient = null
 
 const network = new StacksTestnet()
 const precision = 1000000
-const contractDeployFee = 20000
+const contractDeployFee = 60000
 const STACKS_API = process.env.VUE_APP_STACKS_API
 
 /**
@@ -167,7 +167,9 @@ const rpayStacksStore = {
     result: null,
     contracts: [],
     appName: 'Risidio Auctions',
-    appLogo: '/img/risidio_white.png'
+    appLogo: '/img/risidio_white.png',
+    macsWallet: null,
+    skysWallet: null
   },
   getters: {
     getWalletMode: state => {
@@ -448,7 +450,7 @@ const rpayStacksStore = {
           if (resp.result && (resp.result.nftIndex === 0 || resp.result.nftIndex > 0)) {
             const result = resp.result
             result.network = 15
-            result.opcode = 'stx-mint-success'
+            result.opcode = 'stx-contract-read'
             resolve(result)
             commit('rpayStacksContractStore/addContractWriteResult', result, { root: true })
             window.eventBus.$emit('rpayEvent', result)
@@ -560,13 +562,13 @@ const rpayStacksStore = {
         const shares = listCV(shareList)
         data.functionArgs = [bufferCV(buffer), gaiaUsername, editions, addresses, shares]
         dispatch(data.action, data).then((result) => {
-          result.opcode = 'stx-transaction-mint'
+          result.opcode = 'stx-transaction-sent'
           result.assetHash = data.assetHash
           window.eventBus.$emit('rpayEvent', result)
           resolve(result)
         }).catch((err) => {
           const result = {
-            opcode: 'stx-transaction-mint-error',
+            opcode: 'stx-transaction-error',
             assetHash: data.assetHash,
             error: err
           }
@@ -594,13 +596,13 @@ const rpayStacksStore = {
           // data.sendAsSky = (data.owner !== 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG')
         }
         dispatch(methos, data).then((result) => {
-          result.opcode = 'stx-transaction-mint'
+          result.opcode = 'stx-transaction-sent'
           result.assetHash = data.assetHash
           window.eventBus.$emit('rpayEvent', result)
           resolve(result)
         }).catch((err) => {
           const result = {
-            opcode: 'stx-transaction-mint-error',
+            opcode: 'stx-transaction-error',
             assetHash: data.assetHash,
             error: err
           }
@@ -712,7 +714,7 @@ const rpayStacksStore = {
           codeBody: project.codeBody,
           senderKey: state.macsWallet.keyInfo.privateKey,
           nonce: new BigNum(state.macsWallet.nonce++), // watch for nonce increments if this works - may need to restart mocknet!
-          fee: new BigNum(contractDeployFee), // set a tx fee if you don't want the builder to estimate
+          fee: new BigNum(project.fee), // set a tx fee if you don't want the builder to estimate
           network
         }
         makeContractDeploy(txOptions).then((transaction) => {
@@ -833,6 +835,7 @@ const rpayStacksStore = {
     },
     deployProjectContract ({ state, dispatch }, datum) {
       return new Promise((resolve, reject) => {
+        if (!datum.fee) datum.fee = contractDeployFee
         const methos = (state.provider === 'risidio') ? 'deployContractRisidio' : 'deployContractConnect'
         dispatch(methos, datum).then((result) => {
           resolve(result)

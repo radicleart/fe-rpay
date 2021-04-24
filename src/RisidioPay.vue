@@ -61,8 +61,8 @@ export default {
     }
   },
   beforeDestroy () {
-    this.$store.dispatch('rpayStacksContractStore/cleanup')
-    this.$store.dispatch('rpayStore/cleanup')
+    // this.$store.dispatch('rpayStacksContractStore/cleanup')
+    // this.$store.dispatch('rpayStore/cleanup')
   },
   mounted () {
     let configuration = this.configuration

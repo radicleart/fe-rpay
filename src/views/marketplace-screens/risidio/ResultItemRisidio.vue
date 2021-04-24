@@ -151,6 +151,7 @@ export default {
       const videoOptions = {
         assetHash: this.result.assetHash,
         autoplay: false,
+        muted: true,
         showMeta: false,
         controls: true,
         aspectRatio: '1:1',

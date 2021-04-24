@@ -55,6 +55,7 @@ export default {
         assetHash: this.result.assetHash,
         showMeta: false,
         autoplay: false,
+        muted: true,
         controls: true,
         aspectRatio: '1:1',
         poster: (this.result.nftMedia.coverImage) ? this.result.nftMedia.coverImage.fileUrl : null,
