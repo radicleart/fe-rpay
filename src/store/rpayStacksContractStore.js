@@ -152,6 +152,13 @@ const resolvePrincipals = function (registry) {
               offer.offerer = utils.convertAddress(offer.offerer)
             })
           }
+          if (token.transferHistory) {
+            token.transferHistory.forEach((transfer) => {
+              transfer.from = utils.convertAddress(transfer.from)
+              transfer.to = utils.convertAddress(transfer.to)
+              transfer.amount = utils.fromMicroAmount(transfer.amount)
+            })
+          }
           if (token.saleData) {
             token.saleData.buyNowOrStartingPrice = utils.fromMicroAmount(token.saleData.buyNowOrStartingPrice)
             token.saleData.incrementPrice = utils.fromMicroAmount(token.saleData.incrementPrice)
@@ -167,6 +174,7 @@ const resolvePrincipals = function (registry) {
           }
           if (token.bidHistory) {
             token.bidHistory.forEach((bid) => {
+              bid.amount = utils.fromMicroAmount(bid.amount)
               bid.bidder = utils.convertAddress(bid.bidder)
             })
           }
@@ -282,7 +290,7 @@ const rpayStacksContractStore = {
       const index = state.registry.applications.findIndex((o) => o.contractId === data.contractId)
       if (index < 0) return []
       const tokens = state.registry.applications[index].tokenContract.tokens
-      return tokens.filter((o) => o.gaiaUsername === data.username)
+      return tokens.filter((o) => o.owner === data.stxAddress)
     },
     getGaiaAssets: state => {
       return state.gaiaAssets

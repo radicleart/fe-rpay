@@ -92,12 +92,52 @@
             <div class="col-2">Platform</div><div class="col-10">{{application.tokenContract.platformFee}}</div>
             <div class="col-2">Minted</div><div class="col-10">{{application.tokenContract.mintCounter}}</div>
             <div class="row ml-4 mt-3 border-bottom mb-3 pb-2" v-for="(token, index) in application.tokenContract.tokens" :key="index">
+              <div class="col-2 my-4"><div v-if="gaiaAsset(token.tokenInfo.assetHash)"><img width="70px" :src="gaiaAsset(token.tokenInfo.assetHash).imageUrl"/></div></div>
+              <div class="col-10 my-4" v-if="gaiaAsset(token.tokenInfo.assetHash)">
+                <div>{{gaiaAsset(token.tokenInfo.assetHash).name}}</div>
+                <div>[#{{token.nftIndex}}] : Edition {{token.tokenInfo.edition}} / {{token.tokenInfo.maxEditions}}</div>
+                <div>Uploaded by:     {{gaiaAsset(token.tokenInfo.assetHash).owner}}</div>
+                <div>Gaia user:       {{token.tokenInfo.gaiaUsername}}</div>
+                <div>Gaia user:       {{token.tokenInfo.gaiaUsername}}</div>
+                <div class="text-info">
+                  <a class="text-info pr-3 mr-3 border-right" href="#" @click.prevent="transferAsset(token.nftIndex)">transfer</a>
+                  <a class="text-info pr-3 mr-3 border-right" href="#" @click.prevent="mintNextEdition(token.tokenInfo.assetHash, token.nftIndex)">mint edition</a>
+                  <a class="text-info pr-3 mr-3 border-right" href="#" @click.prevent="confirmBuyNow(token.tokenInfo.assetHash, token.owner)">buy now</a>
+                  <a class="text-info pr-3 mr-3" href="#" @click.prevent="placeBid(token.tokenInfo.assetHash, token.nftIndex)">place bid</a>
+                </div>
+              </div>
               <div class="col-2">NFT</div><div class="col-10">#<a href="#" class="text-small text-info" @click.prevent="loadToken(application.contractId, token.nftIndex)">{{token.nftIndex}}</a></div>
               <div class="col-2">TokenInfo</div><div class="col-10"><a href="#" class="text-small text-info" @click.prevent="loadToken(application.contractId, token.nftIndex, token.tokenInfo.assetHash)">{{token.tokenInfo.assetHash}}</a></div>
               <div class="col-2">Owner</div><div class="col-10">{{token.owner}} </div>
               <div class="col-2">User</div><div class="col-10">{{token.tokenInfo.gaiaUsername}} </div>
-              <div class="col-2"></div><div class="text-small col-10"><a href="#" @click.prevent="transferAsset(token.nftIndex)">transfer</a> <a href="#" @click.prevent="confirmBuyNow(token.nftIndex, token.owner)">buy now</a> <a href="#" @click.prevent="mintNextEdition(token.tokenInfo.assetHash, token.nftIndex)">mint edition</a></div>
+              <div class="col-2">SaleData</div><div class="col-10">Type: {{token.saleData.saleType}}, Cycle {{token.saleData.saleCycleIndex}}, Amount: {{token.saleData.buyNowOrStartingPrice}} Reserve: {{token.saleData.reservePrice}}, Increment: {{token.saleData.incrementPrice}} Ends: {{token.saleData.biddingEndTime}}</div>
+              <div class="col-2">Edition</div><div class="col-10">{{token.tokenInfo.edition}} / {{token.tokenInfo.maxEditions}}</div>
+              <div class="col-2">Block-height</div><div class="col-10">{{token.tokenInfo.date}}</div>
+              <div class="col-2">Original</div><div class="col-10">{{token.tokenInfo.seriesOriginal}}</div>
               <!-- <div class="col-2">Beneficiaries</div><div class="col-10">{{token.beneficiaries}}</div> -->
+              <div class="col-2">Transfer Count</div><div class="col-10">{{token.transferCounter}}</div>
+              <div class="col-2">Transfer History</div><div class="col-10">{{token.transferHistory}}</div>
+              <div class="col-2">Royalties:</div>
+              <div class="col-10">
+                <div class="row" v-for="(beneficiary, index) in token.beneficiaries" :key="index">
+                  <div class="col-2">{{beneficiary.username}}</div>
+                  <div class="col-2">{{beneficiary.royalty}}</div>
+                  <div class="col-8">{{beneficiary.chainAddress}}</div>
+                </div>
+              </div>
+              <div class="col-2">Bids</div><div class="col-10">{{token.bidCounter}}</div>
+              <div class="col-2">Current High</div><div class="col-10">{{currentBid(token)}}</div>
+              <div class="col-2">Next Bid</div><div class="col-10">{{nextBid(token)}}</div>
+              <div class="col-2">Info</div><div class="col-10">{{sellingInfo(token)}}</div>
+              <div class="col-2"></div>
+              <div class="col-10 my-2">
+                <div class="row bg-dark text-white p-2 mr-3" v-for="(bid, index1) in token.bidHistory" :key="index1">
+                  <div class="col-2">Amount</div><div class="col-10">{{bid.amount}}</div>
+                  <div class="col-2">Bidder</div><div class="col-10">{{bid.bidder}}</div>
+                  <div class="col-2">Placed</div><div class="col-10">{{formatDate(bid.whenBid)}}</div>
+                  <div class="col-2">Cycle</div><div class="col-10">{{bid.saleCycle}}</div>
+                </div>
+              </div>
               <div class="col-2">Offers</div><div class="col-10">{{token.offerCounter}}</div>
               <div class="col-2"></div>
               <div class="col-10">
@@ -106,10 +146,6 @@
                   <div><a href="#" @click.prevent="acceptOffer(offer, index1)">accept</a></div>
                 </div>
               </div>
-              <div class="col-2">SaleData</div><div class="col-10">Type: {{token.saleData.saleType}}, Cycle {{token.saleData.saleCycleIndex}}, Amount: {{token.saleData.buyNowOrStartingPrice}} Reserve: {{token.saleData.reservePrice}}, Increment: {{token.saleData.incrementPrice}} Ends: {{token.saleData.biddingEndTime}}</div>
-              <div class="col-2">Edition</div><div class="col-10">{{token.tokenInfo.edition}} / {{token.tokenInfo.maxEditions}}</div>
-              <div class="col-2">Block-height</div><div class="col-10">{{token.tokenInfo.date}}</div>
-              <div class="col-2">Original</div><div class="col-10">{{token.tokenInfo.seriesOriginal}}</div>
             </div>
           </div>
       </div>
@@ -120,6 +156,7 @@
 
 <script>
 import { APP_CONSTANTS } from '@/app-constants'
+import moment from 'moment'
 
 export default {
   name: 'MintingFlow',
@@ -154,6 +191,10 @@ export default {
     })
   },
   methods: {
+    formatDate: function (date) {
+      const loaclEndM = moment(date)
+      return loaclEndM.format('DD-MM-YY hh:mm')
+    },
     loadToken: function (contractId, nftIndex, aHash) {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
@@ -165,20 +206,37 @@ export default {
       configuration.gaiaAsset.assetHash = aHash
       this.$store.commit('rpayStore/addConfiguration', configuration)
     },
-    confirmBuyNow (index, owner) {
-      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+    confirmBuyNow (assetHash, owner) {
       const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
-      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](configuration.gaiaAsset.assetHash)
+      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](assetHash)
       const data = {
         sendAsSky: (owner === 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW'),
         contractAddress: networkConfig.contractAddress,
         contractName: networkConfig.contractName,
-        nftIndex: index,
+        nftIndex: contractAsset.nftIndex,
         owner: owner,
         amount: contractAsset.saleData.buyNowOrStartingPrice,
         recipient: (owner === 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG') ? 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW' : 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
       }
-      this.$store.dispatch('rpayStacksStore/buyNow', data).then((result) => {
+      this.$store.dispatch('rpayPurchaseStore/buyNow', data).then((result) => {
+        this.result = result
+      }).catch((error) => {
+        this.result = error
+      })
+    },
+    placeBid (assetHash, owner) {
+      const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
+      const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](assetHash)
+      const data = {
+        sendAsSky: (owner === 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW'),
+        contractAddress: networkConfig.contractAddress,
+        contractName: networkConfig.contractName,
+        nftIndex: contractAsset.nftIndex,
+        owner: owner,
+        amount: contractAsset.saleData.buyNowOrStartingPrice,
+        recipient: (owner === 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG') ? 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW' : 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
+      }
+      this.$store.dispatch('rpayPurchaseStore/buyNow', data).then((result) => {
         this.result = result
       }).catch((error) => {
         this.result = error
@@ -194,7 +252,7 @@ export default {
         nftIndex: contractAsset.nftIndex,
         buyNowOrStartingPrice: contractAsset.saleData.buyNowOrStartingPrice
       }
-      this.$store.dispatch('rpayStacksStore/mintEdition', data).then((result) => {
+      this.$store.dispatch('rpayPurchaseStore/mintEdition', data).then((result) => {
         this.result = result
       }).catch((error) => {
         this.result = error
@@ -209,7 +267,7 @@ export default {
         owner: owner,
         recipient: (owner === 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG') ? 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW' : 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
       }
-      return this.$store.dispatch('rpayStacksStore/transferAsset', data).then((result) => {
+      return this.$store.dispatch('rpayPurchaseStore/transferAsset', data).then((result) => {
         this.result = result
       })
     },
@@ -226,7 +284,7 @@ export default {
         offerIndex: index,
         nftIndex: contractAsset.nftIndex
       }
-      return this.$store.dispatch('rpayStacksStore/acceptOffer', offerData).then((result) => {
+      return this.$store.dispatch('rpayPurchaseStore/acceptOffer', offerData).then((result) => {
         this.result = result
       })
     },
@@ -297,6 +355,22 @@ export default {
       const ranHash = crypto.createHash('sha256').update(ran).digest('hex')
       configuration.gaiaAsset.assetHash = ranHash
       this.$store.commit('rpayStore/addConfiguration', configuration)
+    },
+    gaiaAsset (hash) {
+      const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_GAIA_ASSET_BY_HASH](hash)
+      return gaiaAsset
+    },
+    nextBid (token) {
+      const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_BIDDING_NEXT_BID](token)
+      return gaiaAsset
+    },
+    currentBid (token) {
+      const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_BIDDING_CURRENT_BID](token)
+      return gaiaAsset
+    },
+    sellingInfo (token) {
+      const gaiaAsset = this.$store.getters[APP_CONSTANTS.KEY_SALES_INFO_TEXT](token)
+      return gaiaAsset
     }
   },
   computed: {

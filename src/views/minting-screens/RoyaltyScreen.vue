@@ -75,7 +75,7 @@ export default {
       }
     },
     mintTokenStacks: function (data) {
-      this.$store.dispatch('rpayStacksStore/mintToken', data)
+      this.$store.dispatch('rpayPurchaseStore/mintToken', data)
     },
     mintTokenEthereum: function (networkConfig) {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]

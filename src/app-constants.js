@@ -27,6 +27,13 @@ export const APP_CONSTANTS = {
   KEY_EXCHANGE_RATE: 'rpayCategoryStore/getExchangeRateFormatted',
   KEY_STX_AMOUNT: 'rpayCategoryStore/getStxAmountFormatted',
 
+  KEY_BIDDING_CURRENT_BID: 'rpayPurchaseStore/getCurrentBid',
+  KEY_BIDDING_NEXT_BID: 'rpayPurchaseStore/getNextBid',
+  KEY_SALES_BUTTON_LABEL: 'rpayPurchaseStore/getSalesButtonLabel',
+  KEY_SALES_BADGE_LABEL: 'rpayPurchaseStore/getSalesBadgeLabel',
+  KEY_SALES_INFO_TEXT: 'rpayPurchaseStore/getSalesInfoText',
+  KEY_FORMATTED_BIDDING_END_TIME: 'rpayPurchaseStore/getFormattedBiddingEndTime',
+
   KEY_TARGET_FILE_FOR_DISPLAY: 'rpayStacksContractStore/getTargetFileForDisplay',
   KEY_GAIA_ASSET_BY_HASH: 'rpayStacksContractStore/getGaiaAssetByHash',
   KEY_GAIA_ASSETS: 'rpayStacksContractStore/getGaiaAssets',

@@ -106,7 +106,7 @@ export default {
         saleData: configuration.gaiaAsset.saleData
       }
       this.sellingMessage = 'Calling wallet to sign and send... transactions can take a few minutes to confirm!'
-      this.$store.dispatch('rpayStacksStore/setTradeInfo', data).then((result) => {
+      this.$store.dispatch('rpayPurchaseStore/setTradeInfo', data).then((result) => {
         this.result = result
         this.sellingMessage = 'Transaction sent! Check the explorer for progress - people will be able to buy this item once it completes!'
       }).catch((error) => {

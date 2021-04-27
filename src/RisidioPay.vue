@@ -36,6 +36,7 @@ import rpayAuthStore from './store/rpayAuthStore'
 import rpayCategoryStore from './store/rpayCategoryStore'
 import rpayStacksContractStore from './store/rpayStacksContractStore'
 import rpayStacksStore from './store/rpayStacksStore'
+import rpayPurchaseStore from './store/rpayPurchaseStore'
 import { APP_CONSTANTS } from '@/app-constants'
 
 if (!window.eventBus) {
@@ -80,6 +81,7 @@ export default {
       this.$store.registerModule('rpayAuthStore', rpayAuthStore)
       this.$store.registerModule('rpayCategoryStore', rpayCategoryStore)
       this.$store.registerModule('rpayStacksStore', rpayStacksStore)
+      this.$store.registerModule('rpayPurchaseStore', rpayPurchaseStore)
       this.$store.registerModule('rpayStacksContractStore', rpayStacksContractStore)
       this.$store.registerModule('rpayStore', rpayStore)
       this.$store.commit('rpayStore/addConfiguration', configuration)

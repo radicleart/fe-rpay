@@ -93,7 +93,7 @@ export default {
       this.offerData.nftIndex = contractAsset.nftIndex
       this.offerData.assetHash = contractAsset.tokenInfo.assetHash
 
-      this.$store.dispatch('rpayStacksStore/makeOffer', this.offerData).then(() => {
+      this.$store.dispatch('rpayPurchaseStore/makeOffer', this.offerData).then(() => {
         this.message = 'okay'
       }).catch((err) => {
         this.errorMessage = err

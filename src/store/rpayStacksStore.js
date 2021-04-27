@@ -7,17 +7,10 @@ import {
   broadcastTransaction,
   makeContractDeploy,
   bufferCV,
-  listCV,
   uintCV,
   intCV,
-  standardPrincipalCV,
   serializeCV,
-  makeStandardSTXPostCondition,
-  FungibleConditionCode,
-  NonFungibleConditionCode,
-  createAssetInfo,
-  PostConditionMode,
-  makeStandardNonFungiblePostCondition
+  PostConditionMode
 } from '@stacks/transactions'
 import { openSTXTransfer, openContractDeploy, openContractCall } from '@stacks/connect'
 import {
@@ -332,6 +325,7 @@ const rpayStacksStore = {
               captureResult(dispatch, commit, rootGetters, result)
               resolve(result)
             }).catch((error) => {
+              dispatch('fetchMacSkyWalletInfo')
               resolveError(commit, reject, error)
             })
           }
@@ -502,181 +496,6 @@ const rpayStacksStore = {
           }).catch((error) => {
             resolveError(commit, reject, error)
           })
-        })
-      })
-    },
-    setTradeInfo ({ state, dispatch, rootGetters }, data) {
-      return new Promise((resolve, reject) => {
-        // (asset-hash (buff 32)) (sale-type uint) (increment-stx uint) (reserve-stx uint) (amount-stx uint)
-        // const buffer = bufferCV(Buffer.from(asset.assetHash, 'hex')) // Buffer.from(hash.toString(CryptoJS.enc.Hex), 'hex')
-        const nftIndex = uintCV(data.nftIndex)
-        const saleType = uintCV(data.saleData.saleType)
-        const incrementPrice = uintCV(utils.toOnChainAmount(data.saleData.incrementPrice))
-        const reservePrice = uintCV(utils.toOnChainAmount(data.saleData.reservePrice))
-        const buyNowOrStartingPrice = uintCV(utils.toOnChainAmount(data.saleData.buyNowOrStartingPrice))
-        const biddingEndTime = uintCV(data.saleData.biddingEndTime)
-        const functionArgs = [nftIndex, saleType, incrementPrice, reservePrice, buyNowOrStartingPrice, biddingEndTime]
-        const callData = {
-          contractAddress: data.contractAddress,
-          contractName: data.contractName,
-          functionName: 'set-sale-data',
-          functionArgs: functionArgs
-        }
-        if (state.provider === 'risidio') {
-          callData.sendAsSky = (data.owner === 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG')
-        }
-        const methos = (state.provider === 'risidio') ? 'callContractRisidio' : 'callContractBlockstack'
-        dispatch(methos, callData).then((result) => {
-          resolve(result)
-        })
-      })
-    },
-    mintToken ({ dispatch }, data) {
-      return new Promise((resolve) => {
-        const postConditionAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
-        const postConditionCode = FungibleConditionCode.LessEqual
-        const postConditionAmount = new BigNum(100000000)
-
-        const standardSTXPostCondition = makeStandardSTXPostCondition(
-          postConditionAddress,
-          postConditionCode,
-          postConditionAmount
-        )
-        data.postConditions = [standardSTXPostCondition]
-        const buffer = Buffer.from(data.assetHash, 'hex')
-        const gaiaUsername = bufferCV(Buffer.from(data.gaiaUsername, 'utf8'))
-        const editions = uintCV(data.editions)
-        const addressList = []
-        const shareList = []
-        for (let i = 0; i < 10; i++) {
-          const beneficiary = data.beneficiaries[i]
-          if (beneficiary) {
-            addressList.push(standardPrincipalCV(beneficiary.chainAddress))
-            shareList.push(uintCV(utils.toOnChainAmount(beneficiary.royalty * 100))) // allows 2 d.p.
-          } else {
-            addressList.push(standardPrincipalCV(data.contractAddress))
-            shareList.push(uintCV(0))
-          }
-        }
-        const addresses = listCV(addressList)
-        const shares = listCV(shareList)
-        data.functionArgs = [bufferCV(buffer), gaiaUsername, editions, addresses, shares]
-        dispatch(data.action, data).then((result) => {
-          result.opcode = 'stx-transaction-sent'
-          result.assetHash = data.assetHash
-          window.eventBus.$emit('rpayEvent', result)
-          resolve(result)
-        }).catch((err) => {
-          const result = {
-            opcode: 'stx-transaction-error',
-            assetHash: data.assetHash,
-            error: err
-          }
-          window.eventBus.$emit('rpayEvent', result)
-        })
-      })
-    },
-    mintEdition ({ state, dispatch }, data) {
-      return new Promise((resolve) => {
-        const postConditionAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
-        const postConditionCode = FungibleConditionCode.LessEqual
-        const postConditionAmount = new BigNum(100000000)
-
-        const standardSTXPostCondition = makeStandardSTXPostCondition(
-          postConditionAddress,
-          postConditionCode,
-          postConditionAmount
-        )
-        data.postConditions = [standardSTXPostCondition]
-        const amount = new BigNum(data.buyNowOrStartingPrice)
-        data.functionArgs = [uintCV(data.nftIndex), uintCV(amount)]
-        data.functionName = 'mint-edition'
-        const methos = (state.provider === 'risidio') ? 'callContractRisidio' : 'callContractBlockstack'
-        if (state.provider === 'risidio') {
-          // data.sendAsSky = (data.owner !== 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG')
-        }
-        dispatch(methos, data).then((result) => {
-          result.opcode = 'stx-transaction-sent'
-          result.assetHash = data.assetHash
-          window.eventBus.$emit('rpayEvent', result)
-          resolve(result)
-        }).catch((err) => {
-          const result = {
-            opcode: 'stx-transaction-error',
-            assetHash: data.assetHash,
-            error: err
-          }
-          window.eventBus.$emit('rpayEvent', result)
-        })
-      })
-    },
-    makeOffer ({ state, dispatch }, data) {
-      return new Promise((resolve) => {
-        data.functionName = 'make-offer'
-        data.functionArgs = [uintCV(data.nftIndex), uintCV(utils.toOnChainAmount(data.offerAmount)), uintCV(data.biddingEndTime)]
-        const methos = (state.provider === 'risidio') ? 'callContractRisidio' : 'callContractBlockstack'
-        dispatch(methos, data).then((result) => {
-          resolve(result)
-        })
-      })
-    },
-    transferAsset ({ state, dispatch, rootGetters }, data) {
-      return new Promise((resolve) => {
-        const nonFungibleAssetInfo = createAssetInfo(
-          data.contractAddress,
-          data.contractName,
-          'my-nft'
-        )
-        // Post-condition check failure on non-fungible asset ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW.thisisnumberone-v1::my-nft owned by STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG: UInt(3) Sent
-        const standardNonFungiblePostCondition = makeStandardNonFungiblePostCondition(
-          data.owner, // postConditionAddress
-          NonFungibleConditionCode.DoesNotOwn,
-          nonFungibleAssetInfo, // contract and nft info
-          uintCV(data.nftIndex) // nft value as clarity type
-        )
-        // const profile = rootGetters['rpayAuthStore/getMyProfile']
-        // const owner = profile.stxAddress
-        data.functionName = 'transfer'
-        data.postConditions = [standardNonFungiblePostCondition]
-        data.functionArgs = [uintCV(data.nftIndex), standardPrincipalCV(data.owner), standardPrincipalCV(data.recipient)]
-        const methos = (state.provider === 'risidio') ? 'callContractRisidio' : 'callContractBlockstack'
-        if (state.provider === 'risidio') {
-          data.sendAsSky = (data.owner === 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG')
-        }
-        dispatch(methos, data).then((result) => {
-          resolve(result)
-        })
-      })
-    },
-    acceptOffer ({ state, dispatch }, data) {
-      return new Promise((resolve) => {
-        data.functionName = 'accept-offer'
-        data.functionArgs = [uintCV(data.nftIndex), uintCV(data.offerIndex), standardPrincipalCV(data.owner), standardPrincipalCV(data.recipient)]
-        const methos = (state.provider === 'risidio') ? 'callContractRisidio' : 'callContractBlockstack'
-        dispatch(methos, data).then((result) => {
-          resolve(result)
-        })
-      })
-    },
-    buyNow ({ state, dispatch }, data) {
-      return new Promise((resolve) => {
-        const amount = new BigNum(utils.toOnChainAmount(data.buyNowOrStartingPrice))
-        const functionArgs = [uintCV(data.nftIndex), standardPrincipalCV(data.owner), standardPrincipalCV(data.recipient)]
-        const standardSTXPostCondition = makeStandardSTXPostCondition(
-          data.owner,
-          FungibleConditionCode.LessEqual,
-          amount
-        )
-        const callData = {
-          postConditions: [standardSTXPostCondition],
-          contractAddress: data.contractAddress,
-          contractName: data.contractName,
-          functionName: 'buy-now',
-          functionArgs: functionArgs
-        }
-        const methos = (state.provider === 'risidio') ? 'callContractRisidio' : 'callContractBlockstack'
-        dispatch(methos, callData).then((result) => {
-          resolve(result)
         })
       })
     },
