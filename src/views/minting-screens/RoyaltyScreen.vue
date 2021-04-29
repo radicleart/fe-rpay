@@ -62,13 +62,14 @@ export default {
       const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
       networkConfig.assetHash = configuration.gaiaAsset.assetHash
       networkConfig.editions = configuration.gaiaAsset.editions
+      networkConfig.editionCost = 0
       networkConfig.gaiaUsername = configuration.gaiaAsset.gaiaUsername
       networkConfig.beneficiaries = configuration.minter.beneficiaries
+      const methos = (process.env.VUE_APP_NETWORK === 'local') ? 'callContractRisidio' : 'callContractBlockstack'
+      networkConfig.action = methos
       if (networkConfig.network === 'stacks connect') {
-        networkConfig.action = 'callContractBlockstack'
         this.mintTokenStacks(networkConfig)
       } else if (networkConfig.network === 'stacks risidio') {
-        networkConfig.action = 'callContractRisidio'
         this.mintTokenStacks(networkConfig)
       } else {
         this.mintTokenEthereum(networkConfig)

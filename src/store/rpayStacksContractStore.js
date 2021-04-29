@@ -147,9 +147,11 @@ const resolvePrincipals = function (registry) {
         app.tokenContract.mintPrice = utils.fromMicroAmount(app.tokenContract.mintPrice)
         app.tokenContract.tokens.forEach((token) => {
           token.owner = utils.convertAddress(token.owner)
+          token.tokenInfo.editionCost = utils.fromMicroAmount(token.tokenInfo.editionCost)
           if (token.offerHistory) {
             token.offerHistory.forEach((offer) => {
               offer.offerer = utils.convertAddress(offer.offerer)
+              offer.amount = utils.fromMicroAmount(offer.amount)
             })
           }
           if (token.transferHistory) {

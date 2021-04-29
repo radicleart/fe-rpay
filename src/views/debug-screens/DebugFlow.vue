@@ -25,7 +25,7 @@
       <div class="col-2">Mode:</div><div class="col-10">{{configuration.risidioCardMode}}</div>
       <div class="col-2">Asset hash:</div><div class="col-10"><a href="#" @click="lookupTokenByHash()">{{configuration.gaiaAsset.assetHash}}</a> <a href="#" @click.prevent="genHash()"><b-icon icon="alarm"/></a></div>
       <div class="col-2">Asset Name:</div><div class="col-10">{{getGaiaAsset.name}}</div>
-      <div class="col-2">Editions:</div><div class="col-10" v-if="getGaiaAsset.contractAsset">{{getGaiaAsset.contractAsset.tokenInfo.edition}} / {{getGaiaAsset.contractAsset.tokenInfo.maxEditions}}</div>
+      <div class="col-2">Editions:</div><div class="col-10" v-if="getGaiaAsset.contractAsset">{{getGaiaAsset.contractAsset.tokenInfo.edition}} / {{getGaiaAsset.contractAsset.tokenInfo.maxEditions}} / {{getGaiaAsset.contractAsset.tokenInfo.editionCost}}</div>
       <div class="col-2">Royalties:</div>
       <div class="col-10">
         <div class="row" v-for="(beneficiary, index) in configuration.minter.beneficiaries" :key="index">
@@ -92,26 +92,27 @@
             <div class="col-2">Platform</div><div class="col-10">{{application.tokenContract.platformFee}}</div>
             <div class="col-2">Minted</div><div class="col-10">{{application.tokenContract.mintCounter}}</div>
             <div class="row ml-4 mt-3 border-bottom mb-3 pb-2" v-for="(token, index) in application.tokenContract.tokens" :key="index">
-              <div class="col-2 my-4"><div v-if="gaiaAsset(token.tokenInfo.assetHash)"><img width="70px" :src="gaiaAsset(token.tokenInfo.assetHash).imageUrl"/></div></div>
-              <div class="col-10 my-4" v-if="gaiaAsset(token.tokenInfo.assetHash)">
+              <div class="col-2 my-2"><div v-if="gaiaAsset(token.tokenInfo.assetHash)"><img width="70px" :src="gaiaAsset(token.tokenInfo.assetHash).imageUrl"/></div></div>
+              <div class="col-10 my-2" v-if="gaiaAsset(token.tokenInfo.assetHash)">
                 <div>{{gaiaAsset(token.tokenInfo.assetHash).name}}</div>
-                <div>[#{{token.nftIndex}}] : Edition {{token.tokenInfo.edition}} / {{token.tokenInfo.maxEditions}}</div>
+                <div>[#{{token.nftIndex}}] : Edition {{token.tokenInfo.edition}} / {{token.tokenInfo.maxEditions}} / {{token.tokenInfo.editionCost}}</div>
                 <div>Uploaded by:     {{gaiaAsset(token.tokenInfo.assetHash).owner}}</div>
                 <div>Gaia user:       {{token.tokenInfo.gaiaUsername}}</div>
                 <div>Gaia user:       {{token.tokenInfo.gaiaUsername}}</div>
                 <div class="text-info">
                   <a class="text-info pr-3 mr-3 border-right" href="#" @click.prevent="transferAsset(token.nftIndex)">transfer</a>
-                  <a class="text-info pr-3 mr-3 border-right" href="#" @click.prevent="mintNextEdition(token.tokenInfo.assetHash, token.nftIndex)">mint edition</a>
+                  <a class="text-info pr-3 mr-3 border-right" href="#" @click.prevent="mintNextEdition(token.tokenInfo.assetHash, token.nftIndex)">mint edition {{token.editionCounter}}</a>
                   <a class="text-info pr-3 mr-3 border-right" href="#" @click.prevent="confirmBuyNow(token.tokenInfo.assetHash, token.owner)">buy now</a>
                   <a class="text-info pr-3 mr-3" href="#" @click.prevent="placeBid(token.tokenInfo.assetHash, token.nftIndex)">place bid</a>
                 </div>
               </div>
+              <div class="row mt-3">
               <div class="col-2">NFT</div><div class="col-10">#<a href="#" class="text-small text-info" @click.prevent="loadToken(application.contractId, token.nftIndex)">{{token.nftIndex}}</a></div>
               <div class="col-2">TokenInfo</div><div class="col-10"><a href="#" class="text-small text-info" @click.prevent="loadToken(application.contractId, token.nftIndex, token.tokenInfo.assetHash)">{{token.tokenInfo.assetHash}}</a></div>
               <div class="col-2">Owner</div><div class="col-10">{{token.owner}} </div>
               <div class="col-2">User</div><div class="col-10">{{token.tokenInfo.gaiaUsername}} </div>
               <div class="col-2">SaleData</div><div class="col-10">Type: {{token.saleData.saleType}}, Cycle {{token.saleData.saleCycleIndex}}, Amount: {{token.saleData.buyNowOrStartingPrice}} Reserve: {{token.saleData.reservePrice}}, Increment: {{token.saleData.incrementPrice}} Ends: {{token.saleData.biddingEndTime}}</div>
-              <div class="col-2">Edition</div><div class="col-10">{{token.tokenInfo.edition}} / {{token.tokenInfo.maxEditions}}</div>
+              <div class="col-2">Edition</div><div class="col-10">{{token.tokenInfo.edition}} / {{token.tokenInfo.maxEditions}} / {{token.tokenInfo.editionCost}}</div>
               <div class="col-2">Block-height</div><div class="col-10">{{token.tokenInfo.date}}</div>
               <div class="col-2">Original</div><div class="col-10">{{token.tokenInfo.seriesOriginal}}</div>
               <!-- <div class="col-2">Beneficiaries</div><div class="col-10">{{token.beneficiaries}}</div> -->
@@ -145,6 +146,7 @@
                   <div>Amount: {{offer.amount}} Made: {{offer.amount}}  Cycle: {{offer.saleCycle}} Offerer: {{offer.offerer}}</div>
                   <div><a href="#" @click.prevent="acceptOffer(offer, index1)">accept</a></div>
                 </div>
+              </div>
               </div>
             </div>
           </div>
@@ -246,6 +248,7 @@ export default {
       const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
       const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](assetHash)
       const data = {
+        editionCost: 30,
         owner: contractAsset.owner,
         contractAddress: networkConfig.contractAddress,
         contractName: networkConfig.contractName,

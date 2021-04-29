@@ -185,6 +185,7 @@ const utils = {
         clarityAsset.edition = tokenData.tokenInfo.value.data.edition.value.toNumber()
         clarityAsset.seriesOriginal = tokenData.tokenInfo.value.data['series-original'].value.toNumber()
         clarityAsset.maxEditions = tokenData.tokenInfo.value.data['max-editions'].value.toNumber()
+        clarityAsset.maxEditionCost = tokenData.tokenInfo.value.data['edition-cost'].value.toNumber()
         clarityAsset.date = tokenData.tokenInfo.value.data.date.value.toNumber()
       }
       if (tokenData.transferCounter) {

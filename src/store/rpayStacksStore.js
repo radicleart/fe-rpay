@@ -29,7 +29,10 @@ const network = new StacksTestnet()
 const precision = 1000000
 const contractDeployFee = 60000
 const STACKS_API = process.env.VUE_APP_STACKS_API
-
+let NETWORK = process.env.VUE_APP_NETWORK
+if (!NETWORK) {
+  NETWORK = 'local'
+}
 /**
 const client = await connectWebSocketClient('ws://stacks-node-api.blockstack.org/')
 const sub = await client.subscribeAddressTransactions(contractCall.txId, event => {
@@ -37,8 +40,6 @@ const sub = await client.subscribeAddressTransactions(contractCall.txId, event =
 })
 await sub.unsubscribe()
 **/
-
-const provider = 'risidio'
 
 const unsubscribeApiNews = function () {
   if (socket && stompClient) {
@@ -156,7 +157,7 @@ const handleFetchWalletInternal = function (wallet, response, commit, resolve) {
 const rpayStacksStore = {
   namespaced: true,
   state: {
-    provider: provider,
+    provider: 'connect',
     result: null,
     contracts: [],
     appName: 'Risidio Auctions',
@@ -202,6 +203,7 @@ const rpayStacksStore = {
     },
     fetchMacSkyWalletInfo ({ commit, dispatch, rootGetters }) {
       return new Promise((resolve) => {
+        if (NETWORK !== 'local') return
         const configuration = rootGetters['rpayStore/getConfiguration']
         const wallet = JSON.parse(configuration.risidioWalletMac)
         dispatch('fetchWalletInternal', wallet).then((wallet) => {
@@ -295,7 +297,7 @@ const rpayStacksStore = {
           postConditions: (data.postConditions) ? data.postConditions : []
         }
         makeContractCall(txOptions).then((transaction) => {
-          if (state.provider !== 'risidio') {
+          if (NETWORK !== 'local') {
             broadcastTransaction(transaction, network).then((result) => {
               result.contractAddress = data.contractAddress
               result.contractName = data.contractName
@@ -655,7 +657,7 @@ const rpayStacksStore = {
     deployProjectContract ({ state, dispatch }, datum) {
       return new Promise((resolve, reject) => {
         if (!datum.fee) datum.fee = contractDeployFee
-        const methos = (state.provider === 'risidio') ? 'deployContractRisidio' : 'deployContractConnect'
+        const methos = (NETWORK === 'local') ? 'deployContractRisidio' : 'deployContractConnect'
         dispatch(methos, datum).then((result) => {
           resolve(result)
         }).catch((error) => {
