@@ -1,7 +1,10 @@
 export const APP_CONSTANTS = {
+  KEY_PROFILE: 'rpayAuthStore/getMyProfile',
+  KEY_ACCOUNT_INFO: 'rpayAuthStore/getAccountInfo',
+  KEY_ACCOUNTS: 'rpayAuthStore/getAccounts',
+
   GET_HEADERS: 'rpayStore/getHeaders',
   KEY_EDIT_BENEFICIARY: 'rpayStore/getEditBeneficiary',
-  KEY_PROFILE: 'rpayAuthStore/getMyProfile',
   KEY_CONFIGURATION: 'rpayStore/getConfiguration',
   KEY_MINTING_MESSAGE: 'rpayStore/getMintingMessage',
   SET_MINTING_MESSAGE: 'rpayStore/setMintingMessage',

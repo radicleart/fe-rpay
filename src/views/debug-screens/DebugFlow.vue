@@ -15,6 +15,10 @@
       <a v-if="!profile.loggedIn" class="text-white" href="#" @click.prevent="startLogin">login</a>
       <a v-else class="text-white" href="#" @click.prevent="startLogout">logout</a>
     </div>
+    <div class="text-right" v-if="profile.loggedIn">
+      <a class="text-white mr-3" href="#">{{profile.stxAddress}}</a>
+      <a class="text-white mr-3" href="#">{{accountInfo}}</a>
+    </div>
 
     <div class="row" v-if="getGaiaAsset">
       <div class="col-12"><h6>Current Item</h6></div>
@@ -168,7 +172,6 @@ export default {
     return {
       nifty: 0,
       loaded: false,
-      profile: {},
       message: null,
       result: null,
       globalEvent: null,
@@ -179,7 +182,7 @@ export default {
     this.$store.dispatch('rpayStacksContractStore/fetchContractData')
     this.$store.dispatch('rpaySearchStore/findAssets')
     this.$store.dispatch('rpayAuthStore/fetchMyAccount').then((profile) => {
-      this.profile = profile
+      this.$store.dispatch('rpayAuthStore/fetchAccountInfo', { stxAddress: profile.stxAddress, force: true })
       this.loaded = true
     })
     const $self = this
@@ -248,6 +251,7 @@ export default {
       const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
       const contractAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](assetHash)
       const data = {
+        methos: 'rpayStacksStore/callContractBlockstack',
         editionCost: 30,
         owner: contractAsset.owner,
         contractAddress: networkConfig.contractAddress,
@@ -381,6 +385,16 @@ export default {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const currentAsset = this.$store.getters[APP_CONSTANTS.KEY_ASSET](configuration.gaiaAsset.assetHash)
       return currentAsset
+    },
+    profile () {
+      const profile = this.$store.getters[APP_CONSTANTS.KEY_PROFILE]
+      return profile
+    },
+    accountInfo () {
+      const profile = this.$store.getters[APP_CONSTANTS.KEY_PROFILE]
+      if (!profile || !profile.loggedIn) return null
+      const ai = this.$store.getters[APP_CONSTANTS.KEY_ACCOUNT_INFO](profile.stxAddress)
+      return ai
     },
     getGaiaAsset () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]

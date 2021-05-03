@@ -14,7 +14,10 @@ import {
   makeStandardNonFungiblePostCondition
 } from '@stacks/transactions'
 
-const NETWORK = process.env.VUE_APP_NETWORK
+let NETWORK = process.env.VUE_APP_NETWORK
+if (!NETWORK) {
+  NETWORK = 'local'
+}
 
 const intCurrentBid = function (contractAsset) {
   if (!contractAsset) return
@@ -126,7 +129,7 @@ const rpayPurchaseStore = {
         if (getProvider(data) === 'risidio') {
           callData.sendAsSky = (data.owner === 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG')
         }
-        const methos = (process.env.VUE_APP_NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, callData, { root: true }).then((result) => {
           resolve(result)
         })
@@ -163,8 +166,8 @@ const rpayPurchaseStore = {
         const addresses = listCV(addressList)
         const shares = listCV(shareList)
         data.functionArgs = [bufferCV(buffer), gaiaUsername, editions, editionCost, addresses, shares]
-        const methos = (process.env.VUE_APP_NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
-        dispatch(methos, data, { root: true }).then((result) => {
+        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        dispatch((data.methos || methos), data, { root: true }).then((result) => {
           result.opcode = 'stx-transaction-sent'
           result.assetHash = data.assetHash
           window.eventBus.$emit('rpayEvent', result)
@@ -196,8 +199,8 @@ const rpayPurchaseStore = {
         data.postConditions = [standardSTXPostCondition]
         data.functionArgs = [uintCV(data.nftIndex)]
         data.functionName = 'mint-edition'
-        const methos = (process.env.VUE_APP_NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
-        dispatch(methos, data, { root: true }).then((result) => {
+        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        dispatch((data.methos || methos), data, { root: true }).then((result) => {
           result.opcode = 'stx-transaction-sent'
           result.assetHash = data.assetHash
           window.eventBus.$emit('rpayEvent', result)
@@ -216,7 +219,7 @@ const rpayPurchaseStore = {
       return new Promise((resolve) => {
         data.functionName = 'make-offer'
         data.functionArgs = [uintCV(data.nftIndex), uintCV(utils.toOnChainAmount(data.offerAmount)), uintCV(data.biddingEndTime)]
-        const methos = (process.env.VUE_APP_NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, data, { root: true }).then((result) => {
           resolve(result)
         })
@@ -226,7 +229,7 @@ const rpayPurchaseStore = {
       return new Promise((resolve) => {
         data.functionName = 'set-edition-cost'
         data.functionArgs = [uintCV(data.seriesOriginal), uintCV(data.maxEditions), uintCV(utils.toOnChainAmount(data.editionCost))]
-        const methos = (process.env.VUE_APP_NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, data, { root: true }).then((result) => {
           resolve(result)
         })
@@ -251,7 +254,7 @@ const rpayPurchaseStore = {
         data.functionName = 'transfer'
         data.postConditions = [standardNonFungiblePostCondition]
         data.functionArgs = [uintCV(data.nftIndex), standardPrincipalCV(data.owner), standardPrincipalCV(data.recipient)]
-        const methos = (process.env.VUE_APP_NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         if (getProvider(data) === 'risidio') {
           data.sendAsSky = (data.owner === 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG')
         }
@@ -264,7 +267,7 @@ const rpayPurchaseStore = {
       return new Promise((resolve) => {
         data.functionName = 'accept-offer'
         data.functionArgs = [uintCV(data.nftIndex), uintCV(data.offerIndex), standardPrincipalCV(data.owner), standardPrincipalCV(data.recipient)]
-        const methos = (process.env.VUE_APP_NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, data, { root: true }).then((result) => {
           resolve(result)
         })
@@ -287,7 +290,7 @@ const rpayPurchaseStore = {
           functionArgs: functionArgs,
           sendAsSky: data.sendAsSky
         }
-        const methos = (process.env.VUE_APP_NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, callData, { root: true }).then((result) => {
           resolve(result)
         })
@@ -304,7 +307,7 @@ const rpayPurchaseStore = {
           functionArgs: functionArgs,
           sendAsSky: data.sendAsSky
         }
-        const methos = (process.env.VUE_APP_NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, callData, { root: true }).then((result) => {
           resolve(result)
         })
@@ -319,7 +322,7 @@ const rpayPurchaseStore = {
           functionName: data.functionName,
           functionArgs: functionArgs
         }
-        const methos = (process.env.VUE_APP_NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, callData, { root: true }).then((result) => {
           resolve(result)
         })

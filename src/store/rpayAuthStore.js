@@ -4,10 +4,23 @@
  * directly to the user.
  */
 import { AppConfig, UserSession, authenticate, showConnect } from '@stacks/connect'
+import { AccountsApi, Configuration } from '@stacks/blockchain-api-client'
+import axios from 'axios'
+import utils from '@/services/utils'
+
+const STACKS_API = process.env.VUE_APP_STACKS_API
+const STACKS_API_RISIDIO = process.env.VUE_APP_STACKS_API_RISISIO
+const apiConfig = new Configuration({
+  fetchApi: fetch,
+  // for mainnet, replace `testnet` with `mainnet`
+  basePath: STACKS_API
+})
+const accountApi = new AccountsApi(apiConfig)
 
 const origin = window.location.origin
 const appConfig = new AppConfig(['store_write', 'publish_data'])
 const userSession = new UserSession({ appConfig })
+
 const NETWORK = process.env.VUE_APP_NETWORK
 const BLOCKSTACK_LOGIN = Number(process.env.VUE_APP_BLOCKSTACK_LOGIN)
 const getProfile = function () {
@@ -54,6 +67,7 @@ const rpayAuthStore = {
       authResponse: null,
       appPrivateKey: null
     },
+    accounts: [],
     session: null,
     appName: 'Risidio Music NFTs',
     appLogo: '/img/sticksnstones_logo.8217b8f7.png'
@@ -66,6 +80,12 @@ const rpayAuthStore = {
         }
       }
       return state.myProfile
+    },
+    getAccountInfo: state => stxAddress => {
+      return state.accounts.find((o) => o.stxAddress === stxAddress)
+    },
+    getAccounts: state => stxAddress => {
+      return state.accounts
     }
   },
   mutations: {
@@ -74,20 +94,37 @@ const rpayAuthStore = {
     },
     setAuthResponse (state, session) {
       state.session = session
+    },
+    setAccountInfo (state, accountInfo) {
+      if (!accountInfo) return
+      const index = state.accounts.findIndex((o) => o.stxAddress === accountInfo.stxAddress)
+      if (index > -1) {
+        state.accounts.splice(index, 1, accountInfo)
+      } else {
+        state.accounts.splice(0, 0, accountInfo)
+      }
     }
   },
   actions: {
-    fetchMyAccount ({ commit }) {
+    fetchMyAccount ({ commit, dispatch }) {
       return new Promise(resolve => {
         if (userSession.isUserSignedIn()) {
           const profile = getProfile()
           commit('myProfile', profile)
-          resolve(profile)
+          dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
+            profile.accountInfo = accountInfo
+            commit('myProfile', profile)
+            resolve(profile)
+          })
         } else if (userSession.isSignInPending()) {
           userSession.handlePendingSignIn().then(() => {
             const profile = getProfile()
             commit('myProfile', profile)
-            resolve(profile)
+            dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
+              profile.accountInfo = accountInfo
+              commit('myProfile', profile)
+              resolve(profile)
+            })
           })
         } else {
           const profile = getProfile()
@@ -96,7 +133,7 @@ const rpayAuthStore = {
         }
       })
     },
-    startLogin ({ state, commit }) {
+    startLogin ({ state, dispatch, commit }) {
       return new Promise((resolve) => {
         const authOptions = {
           sendToSignIn: false,
@@ -109,9 +146,14 @@ const rpayAuthStore = {
             state.appPrivateKey = userSession.loadUserData().appPrivateKey
             state.authResponse = authResponse
             state.userData = userData
-            commit('myProfile', getProfile())
-            resolve(getProfile())
-            location.assign('/')
+            const profile = getProfile()
+            commit('myProfile', profile)
+            dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
+              profile.accountInfo = accountInfo
+              commit('myProfile', profile)
+              resolve(profile)
+            })
+            // location.assign('/')
           },
           appDetails: {
             name: 'Risidio #1 in NFTs',
@@ -133,6 +175,34 @@ const rpayAuthStore = {
           commit('myProfile', getProfile())
         }
         resolve(getProfile())
+      })
+    },
+    fetchAccountInfo ({ state, commit }, data) {
+      return new Promise((resolve) => {
+        if (!data || !data.stxAddress) resolve()
+        const index = state.accounts.findIndex((o) => o.stxAddress === data.stxAddress)
+        if (!data.force && index > -1) {
+          return state.accounts.find((o) => o.stxAddress === data.stxAddress)
+        }
+        accountApi.getAccountInfo({ principal: data.stxAddress }).then((accountInfo) => {
+          if (accountInfo) accountInfo.balance = utils.fromMicroAmount(accountInfo.balance)
+          commit('setAccountInfo', { stxAddress: data.stxAddress, accountInfo: accountInfo })
+          resolve(accountInfo)
+        }).catch(() => {
+          const callData = {
+            path: '/v2/accounts/' + data.stxAddress,
+            httpMethod: 'get',
+            postData: null
+          }
+          axios.post(STACKS_API_RISIDIO + '/mesh/v2/accounts', callData).then(response => {
+            const accountInfo = response.data
+            if (accountInfo) accountInfo.balance = utils.fromMicroAmount(accountInfo.balance)
+            commit('setAccountInfo', { stxAddress: data.stxAddress, accountInfo: accountInfo })
+            resolve(accountInfo)
+          }).catch(() => {
+            resolve()
+          })
+        })
       })
     }
   }

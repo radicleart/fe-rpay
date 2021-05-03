@@ -654,10 +654,10 @@ const rpayStacksStore = {
         })
       })
     },
-    deployProjectContract ({ state, dispatch }, datum) {
+    deployProjectContract ({ dispatch }, datum) {
       return new Promise((resolve, reject) => {
         if (!datum.fee) datum.fee = contractDeployFee
-        const methos = (NETWORK === 'local') ? 'deployContractRisidio' : 'deployContractConnect'
+        const methos = (datum.network === 'local') ? 'deployContractRisidio' : 'deployContractConnect'
         dispatch(methos, datum).then((result) => {
           resolve(result)
         }).catch((error) => {
