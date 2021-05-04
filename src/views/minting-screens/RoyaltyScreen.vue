@@ -65,7 +65,7 @@ export default {
       networkConfig.editionCost = 0
       networkConfig.gaiaUsername = configuration.gaiaAsset.gaiaUsername
       networkConfig.beneficiaries = configuration.minter.beneficiaries
-      const methos = (process.env.VUE_APP_NETWORK === 'local') ? 'callContractRisidio' : 'callContractBlockstack'
+      const methos = (configuration.network === 'local') ? 'callContractRisidio' : 'callContractBlockstack'
       networkConfig.action = methos
       if (networkConfig.network === 'stacks connect') {
         this.mintTokenStacks(networkConfig)

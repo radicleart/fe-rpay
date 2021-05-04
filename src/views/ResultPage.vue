@@ -41,8 +41,7 @@ export default {
   data () {
     return {
       // logoDone: require('@/assets/img/womanonbitcoin.svg'),
-      logoDone: 'https://images.prismic.io/risidio-journal/9ad5b59c-d19d-4339-bb2e-3856e41e067b_womanleanbitcoin.png?auto=compress,format',
-      network: process.env.VUE_APP_NETWORK
+      logoDone: 'https://images.prismic.io/risidio-journal/9ad5b59c-d19d-4339-bb2e-3856e41e067b_womanleanbitcoin.png?auto=compress,format'
     }
   },
   mounted () {

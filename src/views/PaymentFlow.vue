@@ -51,8 +51,7 @@ export default {
       message: null,
       paying: false,
       componentKey: 0,
-      loading: true,
-      network: process.env.VUE_APP_NETWORK
+      loading: true
     }
   },
   mounted () {

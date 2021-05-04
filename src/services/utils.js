@@ -6,12 +6,11 @@ import crypto from 'crypto'
 import { c32address, c32addressDecode } from 'c32check'
 
 const precision = 1000000
-const NETWORK = process.env.VUE_APP_NETWORK
 
 const utils = {
-  convertAddress: function (b160Address) {
+  convertAddress: function (network, b160Address) {
     let version = 26
-    if (NETWORK === 'mainnet') version = 22
+    if (network === 'mainnet') version = 22
     const address = c32address(version, b160Address) // 22 for mainnet
     return address
   },

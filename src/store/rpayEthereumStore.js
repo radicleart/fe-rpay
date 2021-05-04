@@ -4,7 +4,7 @@ import abiContract from './LoopbombX.json'
 import { APP_CONSTANTS } from '@/app-constants'
 
 let NFT_CONTRACT_ADDRESS = null
-const NETWORK = process.env.VUE_APP_NETWORK
+let NETWORK = 'testnet'
 
 const getABI = function () {
   console.log(abiContract)
@@ -214,9 +214,11 @@ const rpayEthereumStore = {
   mutations: {
   },
   actions: {
-    transact ({ commit, state }, data) {
+    transact ({ commit, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         NFT_CONTRACT_ADDRESS = data.ethContractAddress
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        NETWORK = configuration.network
         getWeb3().then((web3) => {
           if (!web3) {
             reject(new Error('no ethereum provider registered - please download Meta Mask to continue!'))

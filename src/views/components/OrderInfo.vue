@@ -23,7 +23,6 @@ export default {
   data () {
     return {
       value: 0,
-      network: process.env.VUE_APP_NETWORK,
       componentKey: 0,
       numbCredits: 2,
       updatingCredits: false,
@@ -48,6 +47,10 @@ export default {
     }
   },
   computed: {
+    network () {
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      return configuration.network
+    },
     numbUnits () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return configuration.payment.creditAttributes.start

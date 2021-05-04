@@ -14,11 +14,6 @@ import {
   makeStandardNonFungiblePostCondition
 } from '@stacks/transactions'
 
-let NETWORK = process.env.VUE_APP_NETWORK
-if (!NETWORK) {
-  NETWORK = 'local'
-}
-
 const intCurrentBid = function (contractAsset) {
   if (!contractAsset) return
   let currentBid = { amount: contractAsset.saleData.buyNowOrStartingPrice }
@@ -48,7 +43,8 @@ const rpayPurchaseStore = {
       const mac = rootGetters['rpayStacksStore/getMacsWallet']
       const sky = rootGetters['rpayStacksStore/getSkysWallet']
       let recipient = myProfile.stxAddress
-      if (NETWORK === 'local') {
+      const configuration = rootGetters['rpayStore/getConfiguration']
+      if (configuration.network === 'local') {
         recipient = (owner === mac.keyInfo.address) ? sky.keyInfo.address : mac.keyInfo.address
       }
       return recipient
@@ -129,22 +125,26 @@ const rpayPurchaseStore = {
         if (getProvider(data) === 'risidio') {
           callData.sendAsSky = (data.owner === 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG')
         }
-        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, callData, { root: true }).then((result) => {
           resolve(result)
         })
       })
     },
-    mintToken ({ dispatch }, data) {
+    mintToken ({ dispatch, rootGetters }, data) {
       return new Promise((resolve) => {
-        let owner = 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW'
-        if (data.sendAsSky) {
-          owner = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
+        if (!data.owner) {
+          data.owner = 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW'
+          if (data.sendAsSky) {
+            data.owner = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
+          }
         }
+        const amount = new BigNum(utils.toOnChainAmount(data.mintingFee))
         const standardSTXPostCondition = makeStandardSTXPostCondition(
-          owner,
+          data.owner,
           FungibleConditionCode.LessEqual,
-          new BigNum(data.editionCost)
+          new BigNum(amount)
         )
         data.postConditions = [standardSTXPostCondition]
         const buffer = Buffer.from(data.assetHash, 'hex')
@@ -166,7 +166,8 @@ const rpayPurchaseStore = {
         const addresses = listCV(addressList)
         const shares = listCV(shareList)
         data.functionArgs = [bufferCV(buffer), gaiaUsername, editions, editionCost, addresses, shares]
-        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch((data.methos || methos), data, { root: true }).then((result) => {
           result.opcode = 'stx-transaction-sent'
           result.assetHash = data.assetHash
@@ -182,7 +183,7 @@ const rpayPurchaseStore = {
         })
       })
     },
-    mintEdition ({ dispatch }, data) {
+    mintEdition ({ dispatch, rootGetters }, data) {
       return new Promise((resolve) => {
         // this is the owner of the asset - needed to set the post condition
         if (!data.owner) {
@@ -191,15 +192,17 @@ const rpayPurchaseStore = {
             data.owner = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
           }
         }
+        const amount = new BigNum(utils.toOnChainAmount(data.editionCost))
         const standardSTXPostCondition = makeStandardSTXPostCondition(
           data.owner,
           FungibleConditionCode.LessEqual,
-          new BigNum(data.editionCost)
+          new BigNum(amount)
         )
         data.postConditions = [standardSTXPostCondition]
         data.functionArgs = [uintCV(data.nftIndex)]
         data.functionName = 'mint-edition'
-        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch((data.methos || methos), data, { root: true }).then((result) => {
           result.opcode = 'stx-transaction-sent'
           result.assetHash = data.assetHash
@@ -215,21 +218,23 @@ const rpayPurchaseStore = {
         })
       })
     },
-    makeOffer ({ state, dispatch }, data) {
+    makeOffer ({ dispatch, rootGetters }, data) {
       return new Promise((resolve) => {
         data.functionName = 'make-offer'
         data.functionArgs = [uintCV(data.nftIndex), uintCV(utils.toOnChainAmount(data.offerAmount)), uintCV(data.biddingEndTime)]
-        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, data, { root: true }).then((result) => {
           resolve(result)
         })
       })
     },
-    setEditionCost ({ dispatch }, data) {
+    setEditionCost ({ dispatch, rootGetters }, data) {
       return new Promise((resolve) => {
         data.functionName = 'set-edition-cost'
         data.functionArgs = [uintCV(data.seriesOriginal), uintCV(data.maxEditions), uintCV(utils.toOnChainAmount(data.editionCost))]
-        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, data, { root: true }).then((result) => {
           resolve(result)
         })
@@ -254,7 +259,8 @@ const rpayPurchaseStore = {
         data.functionName = 'transfer'
         data.postConditions = [standardNonFungiblePostCondition]
         data.functionArgs = [uintCV(data.nftIndex), standardPrincipalCV(data.owner), standardPrincipalCV(data.recipient)]
-        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         if (getProvider(data) === 'risidio') {
           data.sendAsSky = (data.owner === 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG')
         }
@@ -263,17 +269,18 @@ const rpayPurchaseStore = {
         })
       })
     },
-    acceptOffer ({ state, dispatch }, data) {
+    acceptOffer ({ dispatch, rootGetters }, data) {
       return new Promise((resolve) => {
         data.functionName = 'accept-offer'
         data.functionArgs = [uintCV(data.nftIndex), uintCV(data.offerIndex), standardPrincipalCV(data.owner), standardPrincipalCV(data.recipient)]
-        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, data, { root: true }).then((result) => {
           resolve(result)
         })
       })
     },
-    buyNow ({ state, dispatch }, data) {
+    buyNow ({ dispatch, rootGetters }, data) {
       return new Promise((resolve) => {
         const amount = new BigNum(utils.toOnChainAmount(data.buyNowOrStartingPrice + 1))
         const functionArgs = [uintCV(data.nftIndex), standardPrincipalCV(data.owner), standardPrincipalCV(data.recipient)]
@@ -290,13 +297,14 @@ const rpayPurchaseStore = {
           functionArgs: functionArgs,
           sendAsSky: data.sendAsSky
         }
-        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, callData, { root: true }).then((result) => {
           resolve(result)
         })
       })
     },
-    placeBid ({ state, dispatch }, data) {
+    placeBid ({ dispatch, rootGetters }, data) {
       return new Promise((resolve) => {
         const functionArgs = [uintCV(data.nftIndex), uintCV(data.bidAmount), uintCV(data.appTimestamp)]
         const callData = {
@@ -307,13 +315,14 @@ const rpayPurchaseStore = {
           functionArgs: functionArgs,
           sendAsSky: data.sendAsSky
         }
-        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, callData, { root: true }).then((result) => {
           resolve(result)
         })
       })
     },
-    closeBidding ({ state, dispatch }, data) {
+    closeBidding ({ dispatch, rootGetters }, data) {
       return new Promise((resolve) => {
         const functionArgs = [uintCV(data.nftIndex), uintCV(data.closeType)]
         const callData = {
@@ -322,7 +331,8 @@ const rpayPurchaseStore = {
           functionName: data.functionName,
           functionArgs: functionArgs
         }
-        const methos = (NETWORK === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, callData, { root: true }).then((result) => {
           resolve(result)
         })

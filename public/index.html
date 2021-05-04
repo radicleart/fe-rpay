@@ -38,10 +38,11 @@
       if (operation) {
         risidioCardMode = operation
       }
-      let useNetwork = 'testnet'
+      let useNetwork = 'local'
       let risidioBaseApi = 'http://api.risidio.local'
       if (location.href.indexOf('https://trpay.risidio.com') > -1) {
         risidioBaseApi = 'https://tapi.risidio.com'
+        useNetwork = testnet
       } else if (location.href.indexOf('https://rpay.risidio.com') > -1) {
         risidioBaseApi = 'https://api.risidio.com'
         useNetwork = mainnet

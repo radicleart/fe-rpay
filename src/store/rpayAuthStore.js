@@ -8,22 +8,22 @@ import { AccountsApi, Configuration } from '@stacks/blockchain-api-client'
 import axios from 'axios'
 import utils from '@/services/utils'
 
-const STACKS_API = process.env.VUE_APP_STACKS_API
-const STACKS_API_RISIDIO = process.env.VUE_APP_STACKS_API_RISISIO
-const apiConfig = new Configuration({
-  fetchApi: fetch,
-  // for mainnet, replace `testnet` with `mainnet`
-  basePath: STACKS_API
-})
-const accountApi = new AccountsApi(apiConfig)
-
 const origin = window.location.origin
 const appConfig = new AppConfig(['store_write', 'publish_data'])
 const userSession = new UserSession({ appConfig })
 
-const NETWORK = process.env.VUE_APP_NETWORK
+const setupAccountApi = function (commit, stacksApi) {
+  const apiConfig = new Configuration({
+    fetchApi: fetch,
+    // for mainnet, replace `testnet` with `mainnet`
+    basePath: stacksApi
+  })
+  const accountApi = new AccountsApi(apiConfig)
+  commit('setAccountApi', accountApi)
+}
+
 const BLOCKSTACK_LOGIN = Number(process.env.VUE_APP_BLOCKSTACK_LOGIN)
-const getProfile = function () {
+const getProfile = function (network) {
   let myProfile = {}
   try {
     const account = userSession.loadUserData()
@@ -42,7 +42,7 @@ const getProfile = function () {
         uname.indexOf('mijoco') > -1
       myProfile = {
         loggedIn: true,
-        stxAddress: (NETWORK === 'mainnet') ? account.profile.stxAddress.mainnet : account.profile.stxAddress.testnet,
+        stxAddress: (network === 'mainnet') ? account.profile.stxAddress.mainnet : account.profile.stxAddress.testnet,
         superAdmin: isAdmin,
         name: name,
         description: account.profile.description,
@@ -67,6 +67,7 @@ const rpayAuthStore = {
       authResponse: null,
       appPrivateKey: null
     },
+    accountApi: null,
     accounts: [],
     session: null,
     appName: 'Risidio Music NFTs',
@@ -92,6 +93,9 @@ const rpayAuthStore = {
     myProfile (state, myProfile) {
       state.myProfile = myProfile
     },
+    setAccountApi (state, accountApi) {
+      state.accountApi = accountApi
+    },
     setAuthResponse (state, session) {
       state.session = session
     },
@@ -106,10 +110,15 @@ const rpayAuthStore = {
     }
   },
   actions: {
-    fetchMyAccount ({ commit, dispatch }) {
+    fetchMyAccount ({ state, commit, dispatch, rootGetters }) {
       return new Promise(resolve => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        if (!state.accountApi) {
+          setupAccountApi(commit, configuration.risidioStacksApi)
+        }
+
         if (userSession.isUserSignedIn()) {
-          const profile = getProfile()
+          const profile = getProfile(configuration.network)
           commit('myProfile', profile)
           dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
             profile.accountInfo = accountInfo
@@ -118,7 +127,7 @@ const rpayAuthStore = {
           })
         } else if (userSession.isSignInPending()) {
           userSession.handlePendingSignIn().then(() => {
-            const profile = getProfile()
+            const profile = getProfile(configuration.network)
             commit('myProfile', profile)
             dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
               profile.accountInfo = accountInfo
@@ -127,14 +136,15 @@ const rpayAuthStore = {
             })
           })
         } else {
-          const profile = getProfile()
+          const profile = getProfile(configuration.network)
           commit('myProfile', profile)
           resolve(profile)
         }
       })
     },
-    startLogin ({ state, dispatch, commit }) {
+    startLogin ({ state, dispatch, commit, rootGetters }) {
       return new Promise((resolve) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
         const authOptions = {
           sendToSignIn: false,
           userSession: userSession,
@@ -146,7 +156,7 @@ const rpayAuthStore = {
             state.appPrivateKey = userSession.loadUserData().appPrivateKey
             state.authResponse = authResponse
             state.userData = userData
-            const profile = getProfile()
+            const profile = getProfile(configuration.network)
             commit('myProfile', profile)
             dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
               profile.accountInfo = accountInfo
@@ -167,24 +177,29 @@ const rpayAuthStore = {
         }
       })
     },
-    startLogout ({ state, commit }) {
+    startLogout ({ state, commit, rootGetters }) {
       return new Promise((resolve) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
         if (userSession.isUserSignedIn()) {
           userSession.signUserOut()
           state.userData = null
-          commit('myProfile', getProfile())
+          commit('myProfile', getProfile(configuration.network))
         }
-        resolve(getProfile())
+        resolve(getProfile(configuration.network))
       })
     },
-    fetchAccountInfo ({ state, commit }, data) {
+    fetchAccountInfo ({ state, commit, rootGetters }, data) {
       return new Promise((resolve) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
         if (!data || !data.stxAddress) resolve()
         const index = state.accounts.findIndex((o) => o.stxAddress === data.stxAddress)
         if (!data.force && index > -1) {
           return state.accounts.find((o) => o.stxAddress === data.stxAddress)
         }
-        accountApi.getAccountInfo({ principal: data.stxAddress }).then((accountInfo) => {
+        if (!state.accountApi) {
+          setupAccountApi(commit, configuration.risidioStacksApi)
+        }
+        state.accountApi.getAccountInfo({ principal: data.stxAddress }).then((accountInfo) => {
           if (accountInfo) accountInfo.balance = utils.fromMicroAmount(accountInfo.balance)
           commit('setAccountInfo', { stxAddress: data.stxAddress, accountInfo: accountInfo })
           resolve(accountInfo)
@@ -194,7 +209,7 @@ const rpayAuthStore = {
             httpMethod: 'get',
             postData: null
           }
-          axios.post(STACKS_API_RISIDIO + '/mesh/v2/accounts', callData).then(response => {
+          axios.post(configuration.risidioBaseApi + '/mesh/v2/accounts', callData).then(response => {
             const accountInfo = response.data
             if (accountInfo) accountInfo.balance = utils.fromMicroAmount(accountInfo.balance)
             commit('setAccountInfo', { stxAddress: data.stxAddress, accountInfo: accountInfo })

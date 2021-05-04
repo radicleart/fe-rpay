@@ -44,18 +44,19 @@ export async function fetchAppGaiaHubUrl(username) {
   throw Error('Cannot find zonefile');
 }
 **/
-const replaceTokenFromHash = function (state, token) {
+const replaceTokenFromHash = function (state, data) {
   let result = false
   try {
     if (!state.registry || !state.registry.applications) return
+    resolvePrincipalsToken(data.network, data.token)
     state.registry.applications.forEach((app) => {
       if (app.tokenContract && app.tokenContract.tokens) {
-        const index = app.tokenContract.tokens.findIndex((o) => o.tokenInfo.assetHash === token.tokenInfo.assetHash)
+        const index = app.tokenContract.tokens.findIndex((o) => o.tokenInfo.assetHash === data.token.tokenInfo.assetHash)
         if (index > -1) {
-          app.tokenContract.tokens[index] = token
+          app.tokenContract.tokens[index] = data.token
           result = true
         } else {
-          app.tokenContract.tokens.push(token)
+          app.tokenContract.tokens.push(data.token)
           result = true
         }
       }
@@ -109,7 +110,7 @@ const loadAssetsFromGaia = function (commit, registry, connectUrl, contractId) {
   })
 }
 
-const subscribeApiNews = function (commit, connectUrl, contractId) {
+const subscribeApiNews = function (commit, connectUrl, contractId, network) {
   if (!socket) socket = new SockJS(connectUrl + '/api-news')
   if (!stompClient) stompClient = Stomp.over(socket)
   socket.onclose = function () {
@@ -120,13 +121,13 @@ const subscribeApiNews = function (commit, connectUrl, contractId) {
     if (!contractId) {
       stompClient.subscribe('/queue/contract-news', function (response) {
         const registry = JSON.parse(response.body)
-        commit('setRegistry', { registry: registry, contractId: contractId })
+        commit('setRegistry', { registry: registry, contractId: contractId, network: network })
         loadAssetsFromGaia(commit, registry, connectUrl, contractId)
       })
     } else {
       stompClient.subscribe('/queue/contract-news-' + contractId, function (response) {
         const registry = JSON.parse(response.body)
-        commit('setRegistry', { registry: registry, contractId: contractId })
+        commit('setRegistry', { registry: registry, contractId: contractId, network: network })
         loadAssetsFromGaia(commit, registry, connectUrl, contractId)
       })
     }
@@ -136,50 +137,53 @@ const subscribeApiNews = function (commit, connectUrl, contractId) {
   })
 }
 
-const resolvePrincipals = function (registry) {
+const resolvePrincipalsToken = function (network, token) {
+  token.owner = utils.convertAddress(network, token.owner)
+  token.tokenInfo.editionCost = utils.fromMicroAmount(token.tokenInfo.editionCost)
+  if (token.offerHistory) {
+    token.offerHistory.forEach((offer) => {
+      offer.offerer = utils.convertAddress(network, offer.offerer)
+      offer.amount = utils.fromMicroAmount(offer.amount)
+    })
+  }
+  if (token.transferHistory) {
+    token.transferHistory.forEach((transfer) => {
+      transfer.from = utils.convertAddress(network, transfer.from)
+      transfer.to = utils.convertAddress(network, transfer.to)
+      transfer.amount = utils.fromMicroAmount(transfer.amount)
+    })
+  }
+  if (token.saleData) {
+    token.saleData.buyNowOrStartingPrice = utils.fromMicroAmount(token.saleData.buyNowOrStartingPrice)
+    token.saleData.incrementPrice = utils.fromMicroAmount(token.saleData.incrementPrice)
+    token.saleData.reservePrice = utils.fromMicroAmount(token.saleData.reservePrice)
+  }
+  if (token.beneficiaries) {
+    let idx = 0
+    token.beneficiaries.shares.forEach((share) => {
+      token.beneficiaries.shares[idx].value = utils.fromMicroAmount(share.value) / 100
+      token.beneficiaries.addresses[idx].valueHex = utils.convertAddress(network, token.beneficiaries.addresses[idx].valueHex)
+      idx++
+    })
+  }
+  if (token.bidHistory) {
+    token.bidHistory.forEach((bid) => {
+      bid.amount = utils.fromMicroAmount(bid.amount)
+      bid.bidder = utils.convertAddress(network, bid.bidder)
+    })
+  }
+}
+const resolvePrincipals = function (registry, network) {
   if (!registry || !registry.administrator) return
-  registry.administrator = utils.convertAddress(registry.administrator)
+  registry.administrator = utils.convertAddress(network, registry.administrator)
   if (registry.applications) {
     registry.applications.forEach((app) => {
-      app.owner = utils.convertAddress(app.owner)
+      app.owner = utils.convertAddress(network, app.owner)
       if (app.tokenContract) {
-        app.tokenContract.administrator = utils.convertAddress(app.tokenContract.administrator)
+        app.tokenContract.administrator = utils.convertAddress(network, app.tokenContract.administrator)
         app.tokenContract.mintPrice = utils.fromMicroAmount(app.tokenContract.mintPrice)
         app.tokenContract.tokens.forEach((token) => {
-          token.owner = utils.convertAddress(token.owner)
-          token.tokenInfo.editionCost = utils.fromMicroAmount(token.tokenInfo.editionCost)
-          if (token.offerHistory) {
-            token.offerHistory.forEach((offer) => {
-              offer.offerer = utils.convertAddress(offer.offerer)
-              offer.amount = utils.fromMicroAmount(offer.amount)
-            })
-          }
-          if (token.transferHistory) {
-            token.transferHistory.forEach((transfer) => {
-              transfer.from = utils.convertAddress(transfer.from)
-              transfer.to = utils.convertAddress(transfer.to)
-              transfer.amount = utils.fromMicroAmount(transfer.amount)
-            })
-          }
-          if (token.saleData) {
-            token.saleData.buyNowOrStartingPrice = utils.fromMicroAmount(token.saleData.buyNowOrStartingPrice)
-            token.saleData.incrementPrice = utils.fromMicroAmount(token.saleData.incrementPrice)
-            token.saleData.reservePrice = utils.fromMicroAmount(token.saleData.reservePrice)
-          }
-          if (token.beneficiaries) {
-            let idx = 0
-            token.beneficiaries.shares.forEach((share) => {
-              token.beneficiaries.shares[idx].value = utils.fromMicroAmount(share.value) / 100
-              token.beneficiaries.addresses[idx].valueHex = utils.convertAddress(token.beneficiaries.addresses[idx].valueHex)
-              idx++
-            })
-          }
-          if (token.bidHistory) {
-            token.bidHistory.forEach((bid) => {
-              bid.amount = utils.fromMicroAmount(bid.amount)
-              bid.bidder = utils.convertAddress(bid.bidder)
-            })
-          }
+          resolvePrincipalsToken(network, token)
         })
       }
     })
@@ -210,7 +214,6 @@ const rpayStacksContractStore = {
   namespaced: true,
   state: {
     registry: null,
-    registryContractId: process.env.VUE_APP_REGISTRY_CONTRACT_ADDRESS + '.' + process.env.VUE_APP_REGISTRY_CONTRACT_NAME,
     gaiaAssets: [],
     stacksTransactions: []
   },
@@ -227,9 +230,6 @@ const rpayStacksContractStore = {
         return 'artworkClip'
       }
       return 'coverImage'
-    },
-    getRegistryContractId: state => {
-      return state.registryContractId
     },
     getApplicationFromRegistryByContractId: state => contractId => {
       if (!state.registry || !state.registry.applications) return
@@ -306,11 +306,11 @@ const rpayStacksContractStore = {
     setRegistry (state, data) {
       let registry = data.registry
       registry = removeStatusOneApps(registry, data.contractId)
-      registry = resolvePrincipals(registry)
+      registry = resolvePrincipals(registry, data.network)
       state.registry = registry
     },
-    setToken (state, token) {
-      replaceTokenFromHash(state, token)
+    setToken (state, data) {
+      replaceTokenFromHash(state, data)
     },
     addGaiaAsset (state, gaiaAsset) {
       if (!state.gaiaAssets) return
@@ -377,10 +377,10 @@ const rpayStacksContractStore = {
           path = configuration.risidioBaseApi + '/mesh/v2/registry/' + configuration.risidioProjectId
         }
         axios.get(path).then(response => {
-          commit('setRegistry', { registry: response.data, contractId: configuration.risidioProjectId })
+          commit('setRegistry', { registry: response.data, contractId: configuration.risidioProjectId, network: configuration.network })
           loadAssetsFromGaia(commit, state.registry, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId).then((appDataMap) => {
             console.log(appDataMap)
-            subscribeApiNews(commit, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId)
+            subscribeApiNews(commit, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId, configuration.network)
             resolve(state.registry)
           })
         }).catch(() => {

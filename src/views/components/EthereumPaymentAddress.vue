@@ -29,8 +29,6 @@
 import { APP_CONSTANTS } from '@/app-constants'
 import QRCode from 'qrcode'
 
-const NETWORK = process.env.VUE_APP_NETWORK
-
 export default {
   name: 'EthereumPaymentAddress',
   components: {
@@ -88,7 +86,7 @@ export default {
         this.$store.commit('rpayStore/setDisplayCard', 104)
       }).catch((e) => {
         if (e.message.indexOf('cancelled') === -1) {
-          this.errorMessage = 'Please ensure you are logged into your meta mask account on the ' + NETWORK + ' network'
+          this.errorMessage = 'Please ensure you are logged into your meta mask account on the network'
         }
         this.waitingMessage = ''
         this.loading = false

@@ -28,11 +28,7 @@ let stompClient = null
 const network = new StacksTestnet()
 const precision = 1000000
 const contractDeployFee = 60000
-const STACKS_API = process.env.VUE_APP_STACKS_API
-let NETWORK = process.env.VUE_APP_NETWORK
-if (!NETWORK) {
-  NETWORK = 'local'
-}
+
 /**
 const client = await connectWebSocketClient('ws://stacks-node-api.blockstack.org/')
 const sub = await client.subscribeAddressTransactions(contractCall.txId, event => {
@@ -47,7 +43,7 @@ const unsubscribeApiNews = function () {
   }
 }
 
-const subscribeApiNews = function (commit, connectUrl, contractId, assetHash) {
+const subscribeApiNews = function (commit, connectUrl, contractId, assetHash, network) {
   if (!socket) socket = new SockJS(connectUrl + '/api-news')
   if (!stompClient) stompClient = Stomp.over(socket)
   socket.onclose = function () {
@@ -57,7 +53,7 @@ const subscribeApiNews = function (commit, connectUrl, contractId, assetHash) {
   stompClient.connect({}, function () {
     stompClient.subscribe('/queue/contract-news-' + contractId + '-' + assetHash, function (response) {
       const token = JSON.parse(response.body)
-      commit('rpayStacksContractStore/setToken', token, { root: true })
+      commit('rpayStacksContractStore/setToken', { network: network, token: token }, { root: true })
     })
   },
   function (error) {
@@ -65,11 +61,11 @@ const subscribeApiNews = function (commit, connectUrl, contractId, assetHash) {
   })
 }
 
-const pollTxStatus = function (result) {
+const pollTxStatus = function (result, stacksApi) {
   return new Promise((resolve) => {
     let counter = 0
     const intval = setInterval(function () {
-      axios.get(STACKS_API + 'extended/v1/tx/' + result.txId).then(response => {
+      axios.get(stacksApi + 'extended/v1/tx/' + result.txId).then(response => {
         const meth1 = 'tx_status'
         if (response[meth1] === 'success') {
           const meth2 = 'tx_status'
@@ -102,10 +98,10 @@ const captureResult = function (dispatch, commit, rootGetters, result) {
   const connectUrl = configuration.risidioBaseApi + '/mesh'
   result.opcode = 'stx-transaction-sent'
   window.eventBus.$emit('rpayEvent', result)
-  if (STACKS_API.indexOf('stacks-node-api') > -1) {
-    pollTxStatus(result)
+  if (configuration.risidioStacksApi.indexOf('stacks-node-api') > -1) {
+    pollTxStatus(result, configuration.risidioStacksApi)
   }
-  subscribeApiNews(commit, connectUrl, contractId, result.assetHash)
+  subscribeApiNews(commit, connectUrl, contractId, result.assetHash, configuration.network)
   axios.get(useApi).then(response => {
     console.log(response)
   }).catch((error) => {
@@ -203,14 +199,15 @@ const rpayStacksStore = {
     },
     fetchMacSkyWalletInfo ({ commit, dispatch, rootGetters }) {
       return new Promise((resolve) => {
-        if (NETWORK !== 'local') return
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const wallet = JSON.parse(configuration.risidioWalletMac)
-        dispatch('fetchWalletInternal', wallet).then((wallet) => {
+        const walletMac = JSON.parse(configuration.risidioWalletMac)
+        const walletSky = JSON.parse(configuration.risidioWalletMac)
+        commit('setMacsWallet', walletMac)
+        commit('setSkysWallet', walletSky)
+        dispatch('fetchWalletInternal', walletMac).then((wallet) => {
           commit('setMacsWallet', wallet)
           resolve(wallet)
-          wallet = JSON.parse(configuration.risidioWalletSky)
-          dispatch('fetchWalletInternal', wallet).then((wallet) => {
+          dispatch('fetchWalletInternal', walletSky).then((wallet) => {
             commit('setSkysWallet', wallet)
             resolve(wallet)
           })
@@ -225,7 +222,7 @@ const rpayStacksStore = {
           httpMethod: 'get',
           postData: null
         }
-        if (state.provider === 'risidio') {
+        if (configuration.network === 'local') {
           axios.post(configuration.risidioBaseApi + '/mesh/v2/accounts', data).then(response => {
             handleFetchWalletInternal(wallet, response, commit, resolve)
           }).catch((error) => {
@@ -297,7 +294,28 @@ const rpayStacksStore = {
           postConditions: (data.postConditions) ? data.postConditions : []
         }
         makeContractCall(txOptions).then((transaction) => {
-          if (NETWORK !== 'local') {
+          const txdata = new Uint8Array(transaction.serialize())
+          const headers = {
+            'Content-Type': 'application/octet-stream'
+          }
+          axios.post(configuration.risidioBaseApi + '/mesh' + '/v2/broadcast', txdata, { headers: headers }).then(response => {
+            const result = {
+              txId: response.data,
+              network: 15,
+              assetHash: data.assetHash,
+              contractAddress: data.contractAddress,
+              contractName: data.contractName,
+              functionName: data.functionName,
+              functionArgs: data.functionArgs
+            }
+            dispatch('fetchMacSkyWalletInfo')
+            captureResult(dispatch, commit, rootGetters, result)
+            resolve(result)
+          }).catch((error) => {
+            dispatch('fetchMacSkyWalletInfo')
+            resolveError(commit, reject, error)
+          })
+          if (configuration.network !== 'local') {
             broadcastTransaction(transaction, network).then((result) => {
               result.contractAddress = data.contractAddress
               result.contractName = data.contractName
@@ -307,28 +325,6 @@ const rpayStacksStore = {
               resolve(result)
             }).catch((error) => {
               reject(error)
-            })
-          } else {
-            const txdata = new Uint8Array(transaction.serialize())
-            const headers = {
-              'Content-Type': 'application/octet-stream'
-            }
-            axios.post(configuration.risidioBaseApi + '/mesh' + '/v2/broadcast', txdata, { headers: headers }).then(response => {
-              const result = {
-                txId: response.data,
-                network: 15,
-                assetHash: data.assetHash,
-                contractAddress: data.contractAddress,
-                contractName: data.contractName,
-                functionName: data.functionName,
-                functionArgs: data.functionArgs
-              }
-              dispatch('fetchMacSkyWalletInfo')
-              captureResult(dispatch, commit, rootGetters, result)
-              resolve(result)
-            }).catch((error) => {
-              dispatch('fetchMacSkyWalletInfo')
-              resolveError(commit, reject, error)
             })
           }
         })
@@ -367,7 +363,7 @@ const rpayStacksStore = {
         const headers = {
           'Content-Type': 'application/json'
         }
-        if (state.provider === 'risidio') {
+        if (configuration.network === 'local') {
           axios.post(configuration.risidioBaseApi + '/mesh' + '/v2/accounts', txOptions).then(response => {
             data.result = utils.fromHex(data.functionName, response.data.result)
             resolve(data)
@@ -544,7 +540,7 @@ const rpayStacksStore = {
             'Content-Type': 'application/octet-stream'
           }
 
-          if (state.provider === 'risidio') {
+          if (configuration.network === 'local') {
             axios.post(configuration.risidioBaseApi + '/mesh/v2/broadcast', txdata, { headers: headers }).then((response) => {
               const result = {
                 txId: response.data,

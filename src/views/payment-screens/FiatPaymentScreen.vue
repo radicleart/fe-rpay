@@ -46,8 +46,6 @@
 import { APP_CONSTANTS } from '@/app-constants'
 import TestPayments from '@/views/components/TestPayments'
 
-const MAINNET = process.env.VUE_APP_NETWORK
-
 export default {
   name: 'paymentForm',
   components: {
@@ -82,9 +80,6 @@ export default {
     const locationId = configuration.payment.squarePay.locationId
     const applicationId = configuration.payment.squarePay.applicationId // 'sq0idp-gbQhcOCpmb2X4W1588Ky7A'
     const that = this
-    if (MAINNET === 'mainnet') {
-
-    }
     // eslint-disable-next-line no-undef
     this.paymentForm = new SqPaymentForm({
       autoBuild: false,
