@@ -70,6 +70,18 @@ const fetchAllGaiaData = function (commit, registry, appDataMap) {
   if (appDataMap) {
     const keySet = Object.keys(appDataMap)
     keySet.forEach((thisKey) => {
+      const assetKeySet = Object.keys(appDataMap[thisKey])
+      assetKeySet.forEach((thatKey) => {
+        const strAss = appDataMap[thisKey]
+        const strAss1 = strAss[thatKey]
+        const gaiaAsset = JSON.parse(strAss1)
+        const token = tokenFromHash(registry, gaiaAsset.assetHash)
+        if (token) {
+          // gaiaAsset = Object.assign(gaiaAsset, token)
+          commit('addGaiaAsset', gaiaAsset)
+        }
+      })
+      /**
       const rootFile = JSON.parse(appDataMap[thisKey])
       if (rootFile && rootFile.records && rootFile.records.length > -1) {
         rootFile.records.forEach((gaiaAsset) => {
@@ -80,21 +92,18 @@ const fetchAllGaiaData = function (commit, registry, appDataMap) {
           }
         })
       }
+      **/
     })
   }
 }
 
 const loadAssetsFromGaia = function (commit, registry, connectUrl, contractId) {
   return new Promise((resolve) => {
-    if (!registry) return
-    if (registry.applications && contractId) {
+    if (!registry || !registry.applications) return
+    if (contractId) {
       const index = registry.applications.findIndex((o) => o.contractId === contractId)
       if (index > -1) {
-        const application = registry.applications[index]
-        const data = {
-          appOrigin: application.appOrigin
-        }
-        axios.post(connectUrl + '/v2/gaia/rootFilesByDomain', data).then((response) => {
+        axios.get(connectUrl + '/v2/meta-data/' + contractId).then((response) => {
           fetchAllGaiaData(commit, registry, response.data)
           resolve(response.data)
         })
@@ -102,7 +111,7 @@ const loadAssetsFromGaia = function (commit, registry, connectUrl, contractId) {
     } else {
       // the risidio xchange does not pass a contractId as its interested in all connected projects
       // however there needs to be a way to screen out projects with status=1
-      axios.get(connectUrl + '/v2/gaia/rootFiles').then((response) => {
+      axios.get(connectUrl + '/v2/meta-data').then((response) => {
         fetchAllGaiaData(commit, registry, response.data)
         resolve(response.data)
       })
@@ -378,8 +387,7 @@ const rpayStacksContractStore = {
         }
         axios.get(path).then(response => {
           commit('setRegistry', { registry: response.data, contractId: configuration.risidioProjectId, network: configuration.network })
-          loadAssetsFromGaia(commit, state.registry, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId).then((appDataMap) => {
-            console.log(appDataMap)
+          loadAssetsFromGaia(commit, state.registry, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId).then(() => {
             subscribeApiNews(commit, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId, configuration.network)
             resolve(state.registry)
           })

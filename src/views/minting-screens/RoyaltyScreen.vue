@@ -63,7 +63,6 @@ export default {
       networkConfig.assetHash = configuration.gaiaAsset.assetHash
       networkConfig.editions = configuration.gaiaAsset.editions
       networkConfig.editionCost = 0
-      networkConfig.gaiaUsername = configuration.gaiaAsset.gaiaUsername
       networkConfig.beneficiaries = configuration.minter.beneficiaries
       const methos = (configuration.network === 'local') ? 'callContractRisidio' : 'callContractBlockstack'
       networkConfig.action = methos

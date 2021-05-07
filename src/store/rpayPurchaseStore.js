@@ -35,7 +35,7 @@ const rpayPurchaseStore = {
   state: {
     provider: 'stacks',
     buttonText: ['NOT FOR SALE', 'BUY NOW', 'PLACE BID', 'MAKE AN OFFER'],
-    badgeText: ['NOT ON SALE', 'BUY NOW', 'ON AUCTION', 'OFFERS ONLY']
+    badgeText: ['NOT ON SALE', 'BUY NOW', 'AUCTION ENDS', 'ON AUCTION']
   },
   getters: {
     getRecipientAddress: (state, getters, rootState, rootGetters) => (owner) => {
@@ -129,11 +129,13 @@ const rpayPurchaseStore = {
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, callData, { root: true }).then((result) => {
           resolve(result)
+        }).catch((error) => {
+          reject(error)
         })
       })
     },
     mintToken ({ dispatch, rootGetters }, data) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         if (!data.owner) {
           data.owner = 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW'
           if (data.sendAsSky) {
@@ -148,7 +150,7 @@ const rpayPurchaseStore = {
         )
         data.postConditions = [standardSTXPostCondition]
         const buffer = Buffer.from(data.assetHash, 'hex')
-        const gaiaUsername = bufferCV(Buffer.from(data.gaiaUsername, 'utf8'))
+        const metaDataUrl = bufferCV(Buffer.from(data.metaDataUrl, 'utf8'))
         const editions = uintCV(data.editions)
         const editionCost = uintCV(data.editionCost)
         const addressList = []
@@ -165,7 +167,7 @@ const rpayPurchaseStore = {
         }
         const addresses = listCV(addressList)
         const shares = listCV(shareList)
-        data.functionArgs = [bufferCV(buffer), gaiaUsername, editions, editionCost, addresses, shares]
+        data.functionArgs = [bufferCV(buffer), metaDataUrl, editions, editionCost, addresses, shares]
         const configuration = rootGetters['rpayStore/getConfiguration']
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch((data.methos || methos), data, { root: true }).then((result) => {
@@ -173,18 +175,13 @@ const rpayPurchaseStore = {
           result.assetHash = data.assetHash
           window.eventBus.$emit('rpayEvent', result)
           resolve(result)
-        }).catch((err) => {
-          const result = {
-            opcode: 'stx-transaction-error',
-            assetHash: data.assetHash,
-            error: err
-          }
-          window.eventBus.$emit('rpayEvent', result)
+        }).catch((error) => {
+          reject(error)
         })
       })
     },
     mintEdition ({ dispatch, rootGetters }, data) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         // this is the owner of the asset - needed to set the post condition
         if (!data.owner) {
           data.owner = 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW'
@@ -215,33 +212,39 @@ const rpayPurchaseStore = {
             error: err
           }
           window.eventBus.$emit('rpayEvent', result)
+        }).catch((error) => {
+          reject(error)
         })
       })
     },
     makeOffer ({ dispatch, rootGetters }, data) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         data.functionName = 'make-offer'
         data.functionArgs = [uintCV(data.nftIndex), uintCV(utils.toOnChainAmount(data.offerAmount)), uintCV(data.biddingEndTime)]
         const configuration = rootGetters['rpayStore/getConfiguration']
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, data, { root: true }).then((result) => {
           resolve(result)
+        }).catch((error) => {
+          reject(error)
         })
       })
     },
     setEditionCost ({ dispatch, rootGetters }, data) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         data.functionName = 'set-edition-cost'
         data.functionArgs = [uintCV(data.seriesOriginal), uintCV(data.maxEditions), uintCV(utils.toOnChainAmount(data.editionCost))]
         const configuration = rootGetters['rpayStore/getConfiguration']
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, data, { root: true }).then((result) => {
           resolve(result)
+        }).catch((error) => {
+          reject(error)
         })
       })
     },
     transferAsset ({ state, dispatch, rootGetters }, data) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         const nonFungibleAssetInfo = createAssetInfo(
           data.contractAddress,
           data.contractName,
@@ -266,22 +269,26 @@ const rpayPurchaseStore = {
         }
         dispatch(methos, data, { root: true }).then((result) => {
           resolve(result)
+        }).catch((error) => {
+          reject(error)
         })
       })
     },
     acceptOffer ({ dispatch, rootGetters }, data) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         data.functionName = 'accept-offer'
         data.functionArgs = [uintCV(data.nftIndex), uintCV(data.offerIndex), standardPrincipalCV(data.owner), standardPrincipalCV(data.recipient)]
         const configuration = rootGetters['rpayStore/getConfiguration']
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, data, { root: true }).then((result) => {
           resolve(result)
+        }).catch((error) => {
+          reject(error)
         })
       })
     },
     buyNow ({ dispatch, rootGetters }, data) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         const amount = new BigNum(utils.toOnChainAmount(data.buyNowOrStartingPrice + 1))
         const functionArgs = [uintCV(data.nftIndex), standardPrincipalCV(data.owner), standardPrincipalCV(data.recipient)]
         const standardSTXPostCondition = makeStandardSTXPostCondition(
@@ -301,11 +308,13 @@ const rpayPurchaseStore = {
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, callData, { root: true }).then((result) => {
           resolve(result)
+        }).catch((error) => {
+          reject(error)
         })
       })
     },
     placeBid ({ dispatch, rootGetters }, data) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         const functionArgs = [uintCV(data.nftIndex), uintCV(data.bidAmount), uintCV(data.appTimestamp)]
         const callData = {
           postConditions: data.postConditions,
@@ -319,11 +328,13 @@ const rpayPurchaseStore = {
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, callData, { root: true }).then((result) => {
           resolve(result)
+        }).catch((error) => {
+          reject(error)
         })
       })
     },
     closeBidding ({ dispatch, rootGetters }, data) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         const functionArgs = [uintCV(data.nftIndex), uintCV(data.closeType)]
         const callData = {
           contractAddress: data.contractAddress,
@@ -335,6 +346,8 @@ const rpayPurchaseStore = {
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, callData, { root: true }).then((result) => {
           resolve(result)
+        }).catch((error) => {
+          reject(error)
         })
       })
     }

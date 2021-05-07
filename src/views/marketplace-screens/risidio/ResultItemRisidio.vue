@@ -156,10 +156,13 @@ export default {
         controls: true,
         aspectRatio: '1:1',
         poster: (this.result.nftMedia.coverImage) ? this.result.nftMedia.coverImage.fileUrl : null,
-        sources: [
-          { src: this.result.nftMedia.artworkFile.fileUrl, type: this.result.nftMedia.artworkFile.type }
-        ],
+        sources: [],
         fluid: true
+      }
+      if (this.result.nftMedia.artworkFile) {
+        videoOptions.sources = [
+          { src: this.result.nftMedia.artworkFile.fileUrl, type: this.result.nftMedia.artworkFile.type }
+        ]
       }
       return videoOptions
     },

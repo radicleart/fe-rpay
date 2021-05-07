@@ -2,6 +2,7 @@ export const APP_CONSTANTS = {
   KEY_PROFILE: 'rpayAuthStore/getMyProfile',
   KEY_ACCOUNT_INFO: 'rpayAuthStore/getAccountInfo',
   KEY_ACCOUNTS: 'rpayAuthStore/getAccounts',
+  KEY_USER_SESSION: 'rpayAuthStore/getUserSession',
 
   GET_HEADERS: 'rpayStore/getHeaders',
   KEY_EDIT_BENEFICIARY: 'rpayStore/getEditBeneficiary',

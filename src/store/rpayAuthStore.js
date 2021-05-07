@@ -5,12 +5,14 @@
  */
 import { AppConfig, UserSession, authenticate, showConnect } from '@stacks/connect'
 import { AccountsApi, Configuration } from '@stacks/blockchain-api-client'
+import { Storage } from '@stacks/storage'
 import axios from 'axios'
 import utils from '@/services/utils'
 
 const origin = window.location.origin
 const appConfig = new AppConfig(['store_write', 'publish_data'])
 const userSession = new UserSession({ appConfig })
+const storage = new Storage({ userSession })
 
 const setupAccountApi = function (commit, stacksApi) {
   const apiConfig = new Configuration({
@@ -41,6 +43,9 @@ const getProfile = function (network) {
         uname.indexOf('radicle') > -1 ||
         uname.indexOf('mijoco') > -1
       myProfile = {
+        gaiaHubConfig: account.gaiaHubConfig,
+        identityAddress: account.identityAddress,
+        hubUrl: account.hubUrl,
         loggedIn: true,
         stxAddress: (network === 'mainnet') ? account.profile.stxAddress.mainnet : account.profile.stxAddress.testnet,
         superAdmin: isAdmin,
@@ -69,7 +74,6 @@ const rpayAuthStore = {
     },
     accountApi: null,
     accounts: [],
-    session: null,
     appName: 'Risidio Music NFTs',
     appLogo: '/img/sticksnstones_logo.8217b8f7.png'
   },
@@ -81,6 +85,12 @@ const rpayAuthStore = {
         }
       }
       return state.myProfile
+    },
+    getUserSession: state => {
+      return userSession
+    },
+    getUserStorage: state => {
+      return storage
     },
     getAccountInfo: state => stxAddress => {
       return state.accounts.find((o) => o.stxAddress === stxAddress)
