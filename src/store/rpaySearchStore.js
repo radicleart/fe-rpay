@@ -10,7 +10,9 @@ const matchContractAssets = function (rootGetters, resultSet) {
       const gaiaAsset = rootGetters[APP_CONSTANTS.KEY_GAIA_ASSET_BY_HASH](result.assetHash)
       if (gaiaAsset && gaiaAsset.nftMedia) result = gaiaAsset
       result.contractAsset = contractAsset
-      matched.push(result)
+      if (result && result.nftMedia && result.nftMedia.artworkFile && result.nftMedia.artworkFile.fileUrl) {
+        matched.push(result)
+      }
     }
   })
   return matched
