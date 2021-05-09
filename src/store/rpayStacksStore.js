@@ -201,7 +201,7 @@ const rpayStacksStore = {
       return new Promise((resolve) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const walletMac = JSON.parse(configuration.risidioWalletMac)
-        const walletSky = JSON.parse(configuration.risidioWalletMac)
+        const walletSky = JSON.parse(configuration.risidioWalletSky)
         commit('setMacsWallet', walletMac)
         commit('setSkysWallet', walletSky)
         dispatch('fetchWalletInternal', walletMac).then((wallet) => {

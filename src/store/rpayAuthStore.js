@@ -5,6 +5,7 @@
  */
 import { AppConfig, UserSession, authenticate, showConnect } from '@stacks/connect'
 import { AccountsApi, Configuration } from '@stacks/blockchain-api-client'
+import { decodeToken } from 'jsontokens'
 import { Storage } from '@stacks/storage'
 import axios from 'axios'
 import utils from '@/services/utils'
@@ -25,6 +26,29 @@ const setupAccountApi = function (commit, stacksApi) {
 }
 
 const BLOCKSTACK_LOGIN = Number(process.env.VUE_APP_BLOCKSTACK_LOGIN)
+
+const defAuthHeaders = function () {
+  let publicKey = null
+  let token = 'v1:no-token' // note: not all requests require auth token - e.g. getPaymentAddress
+  if (userSession.isUserSignedIn()) {
+    const account = userSession.loadUserData()
+    if (account) {
+      const authResponseToken = account.authResponseToken
+      const decodedToken = decodeToken(authResponseToken)
+      publicKey = decodedToken.payload.public_keys[0]
+      // publicKey = Buffer.from(publicKey).toString()
+      token = 'v1:' + account.authResponseToken
+      // token = 'v1:' + account.gaiaAssociationToken
+    }
+  }
+  const headers = {
+    IdentityAddress: publicKey,
+    'Content-Type': 'application/json',
+    Authorization: 'Bearer ' + token
+  }
+  return headers
+}
+
 const getProfile = function (network) {
   let myProfile = {}
   try {
@@ -73,6 +97,7 @@ const rpayAuthStore = {
       appPrivateKey: null
     },
     accountApi: null,
+    authHeaders: null,
     accounts: [],
     appName: 'Risidio Music NFTs',
     appLogo: '/img/sticksnstones_logo.8217b8f7.png'
@@ -89,6 +114,9 @@ const rpayAuthStore = {
     getUserSession: state => {
       return userSession
     },
+    getAuthHeaders: state => {
+      return state.authHeaders
+    },
     getUserStorage: state => {
       return storage
     },
@@ -102,6 +130,9 @@ const rpayAuthStore = {
   mutations: {
     myProfile (state, myProfile) {
       state.myProfile = myProfile
+    },
+    setAuthHeaders (state, authHeaders) {
+      state.authHeaders = authHeaders
     },
     setAccountApi (state, accountApi) {
       state.accountApi = accountApi
@@ -130,6 +161,7 @@ const rpayAuthStore = {
         if (userSession.isUserSignedIn()) {
           const profile = getProfile(configuration.network)
           commit('myProfile', profile)
+          commit('setAuthHeaders', defAuthHeaders(userSession))
           dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
             profile.accountInfo = accountInfo
             commit('myProfile', profile)
@@ -168,6 +200,7 @@ const rpayAuthStore = {
             state.userData = userData
             const profile = getProfile(configuration.network)
             commit('myProfile', profile)
+            commit('setAuthHeaders', defAuthHeaders(userSession))
             dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
               profile.accountInfo = accountInfo
               commit('myProfile', profile)
@@ -194,6 +227,7 @@ const rpayAuthStore = {
           userSession.signUserOut()
           state.userData = null
           commit('myProfile', getProfile(configuration.network))
+          commit('setAuthHeaders', null)
         }
         resolve(getProfile(configuration.network))
       })

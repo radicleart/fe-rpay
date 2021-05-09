@@ -183,6 +183,9 @@ export default {
     this.$store.dispatch('rpayAuthStore/fetchMyAccount').then((profile) => {
       this.$store.dispatch('rpayAuthStore/fetchAccountInfo', { stxAddress: profile.stxAddress, force: true })
       this.loaded = true
+      this.$store.dispatch('rpayPurchaseStore/fetchOffers').then((dbOffers) => {
+        this.dbOffers = dbOffers
+      })
     })
     const $self = this
     const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]

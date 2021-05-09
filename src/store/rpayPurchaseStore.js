@@ -2,6 +2,7 @@ import { APP_CONSTANTS } from '@/app-constants'
 import moment from 'moment'
 import utils from '@/services/utils'
 import BigNum from 'bn.js'
+import axios from 'axios'
 import {
   bufferCV,
   listCV,
@@ -105,6 +106,18 @@ const rpayPurchaseStore = {
   mutations: {
   },
   actions: {
+    fetchOffers ({ commit, rootGetters }) {
+      return new Promise(function (resolve, reject) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        axios.get(configuration.risidioBaseApi + '/mesh/v2/secure/fetch/offers', { headers: authHeaders }).then((response) => {
+          commit('setOffers', response.data)
+          resolve(response.data)
+        }).catch((error) => {
+          reject(new Error('Unable to fetch transactions: ' + error))
+        })
+      })
+    },
     setTradeInfo ({ state, dispatch, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         // (asset-hash (buff 32)) (sale-type uint) (increment-stx uint) (reserve-stx uint) (amount-stx uint)
@@ -289,7 +302,7 @@ const rpayPurchaseStore = {
     },
     buyNow ({ dispatch, rootGetters }, data) {
       return new Promise((resolve, reject) => {
-        const amount = new BigNum(utils.toOnChainAmount(data.buyNowOrStartingPrice + 1))
+        const amount = new BigNum(utils.toOnChainAmount(data.buyNowOrStartingPrice))
         const functionArgs = [uintCV(data.nftIndex), standardPrincipalCV(data.owner), standardPrincipalCV(data.recipient)]
         const standardSTXPostCondition = makeStandardSTXPostCondition(
           data.owner,

@@ -1,6 +1,6 @@
 {
   "name": "risidio-pay",
-  "version": "0.3.31",
+  "version": "0.3.35",
   "private": false,
   "files": [
     "dist"
@@ -38,6 +38,7 @@
     "bootstrap-vue": "^2.21.2",
     "c32check": "^1.1.2",
     "core-js": "^3.10.1",
+    "jsontokens": "^3.0.0",
     "lodash-es": "^4.17.21",
     "lsat-js": "^1.0.7",
     "luxon": "^1.26.0",

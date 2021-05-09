@@ -309,6 +309,15 @@ const rpayStacksContractStore = {
     getGaiaAssetsByOwner: state => data => {
       if (!state.gaiaAssets) return
       return state.gaiaAssets.filter((o) => o.owner === data.username)
+    },
+    getGaiaAssetsByArtist: state => data => {
+      if (!state.gaiaAssets) return
+      return state.gaiaAssets.filter((o) => {
+        const oArtistId = o.artist.toLowerCase().replace(/ /g, '')
+        if (oArtistId === data.artistId) {
+          return o
+        }
+      })
     }
   },
   mutations: {
