@@ -14,7 +14,8 @@ import {
 } from '@stacks/transactions'
 import { openSTXTransfer, openContractDeploy, openContractCall } from '@stacks/connect'
 import {
-  StacksTestnet
+  StacksTestnet,
+  StacksMainnet
 } from '@stacks/network'
 import axios from 'axios'
 import BigNum from 'bn.js'
@@ -28,7 +29,8 @@ let stompClient = null
 const network = new StacksTestnet()
 const precision = 1000000
 const contractDeployFee = 60000
-
+const testnet = new StacksTestnet()
+const mainnet = new StacksMainnet()
 /**
 const client = await connectWebSocketClient('ws://stacks-node-api.blockstack.org/')
 const sub = await client.subscribeAddressTransactions(contractCall.txId, event => {
@@ -156,8 +158,8 @@ const rpayStacksStore = {
     provider: 'connect',
     result: null,
     contracts: [],
-    appName: 'Risidio Auctions',
-    appLogo: '/img/risidio_white.png',
+    appName: 'Risidio Xchange',
+    appLogo: '/img/logo/Risidio_logo_256x256.png',
     macsWallet: null,
     skysWallet: null
   },
@@ -240,12 +242,14 @@ const rpayStacksStore = {
     },
     callContractBlockstack ({ dispatch, commit, rootGetters, state }, data) {
       return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
         const txOptions = {
           contractAddress: data.contractAddress,
           contractName: data.contractName,
           functionName: data.functionName,
           functionArgs: (data.functionArgs) ? data.functionArgs : [],
           postConditions: (data.postConditions) ? data.postConditions : [],
+          network: (configuration.network === 'mainnet') ? mainnet : testnet,
           appDetails: {
             name: state.appName,
             icon: state.appLogo
