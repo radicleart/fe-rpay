@@ -34,6 +34,7 @@ const getProvider = function (data) {
 const rpayPurchaseStore = {
   namespaced: true,
   state: {
+    dbOffers: [],
     provider: 'stacks',
     buttonText: ['NOT FOR SALE', 'BUY NOW', 'PLACE BID', 'MAKE AN OFFER'],
     badgeText: ['NOT ON SALE', 'BUY NOW', 'AUCTION ENDS', 'ON AUCTION']
@@ -49,6 +50,9 @@ const rpayPurchaseStore = {
         recipient = (owner === mac.keyInfo.address) ? sky.keyInfo.address : mac.keyInfo.address
       }
       return recipient
+    },
+    getDbOffers: (state) => {
+      return state.dbOffers
     },
     getCurrentBid: (state) => (contractAsset) => {
       return intCurrentBid(contractAsset)
@@ -104,6 +108,9 @@ const rpayPurchaseStore = {
     }
   },
   mutations: {
+    setDbOffers: (state, dbOffers) => {
+      state.dbOffers = dbOffers
+    }
   },
   actions: {
     fetchOffers ({ commit, rootGetters }) {
@@ -111,7 +118,7 @@ const rpayPurchaseStore = {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.get(configuration.risidioBaseApi + '/mesh/v2/secure/fetch/offers', { headers: authHeaders }).then((response) => {
-          commit('setOffers', response.data)
+          commit('setDbOffers', response.data)
           resolve(response.data)
         }).catch((error) => {
           reject(new Error('Unable to fetch transactions: ' + error))
