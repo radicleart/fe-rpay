@@ -138,20 +138,6 @@ export default {
         },
 
         /*
-           * Digital Wallet related functions
-           */
-        createPaymentRequest: function () {
-          var paymentRequestJson
-          /* ADD CODE TO SET/CREATE paymentRequestJson */
-          return paymentRequestJson
-        },
-        validateShippingContact: function (contact) {
-          var validationErrorObj
-          /* ADD CODE TO SET validationErrorObj IF ERRORS ARE FOUND */
-          return validationErrorObj
-        },
-
-        /*
            * callback function: cardNonceResponseReceived
            * Triggered when: SqPaymentForm completes a card nonce request
            */

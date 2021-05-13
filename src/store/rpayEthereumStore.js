@@ -1,5 +1,4 @@
 import Web3 from 'web3'
-import _ from 'lodash'
 import abiContract from './LoopbombX.json'
 import { APP_CONSTANTS } from '@/app-constants'
 
@@ -99,8 +98,8 @@ const mintToken = function (web3, data, account, resolve, reject, commit) {
         assetHash: data.assetHash,
         txId: res.transactionHash
       }
-      if (res.events && _.size(res.events) > 0) {
-        for (var key in res.events) {
+      if (res.events && res.events.length > 0) {
+        for (const key in res.events) {
           if (key === 'LoopbombCreated') {
             const event = res.events[key]
             result.tokenId = parseInt(event.returnValues.id, 10)
@@ -130,8 +129,8 @@ const setBaseTokenURI = function (web3, data, account, resolve, reject, commit) 
       assetHash: data.assetHash,
       txId: res.transactionHash
     }
-    if (res.events && _.size(res.events) > 0) {
-      for (var key in res.events) {
+    if (res.events && res.events.length > 0) {
+      for (const key in res.events) {
         const event = res.events[key]
         if (event) {
           result.tokenId = parseInt(event.raw.topics[3], 16)

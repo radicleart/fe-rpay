@@ -62,7 +62,7 @@ export default {
       return configuration.payment.ethPaymentAddress
     },
     addQrCode () {
-      var element = this.$refs.lndQrcode
+      const element = this.$refs.lndQrcode
       const paymentUri = this.paymentUri()
       QRCode.toCanvas(
         element, paymentUri, { errorCorrectionLevel: 'H' },

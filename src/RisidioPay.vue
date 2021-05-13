@@ -1,9 +1,6 @@
 <template>
 <div class="" v-if="loaded" id="rpay-pay-card">
-  <div v-if="risidioCardMode === 'marketplace-flow'">
-    <marketplace-flow class=""/>
-  </div>
-  <div :class="(showDebug) ? 'col-12' : 'col-12'" v-else-if="risidioCardMode === 'payment-flow'">
+  <div :class="(showDebug) ? 'col-12' : 'col-12'" v-if="risidioCardMode === 'payment-flow'">
     <payment-flow/>
   </div>
   <div :class="(showDebug) ? 'col-12' : 'col-12'" v-else-if="risidioCardMode === 'minting-flow'">
@@ -26,7 +23,6 @@ import Vue from 'vue'
 import DebugFlow from './views/debug-screens/DebugFlow'
 import PaymentFlow from './views/PaymentFlow'
 import MintingFlow from './views/MintingFlow'
-import MarketplaceFlow from './views/MarketplaceFlow'
 import SellingFlow from './views/SellingFlow'
 import PurchaseFlow from './views/PurchaseFlow'
 import rpayStore from './store/rpayStore'
@@ -49,7 +45,6 @@ export default {
     MintingFlow,
     SellingFlow,
     PurchaseFlow,
-    MarketplaceFlow,
     DebugFlow
   },
   props: ['configuration'],

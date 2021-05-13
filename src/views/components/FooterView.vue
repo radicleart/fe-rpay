@@ -1,6 +1,6 @@
 <template>
 <div class="footer-container">
-  <b-form-input disabled id="range-2" v-model="rangeValue" type="range" min="0" max="2" step="1"></b-form-input>
+  <b-form-input disabled id="range-2" type="range" min="0" max="2" step="1"></b-form-input>
   <div class="d-flex justify-content-between" style="font-size: 11px;">
     <div :class="(displayCard === 100) ? 'text-bold' : 'text-300'" class="click-effect" @click="skipAhead(0)">Select Amount</div>
     <div :class="(displayCard === 102) ? 'text-bold' : 'text-300'" class="click-effect" @click="skipAhead(1)">Make Payment</div>

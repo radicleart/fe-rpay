@@ -66,7 +66,7 @@ export default {
   },
   methods: {
     addQrCode () {
-      var element = this.$refs.lndQrcode
+      const element = this.$refs.lndQrcode
       const invoice = this.$store.getters[APP_CONSTANTS.KEY_INVOICE]
       const paymentUri = invoice.data.uri
       QRCode.toCanvas(element, paymentUri, { errorCorrectionLevel: 'H' },
@@ -76,7 +76,7 @@ export default {
         })
     },
     addChannelQrCode () {
-      var element = this.$refs.lndChannel
+      const element = this.$refs.lndChannel
       this.channel = this.info.identityPubkey_ + '@' + this.peerAddress
       QRCode.toCanvas(
         element, this.channel, { errorCorrectionLevel: 'H' },
@@ -87,7 +87,7 @@ export default {
     },
     copyAddress () {
       const invoice = this.$store.getters[APP_CONSTANTS.KEY_INVOICE]
-      var tempInput = document.createElement('input')
+      const tempInput = document.createElement('input')
       // tempInput.style = 'position: absolute; left: -1000px; top: -1000px'
       tempInput.value = invoice.data.lightning_invoice.payreq
       document.body.appendChild(tempInput)
@@ -104,7 +104,7 @@ export default {
       // document.execCommand('copy')
     },
     copyUri () {
-      var copyText = this.$refs.paymentUriBtc
+      const copyText = this.$refs.paymentUriBtc
       copyText.select()
       document.execCommand('copy')
       // this.$notify({ type: 'success', title: 'Copied Channel Uri', text: 'Copied the channel uri to clipboard: ' + copyText.value })

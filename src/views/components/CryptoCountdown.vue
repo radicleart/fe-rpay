@@ -47,13 +47,13 @@ export default {
       this.$emit('rpayEvent', { opcode: 'crypto-payment-expired' })
     },
     startCountdown () {
-      var duration = moment.duration(this.timeout)
-      var interval = 1
+      let duration = moment.duration(this.timeout)
+      const interval = 1
       const $self = this
       const timer = setInterval(function () {
         duration = moment.duration(duration.asSeconds() - interval, 'seconds')
-        var min = duration.minutes()
-        var sec = duration.seconds()
+        let min = duration.minutes()
+        let sec = duration.seconds()
         sec -= 1
         if (min < 0) return clearInterval(timer)
         if (min < 10 && min.length !== 2) min = '0' + min
@@ -75,9 +75,9 @@ export default {
   computed: {
     currentCountdown () {
       if (!this.countdown && this.timeout) {
-        var hrs = this.timeout.hours
-        var min = this.timeout.minutes
-        var sec = this.timeout.seconds
+        let hrs = this.timeout.hours
+        let min = this.timeout.minutes
+        let sec = this.timeout.seconds
         if (hrs < 10 && hrs.length !== 2) hrs = '0' + hrs
         if (min < 10 && min.length !== 2) min = '0' + min
         if (sec < 10 && sec.length !== 2) sec = '0' + sec

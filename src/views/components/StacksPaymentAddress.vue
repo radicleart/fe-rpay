@@ -90,14 +90,14 @@ export default {
       return STACKS_PAYMENT_ADDRESS
     },
     addQrCode () {
-      var element = this.$refs.lndQrcode
+      const element = this.$refs.lndQrcode
       const paymentUri = this.paymentUri()
       QRCode.toCanvas(
         element, paymentUri, { errorCorrectionLevel: 'H' },
         function () {})
     },
     copyAddress () {
-      var tempInput = document.createElement('input')
+      const tempInput = document.createElement('input')
       tempInput.value = STACKS_PAYMENT_ADDRESS
       document.body.appendChild(tempInput)
       tempInput.select()

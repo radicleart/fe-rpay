@@ -47,6 +47,7 @@ const sortResults = function (state, resultSet) {
       if (a.artist < b.artist) return -1
       return 0
     }
+    return 0
   })
   return resultSet
 }

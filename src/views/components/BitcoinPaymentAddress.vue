@@ -68,21 +68,21 @@ export default {
       return uri
     },
     addQrCode () {
-      var element = this.$refs.lndQrcode
+      const element = this.$refs.lndQrcode
       const paymentUri = this.paymentUri()
       QRCode.toCanvas(
         element, paymentUri, { errorCorrectionLevel: 'H' },
         function () {})
     },
     copyAmount () {
-      var copyText = this.$refs.paymentAmountBtc
+      const copyText = this.$refs.paymentAmountBtc
       copyText.select()
       document.execCommand('copy')
       this.$notify({ type: 'success', title: 'Copied Address', text: 'Copied the address to clipboard: ' + copyText.value })
     },
     copyAddress (value) {
       // const invoice = this.$store.getters[APP_CONSTANTS.KEY_INVOICE]
-      var tempInput = document.createElement('input')
+      const tempInput = document.createElement('input')
       // tempInput.style = 'position: absolute; left: -1000px; top: -1000px'
       tempInput.value = value // invoice.data.address
       document.body.appendChild(tempInput)
@@ -100,7 +100,7 @@ export default {
     },
 
     copyAddress2 () {
-      var copyText = this.$refs.paymentAddressBtc
+      const copyText = this.$refs.paymentAddressBtc
       copyText.select()
       document.execCommand('copy')
       this.$notify({ type: 'success', title: 'Copied Address', text: 'Copied the address to clipboard: ' + copyText.value })

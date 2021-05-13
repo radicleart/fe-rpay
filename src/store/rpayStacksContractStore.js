@@ -317,6 +317,7 @@ const rpayStacksContractStore = {
         if (oArtistId === data.artistId) {
           return o
         }
+        return null
       })
     }
   },
