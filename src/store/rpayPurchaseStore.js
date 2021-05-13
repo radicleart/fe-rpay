@@ -37,7 +37,7 @@ const rpayPurchaseStore = {
     dbOffers: [],
     provider: 'stacks',
     buttonText: ['NOT FOR SALE', 'BUY NOW', 'PLACE BID', 'MAKE AN OFFER'],
-    badgeText: ['NOT ON SALE', 'BUY NOW', 'AUCTION ENDS', 'ON AUCTION']
+    badgeText: ['AUCTION STARTS SOON!!', 'BUY NOW', 'AUCTION ENDS', 'ON AUCTION']
   },
   getters: {
     getRecipientAddress: (state, getters, rootState, rootGetters) => (owner) => {
@@ -110,14 +110,34 @@ const rpayPurchaseStore = {
   mutations: {
     setDbOffers: (state, dbOffers) => {
       state.dbOffers = dbOffers
+    },
+    addOffer: (state, dbOffer) => {
+      state.dbOffers.splice(0, 0, dbOffer)
+      const index = state.dbOffers.findIndex((o) => o.offerer === dbOffer.offerer)
+      if (index < 0) {
+        state.dbOffers.splice(0, 0, dbOffer)
+      } else {
+        state.dbOffers.splice(index, 1, dbOffer)
+      }
     }
   },
   actions: {
+    registerOfferOffChain ({ commit, rootGetters }, data) {
+      return new Promise(function (resolve, reject) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.post(configuration.risidioBaseApi + '/mesh/v2/register/offer', data).then(() => {
+          commit('addOffer', data)
+          resolve(data)
+        }).catch((error) => {
+          reject(new Error('Unable to register offer: ' + error))
+        })
+      })
+    },
     fetchOffers ({ commit, rootGetters }) {
       return new Promise(function (resolve, reject) {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
-        axios.get(configuration.risidioBaseApi + '/mesh/v2/secure/fetch/offers', { headers: authHeaders }).then((response) => {
+        axios.post(configuration.risidioBaseApi + '/mesh/v2/secure/fetch/offers', {}, { headers: authHeaders }).then((response) => {
           commit('setDbOffers', response.data)
           resolve(response.data)
         }).catch((error) => {
