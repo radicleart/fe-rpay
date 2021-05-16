@@ -135,6 +135,8 @@ const utils = {
     }
     if (method === 'get-mint-price') {
       return res.value.value.toNumber()
+    } else if (method === 'get-balance') {
+      return res.value.value.toNumber()
     } else if (method === 'get-mint-counter') {
       return res.value.value.toNumber()
     } else if (method === 'get-app-counter') {

@@ -175,11 +175,16 @@ const resolvePrincipalsToken = function (network, token) {
       idx++
     })
   }
-  if (token.bidHistory) {
+  if (token.bidHistory && token.bidHistory.length > 0) {
+    const cycledBidHistory = []
     token.bidHistory.forEach((bid) => {
       bid.amount = utils.fromMicroAmount(bid.amount)
       bid.bidder = utils.convertAddress(network, bid.bidder)
+      if (token.saleData.saleCycleIndex === bid.saleCycle) {
+        cycledBidHistory.push(bid)
+      }
     })
+    token.cycledBidHistory = cycledBidHistory
   }
 }
 const resolvePrincipals = function (registry, network) {

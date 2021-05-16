@@ -22,6 +22,7 @@
 
     <div class="row" v-if="getGaiaAsset">
       <div class="col-12"><h6>Current Item</h6></div>
+      <div class="col-2">Contract Balance:</div><div class="col-10">{{contractBalance}}</div>
       <div class="col-2">Lookup App:</div><div class="col-10"><a class="text-info" href="#" @click.prevent="lookupAppmapContractData()" size="sm" variant="info">Appmap contract data</a></div>
       <div class="col-2">Base URI:</div><div class="col-10"><a class="text-info" href="#" @click.prevent="lookupTokenContractData()" size="sm" variant="info">Token contract data</a></div>
       <div class="col-2">Address:</div><div class="col-10"><a target="_blank" class="text-warning" :href="contractUrl()">{{configuration.minter.networks[0].contractAddress}}.{{configuration.minter.networks[0].contractName}}</a></div>
@@ -170,6 +171,7 @@ export default {
   data () {
     return {
       nifty: 0,
+      contractBalance: -1,
       loaded: false,
       message: null,
       result: null,
@@ -180,6 +182,16 @@ export default {
   mounted () {
     this.$store.dispatch('rpayStacksContractStore/fetchContractData')
     this.$store.dispatch('rpaySearchStore/findAssets')
+    const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
+    const config = {
+      contractAddress: networkConfig.contractAddress,
+      contractName: networkConfig.contractName,
+      functionName: 'get-balance',
+      functionArgs: []
+    }
+    this.$store.dispatch('rpayStacksStore/callContractReadOnly', config).then((result) => {
+      this.contractBalance = result.result
+    })
     this.$store.dispatch('rpayAuthStore/fetchMyAccount').then((profile) => {
       this.$store.dispatch('rpayAuthStore/fetchAccountInfo', { stxAddress: profile.stxAddress, force: true })
       this.loaded = true

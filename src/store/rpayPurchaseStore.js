@@ -15,11 +15,21 @@ import {
   makeStandardNonFungiblePostCondition
 } from '@stacks/transactions'
 
+const isOpeneningBid = function (contractAsset) {
+  // simple case - no bids ever
+  if (contractAsset.bidCounter === 0 || contractAsset.bidHistory.length === 0) {
+    return true
+  }
+  // less simple case - start of a new sale cycle
+  const index = contractAsset.bidHistory.findIndex((o) => o.saleCycle === contractAsset.saleData.saleCycleIndex)
+  return index === -1
+}
+
 const intCurrentBid = function (contractAsset) {
   if (!contractAsset) return
   let currentBid = { amount: contractAsset.saleData.buyNowOrStartingPrice }
-  if (contractAsset.bidCounter > 0 && contractAsset.bidHistory.length > 0) {
-    currentBid = contractAsset.bidHistory[contractAsset.bidHistory.length - 1]
+  if (!isOpeneningBid(contractAsset)) {
+    currentBid = contractAsset.cycledBidHistory[contractAsset.cycledBidHistory.length - 1]
   }
   currentBid.reserveMet = currentBid.amount >= contractAsset.saleData.reservePrice
   currentBid.nextBidAmount = currentBid.amount + contractAsset.saleData.incrementPrice
@@ -332,7 +342,7 @@ const rpayPurchaseStore = {
         const amount = new BigNum(utils.toOnChainAmount(data.buyNowOrStartingPrice))
         const functionArgs = [uintCV(data.nftIndex), standardPrincipalCV(data.owner), standardPrincipalCV(data.recipient)]
         const standardSTXPostCondition = makeStandardSTXPostCondition(
-          data.owner,
+          data.pcAddress,
           FungibleConditionCode.LessEqual,
           amount
         )

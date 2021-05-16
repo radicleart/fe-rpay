@@ -1,6 +1,6 @@
 {
   "name": "risidio-pay",
-  "version": "0.3.51",
+  "version": "0.3.62",
   "private": false,
   "files": [
     "dist"
@@ -39,7 +39,7 @@
     "bootstrap-vue": "^2.21.2",
     "c32check": "^1.1.2",
     "jsontokens": "^3.0.0",
-    "luxon": "^1.26.0",
+    "luxon": "^1.27.0",
     "moment": "^2.29.1",
     "qrcode": "^1.4.4",
     "risidio-rates": "^1.0.10",
@@ -63,7 +63,8 @@
     "eslint-plugin-promise": "^5.1.0",
     "eslint-plugin-standard": "^5.0.0",
     "eslint-plugin-vue": "^7.9.0",
-    "vue-cli-plugin-webpack-bundle-analyzer": "~4.0.0",
+    "node-sass": "^4.14.1",
+    "sass-loader": "^8.0.2",
     "vue-template-compiler": "^2.6.12"
   },
   "eslintConfig": {
