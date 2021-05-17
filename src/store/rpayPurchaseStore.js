@@ -79,17 +79,19 @@ const rpayPurchaseStore = {
     getFormattedBiddingEndTime: (state, getters, rootState, rootGetters) => (contractAsset) => {
       let fbet = null
       if (contractAsset.saleData && contractAsset.saleData.biddingEndTime) {
-        let loaclEndM = moment(contractAsset.saleData.biddingEndTime)
-        if (loaclEndM.isBefore(moment({}))) {
-          loaclEndM = moment({}).add(2, 'days')
-        }
-        const loaclEnd = loaclEndM.format('DD-MM-YY hh:mm')
+        const loaclEndM = moment(contractAsset.saleData.biddingEndTime)
+        // if (loaclEndM.isBefore(moment({}))) {
+        // loaclEndM = moment({}).add(2, 'days')
+        // }
+        // const loaclEnd = loaclEndM.format('DD-MM-YY hh:mm')
+        const loaclEnd = loaclEndM.format('ddd, MMMM Do, h:mma') + ' BST'
         fbet = loaclEnd
       } else {
         const dd = moment({}).add(2, 'days')
         dd.hour(10)
         dd.minute(0)
-        fbet = dd.format()
+        // fbet = dd.format()
+        fbet = dd.format('ddd, MMMM Do, h:mma') + ' BST'
       }
       return fbet
     },

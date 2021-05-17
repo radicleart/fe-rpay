@@ -185,7 +185,7 @@ const rpayAuthStore = {
       })
     },
     startLogin ({ state, dispatch, commit, rootGetters }) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const authOptions = {
           sendToSignIn: false,
@@ -213,10 +213,18 @@ const rpayAuthStore = {
             icon: origin + '/img/logo/logo.png'
           }
         }
-        if (BLOCKSTACK_LOGIN === 1) {
-          showConnect(authOptions)
-        } else {
-          authenticate(authOptions)
+        try {
+          if (BLOCKSTACK_LOGIN === 1) {
+            showConnect(authOptions).catch((err) => {
+              reject(err)
+            })
+          } else {
+            authenticate(authOptions).catch((err) => {
+              reject(err)
+            })
+          }
+        } catch (err) {
+          reject(err)
         }
       })
     },
