@@ -59,19 +59,26 @@ const getProfile = function (network) {
       if (uname && !name) {
         name = uname.substring(0, uname.indexOf('.'))
       }
+      const stxAddress = (network === 'mainnet') ? account.profile.stxAddress.mainnet : account.profile.stxAddress.testnet
+
       const isAdmin =
         uname === 'mike.personal.id' ||
         // celine
         account.identityAddress.indexOf('1FwYY6Xjp2xDBn62WvTvX9LY6PH2EvQSJ1') > -1 ||
         uname.indexOf('1FwYY6Xjp2xDBn62WvTvX9LY6PH2EvQSJ1') > -1 ||
-        uname.indexOf('radicle') > -1 ||
-        uname.indexOf('mijoco') > -1
+        uname.indexOf('radicle_art') > -1 ||
+        uname.indexOf('mijoco') > -1 ||
+        stxAddress === 'SPZRAE52H2NC2MDBEV8W99RFVPK8Q9BW8H88XV9N' || // cx
+        stxAddress === 'SP1CS4FVXC59S65C3X1J3XRNZGWTG212JT7CG73AG' || // dash
+        stxAddress === 'SP162D87CY84QVVCMJKNKGHC7GGXFGA0TAR9D0XJW' || // jim
+        stxAddress === 'ST162D87CY84QVVCMJKNKGHC7GGXFGA0TAV32Q5TK' // jim testnet
+
       myProfile = {
         gaiaHubConfig: account.gaiaHubConfig,
         identityAddress: account.identityAddress,
         hubUrl: account.hubUrl,
         loggedIn: true,
-        stxAddress: (network === 'mainnet') ? account.profile.stxAddress.mainnet : account.profile.stxAddress.testnet,
+        stxAddress: stxAddress,
         superAdmin: isAdmin,
         name: name,
         description: account.profile.description,
@@ -215,13 +222,9 @@ const rpayAuthStore = {
         }
         try {
           if (BLOCKSTACK_LOGIN === 1) {
-            showConnect(authOptions).catch((err) => {
-              reject(err)
-            })
+            showConnect(authOptions)
           } else {
-            authenticate(authOptions).catch((err) => {
-              reject(err)
-            })
+            authenticate(authOptions)
           }
         } catch (err) {
           reject(err)

@@ -32,6 +32,7 @@ export const APP_CONSTANTS = {
   KEY_EXCHANGE_RATE: 'rpayCategoryStore/getExchangeRateFormatted',
   KEY_STX_AMOUNT: 'rpayCategoryStore/getStxAmountFormatted',
 
+  KEY_DB_OFFERS: 'rpayPurchaseStore/getDbOffers',
   KEY_BIDDING_CURRENT_BID: 'rpayPurchaseStore/getCurrentBid',
   KEY_BIDDING_NEXT_BID: 'rpayPurchaseStore/getNextBid',
   KEY_SALES_BUTTON_LABEL: 'rpayPurchaseStore/getSalesButtonLabel',

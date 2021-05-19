@@ -33,6 +33,7 @@ const intCurrentBid = function (contractAsset) {
   }
   currentBid.reserveMet = currentBid.amount >= contractAsset.saleData.reservePrice
   currentBid.nextBidAmount = currentBid.amount + contractAsset.saleData.incrementPrice
+  currentBid.nextBidAmountFmt = Number(currentBid.nextBidAmount).toLocaleString()
   return currentBid
 }
 
@@ -67,12 +68,19 @@ const rpayPurchaseStore = {
     getCurrentBid: (state) => (contractAsset) => {
       return intCurrentBid(contractAsset)
     },
+    isOpeningBid: (state) => (contractAsset) => {
+      return isOpeneningBid(contractAsset)
+    },
     getNextBid: (state, rootGetters) => (contractAsset) => {
       if (!contractAsset) return
       const currentBid = intCurrentBid(contractAsset)
-      const nextBidAmount = currentBid.amount + contractAsset.saleData.incrementPrice
+      let nextBidAmount = currentBid.amount
+      if (!isOpeneningBid(contractAsset)) {
+        nextBidAmount += contractAsset.saleData.incrementPrice
+      }
       return {
         amount: nextBidAmount,
+        amountFmt: Number(nextBidAmount).toLocaleString(),
         reserveMet: nextBidAmount >= contractAsset.saleData.reservePrice
       }
     },
@@ -124,8 +132,7 @@ const rpayPurchaseStore = {
       state.dbOffers = dbOffers
     },
     addOffer: (state, dbOffer) => {
-      state.dbOffers.splice(0, 0, dbOffer)
-      const index = state.dbOffers.findIndex((o) => o.offerer === dbOffer.offerer)
+      const index = state.dbOffers.findIndex((o) => o.id === dbOffer.id)
       if (index < 0) {
         state.dbOffers.splice(0, 0, dbOffer)
       } else {
@@ -134,6 +141,18 @@ const rpayPurchaseStore = {
     }
   },
   actions: {
+    cancelOffer ({ commit, rootGetters }, data) {
+      return new Promise(function (resolve, reject) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        data.status = -1
+        axios.post(configuration.risidioBaseApi + '/mesh/v2/register/offer', data).then(() => {
+          commit('addOffer', data)
+          resolve(data)
+        }).catch((error) => {
+          reject(new Error('Unable to register offer: ' + error))
+        })
+      })
+    },
     registerOfferOffChain ({ commit, rootGetters }, data) {
       return new Promise(function (resolve, reject) {
         const configuration = rootGetters['rpayStore/getConfiguration']
@@ -145,11 +164,22 @@ const rpayPurchaseStore = {
         })
       })
     },
+    registerForUpdates ({ commit, rootGetters }, data) {
+      return new Promise(function (resolve, reject) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.post(configuration.risidioBaseApi + '/mesh/v2/register/email', data).then((result) => {
+          commit('addRegisteredEmail', data)
+          resolve(result)
+        }).catch((error) => {
+          reject(new Error('Unable to register email: ' + error))
+        })
+      })
+    },
     fetchOffers ({ commit, rootGetters }) {
       return new Promise(function (resolve, reject) {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
-        axios.post(configuration.risidioBaseApi + '/mesh/v2/secure/fetch/offers', {}, { headers: authHeaders }).then((response) => {
+        // const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        axios.get(configuration.risidioBaseApi + '/mesh/v2/fetch/offers').then((response) => {
           commit('setDbOffers', response.data)
           resolve(response.data)
         }).catch((error) => {
