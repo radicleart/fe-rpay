@@ -55,7 +55,6 @@ export default {
     const query = Object.assign({}, this.$route.query)
     delete query.filter
     this.$router.replace({ query }).catch(() => {
-      console.log('avoided duplicate navigation..')
     })
   },
   methods: {

@@ -48,7 +48,7 @@ const rpayPurchaseStore = {
     dbOffers: [],
     provider: 'stacks',
     buttonText: ['NOT FOR SALE', 'BUY NOW', 'PLACE BID', 'MAKE AN OFFER'],
-    badgeText: ['AUCTION STARTS SOON!!', 'BUY NOW', 'AUCTION ENDS', 'ON AUCTION']
+    badgeText: ['AUCTION STARTS SOON!!', 'BUY NOW', 'AUCTION ENDS', 'AUCTION STARTS']
   },
   getters: {
     getRecipientAddress: (state, getters, rootState, rootGetters) => (owner) => {

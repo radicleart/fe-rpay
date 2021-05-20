@@ -9,6 +9,7 @@ const lsatHelper = {
   startListening (paymentId) {
     socket = new SockJS('API_PATH' + '/lsat/ws1/mynews')
     stompClient = Stomp.over(socket)
+    stompClient.debug = () => {}
     stompClient.connect({}, function () {
       stompClient.subscribe('/queue/mynews-' + paymentId, function (response) {
         const invoice = JSON.parse(response.body)

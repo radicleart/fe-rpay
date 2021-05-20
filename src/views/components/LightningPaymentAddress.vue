@@ -72,7 +72,6 @@ export default {
       QRCode.toCanvas(element, paymentUri, { errorCorrectionLevel: 'H' },
         function (error) {
           if (error) console.error(error)
-          console.log('success!')
         })
     },
     addChannelQrCode () {
@@ -82,7 +81,6 @@ export default {
         element, this.channel, { errorCorrectionLevel: 'H' },
         function (error) {
           if (error) console.error(error)
-          console.log('success!')
         })
     },
     copyAddress () {

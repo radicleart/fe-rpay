@@ -31,13 +31,6 @@ const precision = 1000000
 const contractDeployFee = 60000
 const testnet = new StacksTestnet()
 const mainnet = new StacksMainnet()
-/**
-const client = await connectWebSocketClient('ws://stacks-node-api.blockstack.org/')
-const sub = await client.subscribeAddressTransactions(contractCall.txId, event => {
-  console.log(event)
-})
-await sub.unsubscribe()
-**/
 
 const unsubscribeApiNews = function () {
   if (socket && stompClient) {
@@ -48,8 +41,8 @@ const unsubscribeApiNews = function () {
 const subscribeApiNews = function (commit, connectUrl, contractId, assetHash, network) {
   if (!socket) socket = new SockJS(connectUrl + '/api-news')
   if (!stompClient) stompClient = Stomp.over(socket)
+  stompClient.debug = () => {}
   socket.onclose = function () {
-    console.log('close')
     stompClient.disconnect()
   }
   stompClient.connect({}, function () {
@@ -105,7 +98,6 @@ const captureResult = function (dispatch, commit, rootGetters, result) {
   }
   subscribeApiNews(commit, connectUrl, contractId, result.assetHash, configuration.network)
   axios.get(useApi).then(response => {
-    console.log(response)
   }).catch((error) => {
     console.log(error)
   })
@@ -352,9 +344,6 @@ const rpayStacksStore = {
     callContractReadOnly ({ commit, state, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        if (state) {
-          console.log(state)
-        }
         const path = '/v2/contracts/call-read/' + data.contractAddress + '/' + data.contractName + '/' + data.functionName
         const txOptions = {
           path: path,

@@ -6,7 +6,6 @@ let NFT_CONTRACT_ADDRESS = null
 let NETWORK = 'testnet'
 
 const getABI = function () {
-  console.log(abiContract)
   // const NFT_ABI = JSON.parse(abiContract) // .toString()
   return abiContract
 }

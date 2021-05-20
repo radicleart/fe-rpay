@@ -59,8 +59,8 @@ const getPaymentOptions = function (configuration) {
 const subscribeApiNews = function (commit, connectUrl, paymentId) {
   if (!socket) socket = new SockJS(connectUrl + '/api-news')
   if (!stompClient) stompClient = Stomp.over(socket)
+  stompClient.debug = () => {}
   socket.onclose = function () {
-    console.log('close')
     stompClient.disconnect()
   }
   stompClient.connect({}, function () {
