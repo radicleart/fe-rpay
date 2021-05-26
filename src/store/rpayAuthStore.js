@@ -68,6 +68,8 @@ const getProfile = function (network) {
         uname.indexOf('1FwYY6Xjp2xDBn62WvTvX9LY6PH2EvQSJ1') > -1 ||
         uname.indexOf('radicle_art') > -1 ||
         uname.indexOf('mijoco') > -1 ||
+        stxAddress === 'SP8J1AZT3M85QCVTN2CNKFMBSKJXR1NQ9EWDEGCE' || // cx
+        stxAddress === 'ST8J1AZT3M85QCVTN2CNKFMBSKJXR1NQ9DTRS56F' || // cx
         stxAddress === 'SPZRAE52H2NC2MDBEV8W99RFVPK8Q9BW8H88XV9N' || // cx
         stxAddress === 'SP1CS4FVXC59S65C3X1J3XRNZGWTG212JT7CG73AG' || // dash
         stxAddress === 'SP162D87CY84QVVCMJKNKGHC7GGXFGA0TAR9D0XJW' || // jim
@@ -83,7 +85,7 @@ const getProfile = function (network) {
         name: name,
         description: account.profile.description,
         avatarUrl: account.profile.avatarUrl,
-        username: account.username
+        username: account.username || stxAddress
       }
     }
     return myProfile
