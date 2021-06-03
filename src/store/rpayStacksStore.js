@@ -192,7 +192,7 @@ const rpayStacksStore = {
       })
     },
     fetchMacSkyWalletInfo ({ commit, dispatch, rootGetters }) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const walletMac = JSON.parse(configuration.risidioWalletMac)
         const walletSky = JSON.parse(configuration.risidioWalletSky)
@@ -204,7 +204,11 @@ const rpayStacksStore = {
           dispatch('fetchWalletInternal', walletSky).then((wallet) => {
             commit('setSkysWallet', wallet)
             resolve(wallet)
+          }).catch((err) => {
+            reject(new Error(err))
           })
+        }).catch((err) => {
+          reject(new Error(err))
         })
       })
     },

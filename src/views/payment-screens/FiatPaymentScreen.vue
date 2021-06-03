@@ -44,7 +44,7 @@
 
 <script>
 import { APP_CONSTANTS } from '@/app-constants'
-import TestPayments from '@/views/components/TestPayments'
+import TestPayments from '@/views/payment-screens/components/TestPayments'
 
 export default {
   name: 'paymentForm',
@@ -126,6 +126,31 @@ export default {
 
       // SqPaymentForm callback functions
       callbacks: {
+        createPaymentRequest: function () {
+          return {
+            requestShippingAddress: false,
+            requestBillingInfo: true,
+            shippingContact: {
+              familyName: 'Buyer',
+              givenName: 'The',
+              email: 'info@risidio.com',
+              country: 'USA',
+              region: 'CA',
+              city: 'San Francisco',
+              addressLines: [
+                '123 Main St'
+              ],
+              postalCode: '94114'
+            },
+            currencyCode: 'USD',
+            countryCode: 'US',
+            total: {
+              label: 'devs-Acceptance',
+              amount: '1',
+              pending: false
+            }
+          }
+        },
         /*
            * callback function: methodsSupported
            * Triggered when: the page is loaded.

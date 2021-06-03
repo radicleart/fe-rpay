@@ -30,8 +30,8 @@
 import { APP_CONSTANTS } from '@/app-constants'
 import CryptoPaymentScreen from './payment-screens/CryptoPaymentScreen'
 import CryptoPicker from './payment-screens/CryptoPicker'
-import CryptoOptions from '@/views/components/CryptoOptions'
-import OrderInfo from '@/views/components/OrderInfo'
+import CryptoOptions from '@/views/payment-screens/components/CryptoOptions'
+import OrderInfo from '@/views/payment-screens/components/OrderInfo'
 import ResultPage from '@/views/ResultPage'
 import FooterView from '@/views/components/FooterView'
 

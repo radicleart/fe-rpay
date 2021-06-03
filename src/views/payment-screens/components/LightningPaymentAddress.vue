@@ -35,7 +35,7 @@
 import QRCode from 'qrcode'
 import Vue from 'vue'
 import { APP_CONSTANTS } from '@/app-constants'
-import CryptoCountdown from '@/views/components/CryptoCountdown'
+import CryptoCountdown from '@/views/payment-screens/components/CryptoCountdown'
 
 export default {
   name: 'LightningPaymentAddress2',

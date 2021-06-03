@@ -24,26 +24,6 @@ const tokenFromHash = function (registry, ahash) {
   return myToken
 }
 
-/**
-export async function fetchAppGaiaHubUrl(username) {
-  const response = await fetch(`https://core.blockstack.org/v1/users/${username}`);
-  const zonefile = await response.json(); // the users zonefile
-
-  const app = APP_URL; // the app you're looking for, eg 'http://localhost:3000'
-  const zone_file = Object.values(zonefile)?.[0] as any;
-
-  // account for both legacy use and the new format from the extension
-  if (zone_file?.profile.apps || zone_file?.profile.appsMeta) {
-    if (zone_file.profile?.appsMeta?.[app]) {
-      return zone_file.profile?.appsMeta?.[app].storage;
-    }
-    if (zone_file.profile?.apps?.[app]) {
-      return zone_file.profile?.apps?.[app];
-    }
-  }
-  throw Error('Cannot find zonefile');
-}
-**/
 const replaceTokenFromHash = function (state, data) {
   let result = false
   try {

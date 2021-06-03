@@ -24,10 +24,10 @@
 
 <script>
 import { APP_CONSTANTS } from '@/app-constants'
-import LightningPaymentAddress from '@/views/components/LightningPaymentAddress'
-import BitcoinPaymentAddress from '@/views/components/BitcoinPaymentAddress'
-import StacksPaymentAddress from '@/views/components/StacksPaymentAddress'
-import EthereumPaymentAddress from '@/views/components/EthereumPaymentAddress'
+import LightningPaymentAddress from '@/views/payment-screens/components/LightningPaymentAddress'
+import BitcoinPaymentAddress from '@/views/payment-screens/components/BitcoinPaymentAddress'
+import StacksPaymentAddress from '@/views/payment-screens/components/StacksPaymentAddress'
+import EthereumPaymentAddress from '@/views/payment-screens/components/EthereumPaymentAddress'
 import FiatPaymentScreen from '@/views/payment-screens/FiatPaymentScreen'
 
 export default {
@@ -65,7 +65,7 @@ export default {
   computed: {
     desktopWalletSupported () {
       const paymentOption = this.$store.getters[APP_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
-      return paymentOption === 'bitcoin' || paymentOption === 'lightning'
+      return paymentOption === 'bitcoin' || paymentOption === 'lightning' || paymentOption === 'stacks1'
     },
     paymentOption () {
       const paymentOption = this.$store.getters[APP_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]

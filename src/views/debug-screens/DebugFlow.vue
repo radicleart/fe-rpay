@@ -191,13 +191,19 @@ export default {
     }
     this.$store.dispatch('rpayStacksStore/callContractReadOnly', config).then((result) => {
       this.contractBalance = result.result
+    }).catch((err) => {
+      console.log(err)
     })
     this.$store.dispatch('rpayAuthStore/fetchMyAccount').then((profile) => {
       this.$store.dispatch('rpayAuthStore/fetchAccountInfo', { stxAddress: profile.stxAddress, force: true })
       this.loaded = true
       this.$store.dispatch('rpayPurchaseStore/fetchOffers').then((dbOffers) => {
         this.dbOffers = dbOffers
+      }).catch((err) => {
+        console.log(err)
       })
+    }).catch((err) => {
+      console.log(err)
     })
     const $self = this
     const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]

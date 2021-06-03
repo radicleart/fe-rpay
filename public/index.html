@@ -64,17 +64,17 @@
         amountFiat: 0.5,
         currency: 'GBP',
         paymentCode: 'po-12324',
-        allowMultiples: true,
+        allowMultiples: false,
         stxPaymentAddress: 'ST1R1061ZT6KPJXQ7PAXPFB6ZAZ6ZWW28G8HXK9G5',
         ethPaymentAddress: '0xe31b011344f3f03dba31eeb12308fa446165b7b4',
-        paymentOption: 'stacks',
+        paymentOption: 'fiat',
         paymentOptions: [
           { allowFiat: true },
           { allowBitcoin: true },
           { allowLightning: true },
           { allowStacks: true }, 
           { allowLSAT: false },
-          { allowEthereum: true }
+          { allowEthereum: false }
         ],
         creditAttributes: {
           start: 5,
@@ -168,6 +168,7 @@
         minter: minter,
         network: useNetwork,
         risidioProjectId: null, // 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW.thisisnumberone-v1',
+        loginRequired: 1, // centralised or decentralised login is required
         risidioBaseApi: risidioBaseApi,
         risidioStacksApi: 'http://localhost:20443',
         risidioWalletMac: '{"label": "MacMock", "mnemonic": "","keyInfo": {"privateKey": "4790db90a48e51bdbbc62a37fdc535719c22e195dc1aa6e1725b30bffc569ce501","address": "ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW","btcAddress": "","index": 0}}',

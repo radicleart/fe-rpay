@@ -29,7 +29,7 @@
 <script>
 import QRCode from 'qrcode'
 import { APP_CONSTANTS } from '@/app-constants'
-import CryptoCountdown from '@/views/components/CryptoCountdown'
+import CryptoCountdown from '@/views/payment-screens/components/CryptoCountdown'
 
 export default {
   name: 'BitcoinPaymentAddress',

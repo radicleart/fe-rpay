@@ -1,18 +1,18 @@
 <template>
 <div class="" v-if="loaded" id="rpay-pay-card">
-  <div :class="(showDebug) ? 'col-12' : 'col-12'" v-if="risidioCardMode === 'payment-flow'">
-    <payment-flow/>
-  </div>
-  <div :class="(showDebug) ? 'col-12' : 'col-12'" v-else-if="risidioCardMode === 'minting-flow'">
-    <minting-flow/>
-  </div>
-  <div :class="(showDebug) ? 'col-12' : 'col-12'" v-else-if="risidioCardMode === 'selling-flow'">
-    <selling-flow v-if="configured" :gaiaAsset="gaiaAsset"/>
-  </div>
-  <div :class="(showDebug) ? 'col-12' : 'col-12'" v-else-if="risidioCardMode === 'purchase-flow'">
-    <purchase-flow v-if="configured" :gaiaAsset="gaiaAsset"/>
-  </div>
-  <div class="col-6 text-white" v-if="showDebug">
+    <div class="col-12" v-if="risidioCardMode === 'payment-flow'">
+      <payment-flow />
+    </div>
+    <div class="col-12" v-else-if="risidioCardMode === 'minting-flow'">
+      <minting-flow/>
+    </div>
+    <div class="col-12" v-else-if="risidioCardMode === 'selling-flow'">
+      <selling-flow v-if="configured" :gaiaAsset="gaiaAsset"/>
+    </div>
+    <div class="col-12" v-else-if="risidioCardMode === 'purchase-flow'">
+      <purchase-flow v-if="configured" :gaiaAsset="gaiaAsset"/>
+    </div>
+  <div class="col-12 text-white" v-if="showDebug">
     <debug-flow/>
   </div>
 </div>
@@ -140,6 +140,11 @@ export default {
     gaiaAsset () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return configuration.gaiaAsset
+    },
+    loginRequired () {
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      const profile = this.$store.getters[APP_CONSTANTS.KEY_PROFILE]
+      return configuration.loginRequired > 0 && !profile.loggedIn
     }
   }
 }

@@ -196,6 +196,11 @@ const rpayAuthStore = {
     startLogin ({ state, dispatch, commit, rootGetters }) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
+        const defDetails = {
+          name: 'Risidio #1 in NFTs',
+          icon: origin + '/img/logo/logo.png'
+        }
+        const appDetails = (configuration.appDetails) ? configuration.appDetails : defDetails
         const authOptions = {
           sendToSignIn: false,
           userSession: userSession,
@@ -217,10 +222,7 @@ const rpayAuthStore = {
             })
             // location.assign('/')
           },
-          appDetails: {
-            name: 'Risidio #1 in NFTs',
-            icon: origin + '/img/logo/logo.png'
-          }
+          appDetails: appDetails
         }
         try {
           if (BLOCKSTACK_LOGIN === 1) {

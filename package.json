@@ -1,6 +1,6 @@
 {
   "name": "risidio-pay",
-  "version": "0.3.80",
+  "version": "0.3.84",
   "private": false,
   "files": [
     "dist"
@@ -16,7 +16,7 @@
     "build": "vue-cli-service build",
     "build-stag": "vue-cli-service build --mode staging",
     "build:npm": "vue-cli-service build --mode production --target lib --name risidio-pay src/RisidioPay.vue",
-    "serve": "vue-cli-service serve",
+    "serve": "vue-cli-service serve --port=8082",
     "lint": "vue-cli-service lint",
     "build-app": "vue-cli-service build --mode development",
     "build-app-stag": "vue-cli-service build --mode staging",

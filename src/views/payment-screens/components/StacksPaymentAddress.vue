@@ -1,6 +1,11 @@
 <template>
 <div class="mx-5 mt-4 d-flex flex-column align-items-center">
-  <div>
+  <div v-if="installBrowserFlow">
+    <div class="text-center ">
+      <span><b-button variant="warning"><a class="" target="_blank" href="https://www.hiro.so/wallet/install-web">Install stacks wallet</a></b-button></span>
+    </div>
+  </div>
+  <div v-else>
     <div title="Make Payment">
       <div class="text-center" v-if="desktopWalletSupported">
         <canvas ref="lndQrcode"></canvas>
@@ -20,9 +25,6 @@
       <span class="text-small text-danger">{{errorMessage}}</span>
     </div>
   </div>
-  <div class="text-center ">
-    <span><a class="text-small text-info" target="_blank" href="https://www.hiro.so/wallet/install-web">Install stacks wallet</a></span>
-  </div>
 </div>
 </template>
 
@@ -41,6 +43,7 @@ export default {
   data () {
     return {
       errorMessage: null,
+      installBrowserFlow: false,
       waitingMessage: 'Open Connect Wallet to proceed (sending transactions to the stacks network takes a minute or so...)'
     }
   },
@@ -72,17 +75,22 @@ export default {
         window.eventBus.$emit('rpayEvent', data)
         this.$store.commit('rpayStore/setDisplayCard', 104)
       }).catch((e) => {
-        this.$store.dispatch('rpayStacksStore/makeTransferRisidio', { amountStx: configuration.payment.amountStx, paymentAddress: configuration.payment.stxPaymentAddress }).then((result) => {
-          this.waitingMessage = 'Processed Payment'
-          this.loading = false
-          data.txId = result.txId
-          window.eventBus.$emit('rpayEvent', data)
-          this.$store.commit('rpayStore/setDisplayCard', 104)
-        }).catch((e) => {
-          this.errorMessage = 'Unable to transfer funds at the moment - please try later or choose an alternate payment method'
-          this.$store.commit('rpayStore/setDisplayCard', 104)
-          this.loading = false
-        })
+        if (e) {
+          this.installBrowserFlow = true
+          // this.$store.commit('rpayStore/setDisplayCard', 104)
+        } else {
+          this.$store.dispatch('rpayStacksStore/makeTransferRisidio', { amountStx: configuration.payment.amountStx, paymentAddress: configuration.payment.stxPaymentAddress }).then((result) => {
+            this.waitingMessage = 'Processed Payment'
+            this.loading = false
+            data.txId = result.txId
+            window.eventBus.$emit('rpayEvent', data)
+            this.$store.commit('rpayStore/setDisplayCard', 104)
+          }).catch((e) => {
+            this.errorMessage = 'Unable to transfer funds at the moment - please try later or choose an alternate payment method'
+            this.$store.commit('rpayStore/setDisplayCard', 104)
+            this.loading = false
+          })
+        }
       })
     },
     paymentUri () {
