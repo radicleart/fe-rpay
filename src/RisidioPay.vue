@@ -97,8 +97,9 @@ export default {
     this.$store.dispatch('rpayStacksStore/fetchMacSkyWalletInfo').then(() => {
       this.loaded = true
     }).catch(() => {
-      this.setPage()
+      // error here just means blockchain not running - can ignore and continue.
     })
+    this.loaded = true
     if (!agetter) {
       window.eventBus.$emit('rpayEvent', { opcode: 'configured' })
     }

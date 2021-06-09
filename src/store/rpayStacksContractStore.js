@@ -320,23 +320,14 @@ const rpayStacksContractStore = {
       if (!state.gaiaAssets) return
       if (!state.gaiaAssets[0]) state.gaiaAssets = []
       const index = state.gaiaAssets.findIndex((o) => o.assetHash === gaiaAsset.assetHash)
-      const index1 = state.gaiaAssets.findIndex((o) => o.artist === gaiaAsset.artist)
-      if (index1 > -1) {
-        return
-      }
+      // const index1 = state.gaiaAssets.findIndex((o) => o.artist === gaiaAsset.artist)
+      // if (index1 > -1) {
+      //   return
+      // }
       if (index === -1) {
         state.gaiaAssets.splice(0, 0, gaiaAsset)
       } else {
         state.gaiaAssets.splice(index, 1, gaiaAsset)
-      }
-    },
-    addContractWriteResult (state, asset) {
-      if (!state.gaiaAssets) return
-      const index = state.gaiaAssets.findIndex((o) => o.assetHash === asset.assetHash)
-      if (index === -1) {
-        state.gaiaAssets.splice(0, 0, asset)
-      } else {
-        state.gaiaAssets.splice(index, 1, asset)
       }
     },
     addStacksTransactions: (state, stacksTransaction) => {

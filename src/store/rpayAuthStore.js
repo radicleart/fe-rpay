@@ -63,11 +63,13 @@ const getProfile = function (network) {
 
       const isAdmin =
         uname === 'mike.personal.id' ||
+        uname === 'risidio.btc' ||
         // celine
         account.identityAddress.indexOf('1FwYY6Xjp2xDBn62WvTvX9LY6PH2EvQSJ1') > -1 ||
         uname.indexOf('1FwYY6Xjp2xDBn62WvTvX9LY6PH2EvQSJ1') > -1 ||
         uname.indexOf('radicle_art') > -1 ||
         uname.indexOf('mijoco') > -1 ||
+        stxAddress === 'SP3QSAJQ4EA8WXEDSRRKMZZ29NH91VZ6C5X88FGZQ' ||
         stxAddress === 'SP8J1AZT3M85QCVTN2CNKFMBSKJXR1NQ9EWDEGCE' || // cx
         stxAddress === 'ST8J1AZT3M85QCVTN2CNKFMBSKJXR1NQ9DTRS56F' || // cx
         stxAddress === 'SPZRAE52H2NC2MDBEV8W99RFVPK8Q9BW8H88XV9N' || // cx

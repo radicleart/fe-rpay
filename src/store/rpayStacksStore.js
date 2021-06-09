@@ -199,14 +199,16 @@ const rpayStacksStore = {
         commit('setMacsWallet', walletMac)
         commit('setSkysWallet', walletSky)
         dispatch('fetchWalletInternal', walletMac).then((wallet) => {
-          commit('setMacsWallet', wallet)
-          resolve(wallet)
-          dispatch('fetchWalletInternal', walletSky).then((wallet) => {
-            commit('setSkysWallet', wallet)
+          if (wallet) {
+            commit('setMacsWallet', wallet)
             resolve(wallet)
-          }).catch((err) => {
-            reject(new Error(err))
-          })
+            dispatch('fetchWalletInternal', walletSky).then((wallet) => {
+              commit('setSkysWallet', wallet)
+              resolve(wallet)
+            }).catch((err) => {
+              reject(new Error(err))
+            })
+          }
         }).catch((err) => {
           reject(new Error(err))
         })
@@ -223,16 +225,9 @@ const rpayStacksStore = {
         if (configuration.network === 'local') {
           axios.post(configuration.risidioBaseApi + '/mesh/v2/accounts', data).then(response => {
             handleFetchWalletInternal(wallet, response, commit, resolve)
-          }).catch((error) => {
-            resolveError(commit, reject, error)
           })
         } else {
-          const useApi = configuration.risidioStacksApi + '/v2/accounts/' + wallet.keyInfo.address
-          axios.get(useApi).then(response => {
-            handleFetchWalletInternal(wallet, response, commit, resolve)
-          }).catch((error) => {
-            resolveError(commit, reject, error)
-          })
+          resolve()
         }
       })
     },
@@ -441,7 +436,6 @@ const rpayStacksStore = {
             result.network = 15
             result.opcode = 'stx-contract-read'
             resolve(result)
-            commit('rpayStacksContractStore/addContractWriteResult', result, { root: true })
             window.eventBus.$emit('rpayEvent', result)
           } else {
             resolve(null)
