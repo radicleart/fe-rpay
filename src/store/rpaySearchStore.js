@@ -76,10 +76,10 @@ const rpaySearchStore = {
       if (assetHash && state.searchResults && state.searchResults.length > 0) {
         const asset = state.searchResults.find(o => o.assetHash === assetHash)
         item = asset
-      } if (item === null) {
+      } if (item) {
         item = rootGetters['rpayStacksContractStore/getGaiaAssetByHash'](assetHash)
       }
-      if (item !== null) item.contractAsset = contractAsset
+      if (item) item.contractAsset = contractAsset
       return item
     },
     getProjects: (state) => {

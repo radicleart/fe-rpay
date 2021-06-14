@@ -50,17 +50,19 @@ const fetchAllGaiaData = function (commit, registry, appDataMap) {
   if (appDataMap) {
     const keySet = Object.keys(appDataMap)
     keySet.forEach((thisKey) => {
-      const assetKeySet = Object.keys(appDataMap[thisKey])
-      assetKeySet.forEach((thatKey) => {
-        const strAss = appDataMap[thisKey]
-        const strAss1 = strAss[thatKey]
-        const gaiaAsset = JSON.parse(strAss1)
-        const token = tokenFromHash(registry, gaiaAsset.assetHash)
-        if (token) {
-          // gaiaAsset = Object.assign(gaiaAsset, token)
-          commit('addGaiaAsset', gaiaAsset)
-        }
-      })
+      if (appDataMap[thisKey]) {
+        const assetKeySet = Object.keys(appDataMap[thisKey])
+        assetKeySet.forEach((thatKey) => {
+          const strAss = appDataMap[thisKey]
+          const strAss1 = strAss[thatKey]
+          const gaiaAsset = JSON.parse(strAss1)
+          const token = tokenFromHash(registry, gaiaAsset.assetHash)
+          if (token) {
+            // gaiaAsset = Object.assign(gaiaAsset, token)
+            commit('addGaiaAsset', gaiaAsset)
+          }
+        })
+      }
       /**
       const rootFile = JSON.parse(appDataMap[thisKey])
       if (rootFile && rootFile.records && rootFile.records.length > -1) {

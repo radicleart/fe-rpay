@@ -1,6 +1,6 @@
 <template>
 <div class="footer-container">
-  <b-form-input disabled id="range-2" type="range" min="0" max="2" step="1"></b-form-input>
+  <b-form-input disabled id="range-2" :value="rangeValue" type="range" min="0" max="2" step="1"></b-form-input>
   <div class="d-flex justify-content-between" style="font-size: 11px;">
     <div :class="(displayCard === 100) ? 'text-bold' : 'text-300'" class="click-effect" @click="skipAhead(0)">Select Amount</div>
     <div :class="(displayCard === 102) ? 'text-bold' : 'text-300'" class="click-effect" @click="skipAhead(1)">Make Payment</div>
@@ -16,7 +16,6 @@ export default {
   name: 'FooterView',
   components: {
   },
-  props: ['rangeValue'],
   data () {
     return {
     }
@@ -40,6 +39,12 @@ export default {
     displayCard () {
       const displayCard = this.$store.getters[APP_CONSTANTS.KEY_DISPLAY_CARD]
       return displayCard
+    },
+    rangeValue () {
+      const displayCard = this.displayCard
+      if (displayCard === 100) return 0
+      else if (displayCard === 102) return 1
+      else return 2
     }
   }
 }

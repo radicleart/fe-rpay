@@ -208,13 +208,15 @@ const rpayStacksStore = {
             }).catch((err) => {
               reject(new Error(err))
             })
+          } else {
+            resolve()
           }
         }).catch((err) => {
           reject(new Error(err))
         })
       })
     },
-    fetchWalletInternal ({ state, commit, rootGetters }, wallet) {
+    fetchWalletInternal ({ commit, rootGetters }, wallet) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const data = {
@@ -225,6 +227,8 @@ const rpayStacksStore = {
         if (configuration.network === 'local') {
           axios.post(configuration.risidioBaseApi + '/mesh/v2/accounts', data).then(response => {
             handleFetchWalletInternal(wallet, response, commit, resolve)
+          }).catch(() => {
+            resolve()
           })
         } else {
           resolve()
@@ -564,11 +568,13 @@ const rpayStacksStore = {
       return new Promise((resolve, reject) => {
         const amount = Math.round(data.amountStx * precision)
         // amount = parseInt(amount, 16)
+        const configuration = rootGetters['rpayStore/getConfiguration']
         const amountBN = new BigNum(amount)
         openSTXTransfer({
           recipient: data.paymentAddress,
           // network: network,
           amount: amountBN,
+          network: (configuration.network === 'mainnet') ? mainnet : testnet,
           memo: 'Payment for credits',
           appDetails: {
             name: state.appName,

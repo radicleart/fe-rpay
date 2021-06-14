@@ -1,17 +1,17 @@
 <template>
 <div class="" v-if="loaded" id="rpay-pay-card">
-    <div class="col-12" v-if="risidioCardMode === 'payment-flow'">
-      <payment-flow />
-    </div>
-    <div class="col-12" v-else-if="risidioCardMode === 'minting-flow'">
-      <minting-flow/>
-    </div>
-    <div class="col-12" v-else-if="risidioCardMode === 'selling-flow'">
-      <selling-flow v-if="configured" :gaiaAsset="gaiaAsset"/>
-    </div>
-    <div class="col-12" v-else-if="risidioCardMode === 'purchase-flow'">
-      <purchase-flow v-if="configured" :gaiaAsset="gaiaAsset"/>
-    </div>
+  <div class="col-12" v-if="risidioCardMode === 'payment-flow'">
+    <payment-flow />
+  </div>
+  <div class="col-12" v-else-if="risidioCardMode === 'minting-flow'">
+    <minting-flow/>
+  </div>
+  <div class="col-12" v-else-if="risidioCardMode === 'selling-flow'">
+    <selling-flow v-if="configured" :gaiaAsset="gaiaAsset"/>
+  </div>
+  <div class="col-12" v-else-if="risidioCardMode === 'purchase-flow'">
+    <purchase-flow v-if="configured" :gaiaAsset="gaiaAsset"/>
+  </div>
   <div class="col-12 text-white" v-if="showDebug">
     <debug-flow/>
   </div>
@@ -121,6 +121,15 @@ export default {
     defLF: function () {
       return {
         labels: {
+          variant0: 'danger',
+          variant1: 'warning',
+          variant2: 'info',
+          variant3: 'light',
+          labels: {
+            title: 'Mint Your Item',
+            numberUnits: 'How many spins?',
+            quantityLabel: 'Tokens'
+          },
           numberUnits: 'How many items?',
           orderMsg: 'Place order for \'STX to Lightning\' select number required and pay.',
           successMsg: 'Your order has been received with thanks.',

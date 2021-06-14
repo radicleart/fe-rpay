@@ -2,7 +2,11 @@
 <div class="mx-5 mt-4 d-flex flex-column align-items-center">
   <div v-if="installBrowserFlow">
     <div class="text-center ">
-      <span><b-button variant="warning"><a class="" target="_blank" href="https://www.hiro.so/wallet/install-web">Install stacks wallet</a></b-button></span>
+      <span><b-button class="cp-btn-order" variant="outline-danger"><a style="text-decoration: none;" target="_blank" href="https://www.hiro.so/wallet/install-web">Install stacks wallet</a></b-button></span>
+    </div>
+    <div class="text-center mt-5">
+      <div>Install the Stacks Web Wallet, create an account, transfer some STX then reload this page!</div>
+      <div class="mt-3">Need help? <a href="https://www.youtube.com/watch?v=oVEddTQ-95k" target="_blank">Check out our videos</a></div>
     </div>
   </div>
   <div v-else>
@@ -19,7 +23,7 @@
     </div>
     <div class="mt-5 text-center">
       <!--<b-button v-if="!loggedIn" class="cp-btn-order" :variant="$globalLookAndFeel.variant0" @click.prevent="doLogin()">Connect to Stacks</b-button> -->
-      <b-button class="cp-btn-order" :variant="$globalLookAndFeel.variant0" @click.prevent="sendPayment()">Send <span class="" v-html="currentSymbol"></span> {{currentAmount}}</b-button>
+      <b-button class="cp-btn-order" :variant="$globalLookAndFeel.variant0" @click.prevent="sendPayment()">{{buttonLabel}}</b-button>
     </div>
     <div class="my-3 text-center">
       <span class="text-small text-danger">{{errorMessage}}</span>
@@ -42,6 +46,7 @@ export default {
   props: ['desktopWalletSupported'],
   data () {
     return {
+      webWalletNeeded: false,
       errorMessage: null,
       installBrowserFlow: false,
       waitingMessage: 'Open Connect Wallet to proceed (sending transactions to the stacks network takes a minute or so...)'
@@ -60,6 +65,21 @@ export default {
       })
     },
     sendPayment () {
+      const profile = this.$store.getters[APP_CONSTANTS.KEY_PROFILE]
+      if (!profile.loggedIn) {
+        this.$store.dispatch('rpayAuthStore/startLogin').then(() => {
+          this.transfer()
+        }).catch((err) => {
+          console.log(err)
+          // https://www.hiro.so/wallet/install-web
+          this.installBrowserFlow = true
+          this.webWalletNeeded = true
+        })
+      } else {
+        this.transfer()
+      }
+    },
+    transfer () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       this.loading = true
       this.waitingMessage = 'Processing Payment'
@@ -75,22 +95,17 @@ export default {
         window.eventBus.$emit('rpayEvent', data)
         this.$store.commit('rpayStore/setDisplayCard', 104)
       }).catch((e) => {
-        if (e) {
-          this.installBrowserFlow = true
-          // this.$store.commit('rpayStore/setDisplayCard', 104)
-        } else {
-          this.$store.dispatch('rpayStacksStore/makeTransferRisidio', { amountStx: configuration.payment.amountStx, paymentAddress: configuration.payment.stxPaymentAddress }).then((result) => {
-            this.waitingMessage = 'Processed Payment'
-            this.loading = false
-            data.txId = result.txId
-            window.eventBus.$emit('rpayEvent', data)
-            this.$store.commit('rpayStore/setDisplayCard', 104)
-          }).catch((e) => {
-            this.errorMessage = 'Unable to transfer funds at the moment - please try later or choose an alternate payment method'
-            this.$store.commit('rpayStore/setDisplayCard', 104)
-            this.loading = false
-          })
-        }
+        this.$store.dispatch('rpayStacksStore/makeTransferRisidio', { amountStx: configuration.payment.amountStx, paymentAddress: configuration.payment.stxPaymentAddress }).then((result) => {
+          this.waitingMessage = 'Processed Payment'
+          this.loading = false
+          data.txId = result.txId
+          window.eventBus.$emit('rpayEvent', data)
+          this.$store.commit('rpayStore/setDisplayCard', 104)
+        }).catch((e) => {
+          this.errorMessage = 'Unable to transfer funds at the moment - please try later or choose an alternate payment method'
+          this.$store.commit('rpayStore/setDisplayCard', 104)
+          this.loading = false
+        })
       })
     },
     paymentUri () {
@@ -120,6 +135,10 @@ export default {
     }
   },
   computed: {
+    buttonLabel: function () {
+      if (this.webWalletNeeded) return 'Install Stacks Wallet'
+      return 'Send ' + this.currentAmount
+    },
     currentSymbol () {
       const paymentOption = this.$store.getters[APP_CONSTANTS.KEY_PAYMENT_OPTION_VALUE]
       if (paymentOption === 'ethereum') {
