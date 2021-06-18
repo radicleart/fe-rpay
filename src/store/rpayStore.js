@@ -362,7 +362,7 @@ const rpayStore = {
             if (savedInvoice) {
               if (savedInvoice.data.status === 'paid' || savedInvoice.data.status === 'processing') {
                 commit('setInvoice', savedInvoice)
-                savedInvoice.opcode = 'btc-crypto-payment-success'
+                savedInvoice.opcode = 'btc-crypto-payment-prior'
                 window.eventBus.$emit('rpayEvent', savedInvoice)
                 resolve(savedInvoice)
                 return

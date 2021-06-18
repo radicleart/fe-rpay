@@ -50,7 +50,7 @@ export default {
   methods: {
     doFinish () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      window.eventBus.$emit('rpayEvent', { opcode: configuration.payment.paymentOption + '-payment-success' })
+      window.eventBus.$emit('rpayEvent', { opcode: configuration.payment.paymentOption + '-payment-end' })
     },
     rangeEvent (displayCard) {
       this.$store.commit('rpayStore/setDisplayCard', displayCard)

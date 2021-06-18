@@ -371,15 +371,9 @@ const rpayPurchaseStore = {
     },
     buyNow ({ dispatch, rootGetters }, data) {
       return new Promise((resolve, reject) => {
-        const amount = new BigNum(utils.toOnChainAmount(data.buyNowOrStartingPrice))
         const functionArgs = [uintCV(data.nftIndex), standardPrincipalCV(data.owner), standardPrincipalCV(data.recipient)]
-        const standardSTXPostCondition = makeStandardSTXPostCondition(
-          data.pcAddress,
-          FungibleConditionCode.LessEqual,
-          amount
-        )
         const callData = {
-          postConditions: [standardSTXPostCondition],
+          postConditions: data.postConditions,
           contractAddress: data.contractAddress,
           contractName: data.contractName,
           functionName: 'buy-now',
