@@ -83,15 +83,22 @@ export default {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       this.loading = true
       this.waitingMessage = 'Processing Payment'
+      const profile = this.$store.getters[APP_CONSTANTS.KEY_PROFILE]
       const data = {
         numbCredits: configuration.payment.creditAttributes.start,
         status: 10,
-        opcode: 'stx-crypto-payment-success'
+        opcode: 'stx-crypto-payment-success',
+        currency: configuration.payment.currency,
+        amountFiat: Number(configuration.payment.amountFiat) * 100, // store in cents and pennies
+        amountStx: configuration.payment.amountStx,
+        amountBtc: configuration.payment.amountBtc,
+        sendingAddress: profile.stxAddress,
+        paymentAddress: configuration.payment.stxPaymentAddress
       }
       this.$store.dispatch('rpayStacksStore/makeTransferBlockstack', { amountStx: configuration.payment.amountStx, paymentAddress: configuration.payment.stxPaymentAddress }).then((result) => {
         this.waitingMessage = 'Processed Payment'
         this.loading = false
-        data.txId = result.txId
+        data.txId = (result && result.result) ? result.result.txId : 'unknown'
         window.eventBus.$emit('rpayEvent', data)
         this.$store.commit('rpayStore/setDisplayCard', 104)
       }).catch((e) => {

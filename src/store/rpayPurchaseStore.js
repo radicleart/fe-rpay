@@ -224,13 +224,20 @@ const rpayPurchaseStore = {
             data.owner = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
           }
         }
+        const profile = rootGetters['rpayAuthStore/getMyProfile']
         const amount = new BigNum(utils.toOnChainAmount(data.mintingFee))
-        const standardSTXPostCondition = makeStandardSTXPostCondition(
-          data.owner,
-          FungibleConditionCode.LessEqual,
-          new BigNum(amount)
-        )
-        data.postConditions = [standardSTXPostCondition]
+        let postConds = []
+        if (data.postConditions) {
+          postConds = data.postConditions
+        } else {
+          postConds.push(makeStandardSTXPostCondition(
+            profile.stxAddress,
+            FungibleConditionCode.Equal,
+            new BigNum(amount)
+          ))
+        }
+
+        data.postConditions = postConds
         const buffer = Buffer.from(data.assetHash, 'hex')
         const metaDataUrl = bufferCV(Buffer.from(data.metaDataUrl, 'utf8'))
         const editions = uintCV(data.editions)
