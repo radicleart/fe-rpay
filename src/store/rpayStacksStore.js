@@ -492,8 +492,9 @@ const rpayStacksStore = {
         })
       })
     },
-    deployContractConnect ({ state }, datum) {
+    deployContractConnect ({ state, rootGetters }, datum) {
       return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
         const txOptions = {
           codeBody: datum.codeBody,
           contractName: datum.projectId.split('.')[1],
@@ -501,6 +502,7 @@ const rpayStacksStore = {
             name: state.appName,
             icon: state.appLogo
           },
+          network: (configuration.network === 'mainnet') ? mainnet : testnet,
           finished: (response) => {
             const result = {
               txId: response.txId,
