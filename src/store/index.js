@@ -18,7 +18,7 @@ const getAmountSat = function (amountBtc) {
     return 0
   }
 }
-const options = [{ text: 'Lightning', value: 'lightning' }, { text: 'Bitcoin', value: 'bitcoin' }, { text: 'Ether', value: 'ethereum' }, { text: 'Stacks', value: 'stacks' }]
+const options = [{ text: 'Lightning', value: 'lightning' }, { text: 'Bitcoin', value: 'bitcoin' }, { text: 'Ether', value: 'ethereum' }, { text: 'Stacks', value: 'stacks' }, { text: 'Paypal', value: 'paypal' }]
 const getPaymentOptions = function (paymentChallenge, configuration) {
   const allowedOptions = []
   options.forEach(function (option) {
@@ -37,6 +37,10 @@ const getPaymentOptions = function (paymentChallenge, configuration) {
     } else if (option.value === 'stacks') {
       if (!configuration.paymentOptions || configuration.paymentOptions.allowStacks) {
         allowedOptions.push({ text: 'Stacks', value: 'stacks' })
+      }
+    } else if (option.value === 'paypal') {
+      if (!configuration.paymentOptions || configuration.paymentOptions.allowPaypal) {
+        allowedOptions.push({ text: 'Paypal', value: 'paypal' })
       }
     }
   })

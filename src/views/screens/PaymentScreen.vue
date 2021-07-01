@@ -23,6 +23,7 @@
       <lightning-payment-address :lookAndFeel="lookAndFeel" v-if="paymentOption === 'lightning'"/>
       <bitcoin-payment-address v-if="paymentOption === 'bitcoin'"/>
       <stacks-payment-address v-if="paymentOption === 'stacks'"/>
+      <paypal-payment v-if="paymentOption === 'paypal'"/>
     </div>
   </div>
 </b-card-text>
@@ -34,6 +35,7 @@ import OrderInfo from '@/views/components/OrderInfo'
 import LightningPaymentAddress from '@/views/components/LightningPaymentAddress'
 import BitcoinPaymentAddress from '@/views/components/BitcoinPaymentAddress'
 import StacksPaymentAddress from '@/views/components/StacksPaymentAddress'
+import PaypalPayment from '@/views/components/PaypalPayment'
 
 export default {
   name: 'PaymentScreen',
@@ -41,6 +43,7 @@ export default {
     LightningPaymentAddress,
     BitcoinPaymentAddress,
     StacksPaymentAddress,
+    PaypalPayment,
     OrderInfo
   },
   props: ['lookAndFeel'],
