@@ -68,20 +68,6 @@ const rpayCategoryStore = {
       const priceInEuro = (1 / rate.amountStx) * amountStx
       return Math.round(priceInEuro * 100) / 100
     },
-    getExchangeRateFormatted: state => amountStx => {
-      if (!state.xgeRates) {
-        return null
-      }
-      const rate = state.xgeRates.find(item => item.fiatCurrency === 'EUR')
-      const priceInEuro = (1 / rate.amountStx) * amountStx
-      return rate.symbol + ' ' + (Math.round(priceInEuro * 100) / 100)
-    },
-    getStxAmountFormatted: () => amountStx => {
-      if (!amountStx) {
-        return 0
-      }
-      return (Math.round(amountStx * 10000) / 10000)
-    },
     getEventCode: state => {
       return state.eventCode
     },
