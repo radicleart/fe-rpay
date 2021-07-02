@@ -117,7 +117,7 @@ const rpayStore = {
   // },
   state: {
     timer: null,
-    xgeRates: null,
+    tickerRates: null,
     configuration: null,
     settledInvoice: null,
     invoice: null,
@@ -245,19 +245,28 @@ const rpayStore = {
     getInvoiceDuration: state => {
       return lsatHelper.lsatDuration(state.invoice)
     },
+    getExchangeRateFormatted: state => amountStx => {
+      if (!state.tickerRates) {
+        return null
+      }
+      const rate = state.tickerRates.find(item => item.currency === 'EUR')
+      const priceInEuro = (1 / rate.amountStx) * amountStx
+      return rate.symbol + ' ' + (Math.round(priceInEuro * 100) / 100)
+    },
+    getStxAmountFormatted: () => amountStx => {
+      if (!amountStx) {
+        return 0
+      }
+      return (Math.round(amountStx * 10000) / 10000)
+    },
     getTickerRates: state => {
       if (!state.tickerRates) return []
       const currencies = state.tickerRates.filter((o) => currencyWhiteList(o.currency))
       return currencies
     },
-    getExchangeRates: state => {
-      return state.xgeRates
-    },
-    getExchangeRate: state => currency => {
-      if (!state.xgeRates) {
-        return null
-      }
-      return state.xgeRates.find(item => item.currency === currency)
+    getUnfilteredTickerRates: state => {
+      if (!state.tickerRates) return []
+      return state.tickerRates
     }
   },
   mutations: {
@@ -319,9 +328,6 @@ const rpayStore = {
     },
     setTickerRates (state, tickerRates) {
       state.tickerRates = tickerRates
-    },
-    setXgeRates (state, xgeRates) {
-      state.xgeRates = xgeRates
     }
   },
   actions: {
