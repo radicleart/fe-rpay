@@ -207,7 +207,7 @@ export default {
             data.numbCredits = configuration.payment.creditAttributes.start
             data.status = 'paid'
             that.$store.commit('rpayStore/setInvoice', data)
-            that.$emit('rpayEvent', data)
+            that.$emit('', data)
           }).catch(err => {
             // console.error(err)
             const data = {

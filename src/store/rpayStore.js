@@ -52,6 +52,8 @@ const getPaymentOptions = function (configuration) {
       allowedOptions.push({ text: 'Ether', value: 'ethereum', mainOption: mainOption === 'ethereum' })
     } else if (option.allowStacks) {
       allowedOptions.push({ text: 'Stacks', value: 'stacks', mainOption: mainOption === 'stacks' })
+    } else if (option.allowPaypal) {
+      allowedOptions.push({ text: 'Paypal', value: 'paypal', mainOption: mainOption === 'paypal' })
     }
   })
   return allowedOptions

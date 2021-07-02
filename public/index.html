@@ -74,13 +74,17 @@
           { allowLightning: true },
           { allowStacks: true }, 
           { allowLSAT: false },
-          { allowEthereum: false }
+          { allowEthereum: false },
+          { allowPaypal: true }
         ],
         creditAttributes: {
           start: 5,
           min: 2,
           max: 10,
           step: 1
+        },
+        paypal: {
+          clientID: 'sb'
         },
         squarePay: {
           applicationId: 'sandbox-sq0idb-B8CL6u-_2GdwAvkgg6M7WA',

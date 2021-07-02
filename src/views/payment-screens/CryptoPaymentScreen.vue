@@ -13,6 +13,7 @@
     <div class="text-center text-bold" v-if="paymentOption === 'fiat'">Enter your payment information</div>
     <div class="d-flex justify-content-center">
       <fiat-payment-screen v-on="$listeners" v-if="paymentOption === 'fiat'"/>
+      <paypal-payment-screen v-on="$listeners" v-if="paymentOption === 'paypal'"/>
       <lightning-payment-address v-on="$listeners" v-if="paymentOption === 'lightning'"/>
       <bitcoin-payment-address v-on="$listeners" v-if="paymentOption === 'bitcoin'"/>
       <stacks-payment-address :desktopWalletSupported="desktopWalletSupported" v-if="paymentOption === 'stacks'"/>
@@ -29,6 +30,7 @@ import BitcoinPaymentAddress from '@/views/payment-screens/components/BitcoinPay
 import StacksPaymentAddress from '@/views/payment-screens/components/StacksPaymentAddress'
 import EthereumPaymentAddress from '@/views/payment-screens/components/EthereumPaymentAddress'
 import FiatPaymentScreen from '@/views/payment-screens/FiatPaymentScreen'
+import PaypalPaymentScreen from '@/views/payment-screens/PaypalPaymentScreen'
 
 export default {
   name: 'CryptoPaymentScreen',
@@ -37,7 +39,8 @@ export default {
     BitcoinPaymentAddress,
     EthereumPaymentAddress,
     StacksPaymentAddress,
-    FiatPaymentScreen
+    FiatPaymentScreen,
+    PaypalPaymentScreen
   },
   data () {
     return {
