@@ -320,7 +320,7 @@ const rpayStore = {
     addPaymentOptions (state, o) {
       state.paymentOptions = getPaymentOptions(state.configuration)
       if (!state.configuration.payment.paymentOption) {
-        state.configuration.payment.paymentOption = state.payment.paymentOptions[0].value
+        state.configuration.payment.paymentOption = state.configuration.payment.paymentOptions[0].value
       }
     },
     setInvoice (state, invoice) {
@@ -420,7 +420,6 @@ const rpayStore = {
           console.log(error)
           configuration.payment.paymentOptions[1].allowBitcoin = false
           configuration.payment.paymentOptions[2].allowLightning = false
-          commit('addConfiguration', configuration)
           commit('addConfiguration', configuration)
           resolve({ data: { status: 'unpaid' } })
         })

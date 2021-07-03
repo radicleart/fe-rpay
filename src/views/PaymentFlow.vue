@@ -3,6 +3,19 @@
   <div class="mx-auto">
     <b-card-group class="">
       <b-card v-if="page === 'payment-page'" header-tag="header" footer-tag="footer" class="rpay-card">
+        <template #header>
+          <b-row>
+            <b-col cols="3">
+              <img :src="passport" width="100px;"/>
+            </b-col>
+            <b-col cols="8" style="font-size: 1.0rem;" v-if="paymentMessage">
+              {{paymentMessage}}
+            </b-col>
+            <b-col cols="8" style="font-size: 1.0rem;" v-else>
+              Digital PROM Passport <br/>and invite to the launch party $10
+            </b-col>
+          </b-row>
+        </template>
         <div>
           <crypto-picker v-if="displayCard === 100" @rpayEvent="rpayEvent($event)"/>
           <div v-else-if="displayCard === 102" :style="offsetTop()">
@@ -47,6 +60,7 @@ export default {
   },
   data () {
     return {
+      passport: 'https://images.prismic.io/digirad/ba438fd3-a07d-4fce-8483-aaf46b975c4b_alexander-sinn-KgLtFCgfC28-unsplash+%281%29%402x.png?auto=compress,format',
       page: 'payment-page',
       message: null,
       paying: false,
@@ -142,6 +156,10 @@ export default {
     showOrderInfo () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return configuration.payment.allowMultiples
+    },
+    paymentMessage () {
+      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
+      return 'Swap ' + configuration.payment.amountFiat + ' ' + configuration.payment.currency + ' for ' + configuration.payment.amountStx + ' STX'
     },
     displayCard () {
       const displayCard = this.$store.getters[APP_CONSTANTS.KEY_DISPLAY_CARD]

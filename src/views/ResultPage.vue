@@ -67,10 +67,6 @@ export default {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       return configuration.payment.creditAttributes.start
     },
-    method () {
-      const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      return configuration.payment.paymentOption
-    },
     formattedFiat () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
       const amountFiat = (configuration.payment) ? configuration.payment.amountFiat : '0'
