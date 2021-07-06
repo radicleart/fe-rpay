@@ -217,6 +217,11 @@ const rpayStacksContractStore = {
     getRegistry: state => {
       return state.registry
     },
+    getContractAssetByNftIndex: state => nftIndex => {
+      if (!state.registry || !state.registry.applications || !state.registry.applications[0] || !state.registry.applications[0].tokenContract) return null
+      const application = state.registry.applications[0]
+      return application.tokenContract.tokens.find((o) => o.nftIndex === nftIndex)
+    },
     getTargetFileForDisplay: state => item => {
       if (item === null) return
       const af = item.nftMedia.artworkFile
@@ -341,10 +346,20 @@ const rpayStacksContractStore = {
     }
   },
   actions: {
+    updateCahe ({ rootGetters }, cacheUpdate) {
+      return new Promise(function (resolve, reject) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.post(configuration.risidioBaseApi + '/mesh/v2/register/cacheUpdate', cacheUpdate).then(() => {
+          resolve(cacheUpdate)
+        }).catch((error) => {
+          reject(new Error('Unable index record: ' + error))
+        })
+      })
+    },
     postStacksTransaction ({ commit, rootGetters }, stacksTransaction) {
       return new Promise(function (resolve, reject) {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        axios.post(configuration.risidioBaseApi + '/mesh/v2/register/transaction', stacksTransaction).then((result) => {
+        axios.post(configuration.risidioBaseApi + '/mesh/v2/register/transaction', stacksTransaction).then(() => {
           commit('addStacksTransactions', stacksTransaction)
           resolve(stacksTransaction)
         }).catch((error) => {
@@ -396,6 +411,20 @@ const rpayStacksContractStore = {
         axios.get(path).then(response => {
           loadAssetsFromGaia(commit, state.registry, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId).then((appDataMap) => {
             resolve(appDataMap)
+          })
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    getAssetByNftIndex ({ state, commit, rootGetters }, nftIndex) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const path = configuration.risidioBaseApi + '/mesh/v2/registry/' + configuration.risidioProjectId + '/' + nftIndex
+        axios.get(path).then(response => {
+          loadAssetsFromGaia(commit, state.registry, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId).then((contractAsset) => {
+            commit('setToken', { network: configuration.network, token: contractAsset })
+            resolve(contractAsset)
           })
         }).catch((error) => {
           reject(error)

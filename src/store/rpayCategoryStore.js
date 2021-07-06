@@ -25,6 +25,26 @@ const rpayCategoryStore = {
         name: 'artwork'
       },
       {
+        icon: 'basket',
+        displayName: 'Merchandise',
+        name: 'merchandise'
+      },
+      {
+        icon: 'badge-tm',
+        displayName: 'Brands / Logos',
+        name: 'brands'
+      },
+      {
+        icon: 'three-dots-vertical',
+        displayName: 'Digital 3D Art',
+        name: 'threed'
+      },
+      {
+        icon: 'star',
+        displayName: 'Instants in Time',
+        name: 'instants'
+      },
+      {
         icon: 'card-list',
         displayName: 'Trading Cards',
         name: 'trading_cards'
@@ -111,27 +131,11 @@ const rpayCategoryStore = {
   actions: {
     fetchRatesFromBinance ({ commit }) {
       return new Promise(() => {
-        /**
-        rates.fetchSTXRates().then((rates) => {
-          commit('setXgeRates', rates)
-          searchIndexService.addExchangeRates({ binanceRates: rates })
-        })
-        **/
         searchIndexService.getExchangeRates().then((rates) => {
           commit('setXgeRates', rates.binanceRates)
         })
       })
     },
-    /**
-    fetchRates ({ state, commit }, configuration) {
-      return new Promise((resolve, reject) => {
-        MESH_API = configuration.risidioBaseApi + '/mesh'
-        axios.get(MESH_API + '/v1/rates/ticker').then(response => {
-          commit('setTickerRates', response.data)
-        })
-      })
-    },
-    **/
     fetchRatesFromDb ({ commit }) {
       return new Promise(() => {
         searchIndexService.getExchangeRates().then((rates) => {

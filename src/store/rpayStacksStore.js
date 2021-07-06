@@ -56,7 +56,7 @@ const subscribeApiNews = function (commit, connectUrl, contractId, assetHash, ne
   })
 }
 
-const pollTxStatus = function (result, stacksApi) {
+const pollTxStatus = function (result, stacksApi, dispatch, data) {
   return new Promise((resolve) => {
     let counter = 0
     const intval = setInterval(function () {
@@ -70,6 +70,11 @@ const pollTxStatus = function (result, stacksApi) {
           result.opcode = 'stx-transaction-finished'
           result.response = response
           window.eventBus.$emit('rpayEvent', result)
+          const cacheUpdate = {
+            nftIndex: data.nftIndex,
+            contractId: data.contractAddress + '.' + data.contractName
+          }
+          dispatch('rpayStacksContractStore/updateCache', cacheUpdate, { root: true })
         }
       }).catch((e) => {
         console.log(e)
@@ -80,11 +85,11 @@ const pollTxStatus = function (result, stacksApi) {
         resolve()
       }
       counter++
-    }, 2000)
+    }, 5000)
   })
 }
 
-const captureResult = function (dispatch, commit, rootGetters, result) {
+const captureResult = function (dispatch, commit, rootGetters, result, data) {
   const configuration = rootGetters['rpayStore/getConfiguration']
   const contractId = result.contractAddress + '.' + result.contractName
   const stacksTransaction = { contractId: contractId, timestamp: Date.now(), txId: result.txId, assetHash: result.assetHash, type: result.functionName, status: 1 }
@@ -94,10 +99,10 @@ const captureResult = function (dispatch, commit, rootGetters, result) {
   result.opcode = 'stx-transaction-sent'
   window.eventBus.$emit('rpayEvent', result)
   if (configuration.risidioStacksApi.indexOf('stacks-node-api') > -1) {
-    pollTxStatus(result, configuration.risidioStacksApi)
+    pollTxStatus(result, configuration.risidioStacksApi, dispatch, data)
   }
   subscribeApiNews(commit, connectUrl, contractId, result.assetHash, configuration.network)
-  axios.get(useApi).then(response => {
+  axios.get(useApi).then(() => {
   }).catch((error) => {
     console.log(error)
   })
@@ -260,7 +265,7 @@ const rpayStacksStore = {
               functionName: data.functionName,
               functionArgs: data.functionArgs
             }
-            captureResult(dispatch, commit, rootGetters, result)
+            captureResult(dispatch, commit, rootGetters, result, data)
             resolve(result)
           }
         }
@@ -308,7 +313,7 @@ const rpayStacksStore = {
               functionArgs: data.functionArgs
             }
             dispatch('fetchMacSkyWalletInfo')
-            captureResult(dispatch, commit, rootGetters, result)
+            captureResult(dispatch, commit, rootGetters, result, data)
             resolve(result)
           }).catch((error) => {
             dispatch('fetchMacSkyWalletInfo')
@@ -320,7 +325,7 @@ const rpayStacksStore = {
               result.contractName = data.contractName
               result.functionName = data.functionName
               result.assetHash = data.assetHash
-              captureResult(dispatch, commit, rootGetters, result)
+              captureResult(dispatch, commit, rootGetters, result, data)
               resolve(result)
             }).catch((error) => {
               reject(error)
