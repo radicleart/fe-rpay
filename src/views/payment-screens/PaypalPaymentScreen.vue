@@ -45,7 +45,6 @@ export default {
             data.status = 'paid'
             that.$store.commit('rpayStore/setInvoice', data)
             that.$emit('rpayEvent', data)
-            that.$emit('', data)
           },
           onError: err => {
             // console.error(err)
