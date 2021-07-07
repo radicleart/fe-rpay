@@ -8,9 +8,9 @@ const matchContractAssets = function (rootGetters, resultSet) {
     const contractAsset = rootGetters['rpayStacksContractStore/getAssetFromContractByHash'](result.assetHash)
     if (contractAsset) {
       const gaiaAsset = rootGetters[APP_CONSTANTS.KEY_GAIA_ASSET_BY_HASH](result.assetHash)
-      if (gaiaAsset && gaiaAsset.nftMedia) result = gaiaAsset
+      if (gaiaAsset && gaiaAsset.attributes) result = gaiaAsset
       result.contractAsset = contractAsset
-      if (result && result.nftMedia && result.nftMedia.artworkFile && result.nftMedia.artworkFile.fileUrl) {
+      if (result && result.attributes && result.attributes.artworkFile && result.attributes.artworkFile.fileUrl) {
         matched.push(result)
       }
     }
@@ -22,7 +22,7 @@ const matchContractAsset = function (rootGetters, result) {
   const contractAsset = rootGetters['rpayStacksContractStore/getAssetFromContractByHash'](result.assetHash)
   if (contractAsset) {
     const gaiaAsset = rootGetters[APP_CONSTANTS.KEY_GAIA_ASSET_BY_HASH](result.assetHash)
-    if (gaiaAsset && gaiaAsset.nftMedia) result = gaiaAsset
+    if (gaiaAsset && gaiaAsset.attributes) result = gaiaAsset
     result.contractAsset = contractAsset
   }
   return result

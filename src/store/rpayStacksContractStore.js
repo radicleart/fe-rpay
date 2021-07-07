@@ -224,10 +224,10 @@ const rpayStacksContractStore = {
     },
     getTargetFileForDisplay: state => item => {
       if (item === null) return
-      const af = item.nftMedia.artworkFile
+      const af = item.attributes.artworkFile
       if (af && af.type && af.type.length > 0 && af.type !== 'threed') {
         return 'artworkFile'
-      } else if (item.nftMedia.artworkClip && item.nftMedia.artworkClip.fileUrl) {
+      } else if (item.attributes.artworkClip && item.attributes.artworkClip.fileUrl) {
         return 'artworkClip'
       }
       return 'coverImage'
