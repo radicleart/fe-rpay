@@ -1,7 +1,7 @@
 <template>
 <b-card-text class="mx-4">
   <div class="row">
-    <div class="col-4"><img style="border-radius: 18px;" width="100%" :src="item.imageUrl"/></div>
+    <div class="col-4"><img style="border-radius: 18px;" width="100%" :src="item.image"/></div>
     <div class="col-8">
       <div class="text-bold">{{item.name}}</div>
     </div>
