@@ -367,12 +367,34 @@ const rpayStacksContractStore = {
         })
       })
     },
-    fetchStacksTransactions ({ commit, rootGetters }, stacksTransaction) {
+    fetchStacksTransactions ({ commit, rootGetters }) {
       return new Promise(function (resolve, reject) {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        axios.post(configuration.risidioBaseApi + '/mesh/v2/register/transaction', stacksTransaction).then((result) => {
-          commit('setStacksTransactions', stacksTransaction)
-          resolve(stacksTransaction)
+        axios.get(configuration.risidioBaseApi + '/mesh/v2/fetch/transactions').then((result) => {
+          commit('setStacksTransactions', result)
+          resolve(result)
+        }).catch((error) => {
+          reject(new Error('Unable index record: ' + error))
+        })
+      })
+    },
+    fetchStacksTransactionsByAssetHash ({ commit, rootGetters }, assetHash) {
+      return new Promise(function (resolve, reject) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.get(configuration.risidioBaseApi + '/mesh/v2/fetch/transactions/' + assetHash).then((result) => {
+          commit('setStacksTransactions', result)
+          resolve(result)
+        }).catch((error) => {
+          reject(new Error('Unable index record: ' + error))
+        })
+      })
+    },
+    fetchStacksTransactionsByAssetHashAndFunctionName ({ commit, rootGetters }, data) {
+      return new Promise(function (resolve, reject) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.get(configuration.risidioBaseApi + '/mesh/v2/fetch/transactions/' + data.assetHash + '/' + data.functionName).then((result) => {
+          commit('setStacksTransactions', result)
+          resolve(result)
         }).catch((error) => {
           reject(new Error('Unable index record: ' + error))
         })
