@@ -187,6 +187,25 @@ const searchIndexService = {
       })
     })
   },
+  findByGeneralSearchTerm: function (baseUrl, data) {
+    return new Promise(function (resolve, reject) {
+      const url = baseUrl + '/index/findByGeneralSearchTerm/' + data.inField + '?q=' + encodeURIComponent(data.query)
+      axios.get(url).then((result) => {
+        resolve(result.data.details)
+      }).catch((error) => {
+        reject(new Error('Unable index record: ' + error))
+      })
+    })
+  },
+  findByFieldAndSearchTerm: function (baseUrl, inField, query) {
+    return new Promise(function (resolve, reject) {
+      axios.get(baseUrl + '/index/findByTitleOrDescriptionOrCategoryOrKeyword/' + inField + '?q=' + query).then((result) => {
+        resolve(result.data.details)
+      }).catch((error) => {
+        reject(new Error('Unable index record: ' + error))
+      })
+    })
+  },
   countByDomainAndObjectTypeAndCategories: function (baseUrl, domain, objType, term, query) {
     return new Promise(function (resolve, reject) {
       axios.get(baseUrl + '/countByDomainAndObjectTypeAndCategories/' + domain + '/' + objType + '/' + term + '?q=' + query).then((result) => {

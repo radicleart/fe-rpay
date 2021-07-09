@@ -218,20 +218,22 @@ const rpayPurchaseStore = {
     },
     mintToken ({ dispatch, rootGetters }, data) {
       return new Promise((resolve, reject) => {
-        if (!data.owner) {
-          data.owner = 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW'
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const profile = rootGetters['rpayAuthStore/getMyProfile']
+        let postCondAddress = profile.stxAddress
+        if (configuration.network === 'local') {
+          postCondAddress = 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW'
           if (data.sendAsSky) {
-            data.owner = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
+            postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
           }
         }
-        const profile = rootGetters['rpayAuthStore/getMyProfile']
         const amount = new BigNum(utils.toOnChainAmount(data.mintingFee))
         let postConds = []
         if (data.postConditions) {
           postConds = data.postConditions
         } else {
           postConds.push(makeStandardSTXPostCondition(
-            profile.stxAddress,
+            postCondAddress,
             FungibleConditionCode.Equal,
             new BigNum(amount)
           ))
@@ -257,7 +259,6 @@ const rpayPurchaseStore = {
         const addresses = listCV(addressList)
         const shares = listCV(shareList)
         data.functionArgs = [bufferCV(buffer), metaDataUrl, editions, editionCost, addresses, shares]
-        const configuration = rootGetters['rpayStore/getConfiguration']
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch((data.methos || methos), data, { root: true }).then((result) => {
           result.opcode = 'stx-transaction-sent'
@@ -271,23 +272,24 @@ const rpayPurchaseStore = {
     },
     mintEdition ({ dispatch, rootGetters }, data) {
       return new Promise((resolve, reject) => {
-        // this is the owner of the asset - needed to set the post condition
-        if (!data.owner) {
-          data.owner = 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW'
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const profile = rootGetters['rpayAuthStore/getMyProfile']
+        let postCondAddress = profile.stxAddress
+        if (configuration.network === 'local') {
+          postCondAddress = 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW'
           if (data.sendAsSky) {
-            data.owner = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
+            postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
           }
         }
         const amount = new BigNum(utils.toOnChainAmount(data.editionCost))
         const standardSTXPostCondition = makeStandardSTXPostCondition(
-          data.owner,
+          postCondAddress,
           FungibleConditionCode.LessEqual,
           new BigNum(amount)
         )
         data.postConditions = [standardSTXPostCondition]
         data.functionArgs = [uintCV(data.nftIndex)]
         data.functionName = 'mint-edition'
-        const configuration = rootGetters['rpayStore/getConfiguration']
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch((data.methos || methos), data, { root: true }).then((result) => {
           result.opcode = 'stx-transaction-sent'

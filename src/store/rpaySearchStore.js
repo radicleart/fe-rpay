@@ -169,6 +169,18 @@ const rpaySearchStore = {
         })
       })
     },
+    findByGeneralSearchTerm ({ commit, rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        searchIndexService.findByGeneralSearchTerm(configuration.risidioBaseApi, data).then((resultSet) => {
+          const assets = matchContractAsset(rootGetters, resultSet)
+          commit('setSearchResults', assets)
+          resolve(assets)
+        }).catch((error) => {
+          reject(new Error('Unable index record: ' + error))
+        })
+      })
+    },
     findBySearchTerm ({ commit, rootGetters }, query) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
