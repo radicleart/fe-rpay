@@ -230,7 +230,8 @@ const rpayStacksStore = {
           postData: null
         }
         if (configuration.network === 'local') {
-          axios.post(configuration.risidioBaseApi + '/mesh/v2/accounts', data).then(response => {
+          const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+          axios.post(configuration.risidioBaseApi + '/mesh/v2/accounts', data, authHeaders).then(response => {
             handleFetchWalletInternal(wallet, response, commit, resolve)
           }).catch(() => {
             resolve()
@@ -365,7 +366,8 @@ const rpayStacksStore = {
           'Content-Type': 'application/json'
         }
         if (configuration.network === 'local') {
-          axios.post(configuration.risidioBaseApi + '/mesh' + '/v2/accounts', txOptions).then(response => {
+          const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+          axios.post(configuration.risidioBaseApi + '/mesh' + '/v2/accounts', txOptions, authHeaders).then(response => {
             data.result = utils.fromHex(data.functionName, response.data.result)
             resolve(data)
           }).catch((error) => {
@@ -485,7 +487,8 @@ const rpayStacksStore = {
           path: '/v2/contracts/interface/' + contractAddress + '/' + contractName + '?proof=0',
           httpMethod: 'GET'
         }
-        axios.post(configuration.risidioBaseApi + '/mesh' + '/v2/accounts', txOptions).then(response => {
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        axios.post(configuration.risidioBaseApi + '/mesh' + '/v2/accounts', txOptions, authHeaders).then(response => {
           resolve({ projectId: projectId, interface: response.data })
           // commit('addValue', response)
         }).catch(() => {

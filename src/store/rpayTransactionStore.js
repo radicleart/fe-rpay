@@ -9,9 +9,12 @@ const rpayTransactionStore = {
   },
   getters: {
     getTransaction: state => txId => {
+      if (!txId) return { error: 'invalid transaction id' }
       const index = state.transactions.findIndex((o) => o.tx_id === txId)
       if (index > -1) {
         return state.transactions[index]
+      } else {
+        return { error: 'transaction not found for id: ' + txId }
       }
     }
   },

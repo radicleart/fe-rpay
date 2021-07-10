@@ -31,6 +31,7 @@ import rpayEthereumStore from './store/rpayEthereumStore'
 import rpayAuthStore from './store/rpayAuthStore'
 import rpayCategoryStore from './store/rpayCategoryStore'
 import rpayTransactionStore from './store/rpayTransactionStore'
+import rpayPrivilegeStore from './store/rpayPrivilegeStore'
 import rpayStacksContractStore from './store/rpayStacksContractStore'
 import rpayStacksStore from './store/rpayStacksStore'
 import rpayPurchaseStore from './store/rpayPurchaseStore'
@@ -76,6 +77,7 @@ export default {
       this.$store.registerModule('rpayEthereumStore', rpayEthereumStore)
       this.$store.registerModule('rpayAuthStore', rpayAuthStore)
       this.$store.registerModule('rpayTransactionStore', rpayTransactionStore)
+      this.$store.registerModule('rpayPrivilegeStore', rpayPrivilegeStore)
       this.$store.registerModule('rpayCategoryStore', rpayCategoryStore)
       this.$store.registerModule('rpayStacksStore', rpayStacksStore)
       this.$store.registerModule('rpayPurchaseStore', rpayPurchaseStore)

@@ -2,6 +2,7 @@ import axios from 'axios'
 import SockJS from 'sockjs-client'
 import Stomp from '@stomp/stompjs'
 import utils from '@/services/utils'
+import { APP_CONSTANTS } from '@/app-constants'
 
 let socket = null
 let stompClient = null
@@ -412,10 +413,11 @@ const rpayStacksContractStore = {
         // if project id is set in config then read search index of this
         // project. Otherwise search projects recursively
         let path = configuration.risidioBaseApi + '/mesh/v2/registry'
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         if (configuration.risidioProjectId) {
           path = configuration.risidioBaseApi + '/mesh/v2/registry/' + configuration.risidioProjectId
         }
-        axios.get(path).then(response => {
+        axios.get(path, authHeaders).then(response => {
           commit('setRegistry', { registry: response.data, contractId: configuration.risidioProjectId, network: configuration.network })
           loadAssetsFromGaia(commit, state.registry, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId).then(() => {
             subscribeApiNews(commit, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId, configuration.network)
@@ -442,8 +444,9 @@ const rpayStacksContractStore = {
     getAssetByNftIndex ({ state, commit, rootGetters }, nftIndex) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         const path = configuration.risidioBaseApi + '/mesh/v2/registry/' + configuration.risidioProjectId + '/' + nftIndex
-        axios.get(path).then(response => {
+        axios.get(path, authHeaders).then(response => {
           loadAssetsFromGaia(commit, state.registry, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId).then((contractAsset) => {
             commit('setToken', { network: configuration.network, token: contractAsset })
             resolve(contractAsset)

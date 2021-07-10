@@ -8,6 +8,7 @@
         <a class="text-white mr-3" href="/?operation=selling-flow&debug=true">selling flow</a>
         <a class="text-white mr-3" href="/?operation=purchase-flow&debug=true">purchase flow</a>
         <a class="text-white mr-3" href="/?operation=marketplace-flow&debug=true">marketplace flow</a>
+        <a class="text-white mr-3" @click.prevent="privileges()">privileges</a>
       </div>
     </div>
     <div class="text-right">
@@ -219,6 +220,11 @@ export default {
     formatDate: function (date) {
       const loaclEndM = moment(date)
       return loaclEndM.format('DD-MM-YY hh:mm')
+    },
+    privileges: function () {
+      this.$store.dispatch('rpayPrivilegeStore/getAuthorisation', { stxAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW' }).then((result) => {
+        this.$store.dispatch('rpayPrivilegeStore/isAuthorised', { stxAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW', domain: location.origin, privilege: 'can-mint' })
+      })
     },
     loadToken: function (contractId, nftIndex, aHash) {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]

@@ -9,6 +9,7 @@ import { decodeToken } from 'jsontokens'
 import { Storage } from '@stacks/storage'
 import axios from 'axios'
 import utils from '@/services/utils'
+import { APP_CONSTANTS } from '@/app-constants'
 
 const origin = window.location.origin
 const appConfig = new AppConfig(['store_write', 'publish_data'])
@@ -42,9 +43,11 @@ const defAuthHeaders = function () {
     }
   }
   const headers = {
-    IdentityAddress: publicKey,
-    'Content-Type': 'application/json',
-    Authorization: 'Bearer ' + token
+    headers: {
+      IdentityAddress: publicKey,
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer ' + token
+    }
   }
   return headers
 }
@@ -270,7 +273,8 @@ const rpayAuthStore = {
             httpMethod: 'get',
             postData: null
           }
-          axios.post(configuration.risidioBaseApi + '/mesh/v2/accounts', callData).then(response => {
+          const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+          axios.post(configuration.risidioBaseApi + '/mesh/v2/accounts', callData, authHeaders).then(response => {
             const accountInfo = response.data
             if (accountInfo) accountInfo.balance = utils.fromMicroAmount(accountInfo.balance)
             commit('setAccountInfo', { stxAddress: data.stxAddress, accountInfo: accountInfo })

@@ -178,8 +178,8 @@ const rpayPurchaseStore = {
     fetchOffers ({ commit, rootGetters }) {
       return new Promise(function (resolve, reject) {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        // const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
-        axios.get(configuration.risidioBaseApi + '/mesh/v2/fetch/offers').then((response) => {
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        axios.get(configuration.risidioBaseApi + '/mesh/v2/fetch/offers', authHeaders).then((response) => {
           commit('setDbOffers', response.data)
           resolve(response.data)
         }).catch((error) => {

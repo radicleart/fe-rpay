@@ -104,8 +104,13 @@ const rpaySearchStore = {
     }
   },
   actions: {
-    indexUsers ({ commit }, users) {
+    indexUsers ({ commit, rootGetters }, users) {
       return new Promise((resolve, reject) => {
+        const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
+        if (!profile.superAdmin) {
+          resolve(null)
+          return
+        }
         searchIndexService.indexUsers(users).then((resultSet) => {
           commit('setUsers', resultSet)
           resolve(resultSet)
@@ -114,8 +119,13 @@ const rpaySearchStore = {
         })
       })
     },
-    clearAssets ({ commit }) {
+    clearAssets ({ commit, rootGetters }) {
       return new Promise((resolve, reject) => {
+        const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
+        if (!profile.superAdmin) {
+          resolve(null)
+          return
+        }
         searchIndexService.clearDappsIndex().then((resultSet) => {
           commit('setArtworks', resultSet)
           resolve(resultSet)
