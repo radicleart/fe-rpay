@@ -227,11 +227,14 @@ const rpayStacksStore = {
         const data = {
           path: '/v2/accounts/' + wallet.keyInfo.address,
           httpMethod: 'get',
-          postData: null
+          postData: {
+            sender: '',
+            arguments: []
+          }
         }
         if (configuration.network === 'local') {
-          const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
-          axios.post(configuration.risidioBaseApi + '/mesh/v2/accounts', data, authHeaders).then(response => {
+          // const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+          axios.post(configuration.risidioBaseApi + '/mesh/v2/accounts', data).then(response => {
             handleFetchWalletInternal(wallet, response, commit, resolve)
           }).catch(() => {
             resolve()

@@ -28,7 +28,7 @@ const setupAccountApi = function (commit, stacksApi) {
 
 const BLOCKSTACK_LOGIN = Number(process.env.VUE_APP_BLOCKSTACK_LOGIN)
 
-const defAuthHeaders = function () {
+const defAuthHeaders = function (profile) {
   let publicKey = null
   let token = 'v1:no-token' // note: not all requests require auth token - e.g. getPaymentAddress
   if (userSession.isUserSignedIn()) {
@@ -38,8 +38,8 @@ const defAuthHeaders = function () {
       const decodedToken = decodeToken(authResponseToken)
       publicKey = decodedToken.payload.public_keys[0]
       // publicKey = Buffer.from(publicKey).toString()
-      token = 'v1:' + account.authResponseToken
-      // token = 'v1:' + account.gaiaAssociationToken
+      // token = 'v1:' + account.authResponseToken
+      token = 'v1:' + profile.stxAddress
     }
   }
   const headers = {
@@ -175,7 +175,7 @@ const rpayAuthStore = {
         if (userSession.isUserSignedIn()) {
           const profile = getProfile(configuration.network)
           commit('myProfile', profile)
-          const authHeaders = defAuthHeaders(userSession)
+          const authHeaders = defAuthHeaders(profile)
           commit('setAuthHeaders', authHeaders)
           const url = configuration.risidioBaseApi + '/mesh/v2/auth/getAuthorisation/' + profile.stxAddress
           axios.get(url, authHeaders).then((response) => {
@@ -228,7 +228,7 @@ const rpayAuthStore = {
             state.userData = userData
             const profile = getProfile(configuration.network)
             commit('myProfile', profile)
-            const authHeaders = defAuthHeaders(userSession)
+            const authHeaders = defAuthHeaders(profile)
             commit('setAuthHeaders', authHeaders)
             dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
               profile.accountInfo = accountInfo

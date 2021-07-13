@@ -181,6 +181,7 @@ export default {
     }
   },
   mounted () {
+    if (this.privileges()) return
     this.$store.dispatch('rpayStacksContractStore/fetchContractData')
     this.$store.dispatch('rpaySearchStore/findAssets')
     const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
@@ -222,8 +223,8 @@ export default {
       return loaclEndM.format('DD-MM-YY hh:mm')
     },
     privileges: function () {
-      this.$store.dispatch('rpayPrivilegeStore/getAuthorisation', { stxAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW' }).then((result) => {
-        this.$store.dispatch('rpayPrivilegeStore/isAuthorised', { stxAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW', domain: location.origin, privilege: 'can-mint' })
+      this.$store.dispatch('rpayPrivilegeStore/fetchAuthorisation', { stxAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW' }).then((result) => {
+        this.$store.dispatch('rpayPrivilegeStore/isAuthorised', { stxAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW', domain: encodeURI(location.host), privilege: 'can-mint' })
       })
     },
     loadToken: function (contractId, nftIndex, aHash) {
