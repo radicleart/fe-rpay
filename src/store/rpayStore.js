@@ -337,20 +337,20 @@ const rpayStore = {
         resolve(null)
       })
     },
-    initialiseWebsockets ({ commit }, configuration) {
+    initialiseRpayModule ({ commit }, configuration) {
       return new Promise(() => {
         try {
           MESH_API = configuration.risidioBaseApi + '/mesh'
           axios.get(MESH_API + '/v1/rates/ticker').then(response => {
             commit('setTickerRates', response.data)
           })
-          subscribeApiNews(commit, configuration.risidioBaseApi + '/mesh')
+          subscribeApiNews(commit, MESH_API)
         } catch (err) {
           console.log(err)
         }
       })
     },
-    initialiseApp ({ state, commit }, configuration) {
+    initialisePaymentFlow ({ state, commit }, configuration) {
       return new Promise((resolve, reject) => {
         MESH_API = configuration.risidioBaseApi + '/mesh'
         axios.get(MESH_API + '/v1/rates/ticker').then(response => {
@@ -454,7 +454,7 @@ const rpayStore = {
       config.payment.creditAttributes.start = data.numbCredits
       config = setAmounts(state.tickerRates, config)
       commit('addConfiguration', config)
-      // return this.dispatch('initialiseApp', state.configuration)
+      // return this.dispatch('initialisePaymentFlow', state.configuration)
     },
     stopListening ({ commit }) {
       if (stompClient) stompClient.disconnect()

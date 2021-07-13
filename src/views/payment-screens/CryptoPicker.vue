@@ -58,7 +58,7 @@ export default {
   methods: {
     continueToPayment () {
       const config = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      this.$store.dispatch('rpayStore/initialiseApp', config).then(() => {
+      this.$store.dispatch('rpayStore/initialisePaymentFlow', config).then(() => {
         this.$store.commit('rpayStore/setDisplayCard', 102)
       })
     },

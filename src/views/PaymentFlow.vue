@@ -91,7 +91,7 @@ export default {
       } else {
         this.$store.commit('rpayStore/setDisplayCard', 102)
       }
-      this.$store.dispatch('rpayStore/initialiseApp', configuration).then((invoice) => {
+      this.$store.dispatch('rpayStore/initialisePaymentFlow', configuration).then((invoice) => {
         this.page = 'payment-page'
         if (invoice) {
           if (invoice.data && (invoice.data.status === 'paid' || invoice.data.status === 'processing')) {
@@ -139,7 +139,7 @@ export default {
     },
     paymentExpired () {
       const configuration = this.$store.getters[APP_CONSTANTS.KEY_CONFIGURATION]
-      this.$store.dispatch('rpayStore/initialiseApp', configuration).then(() => {
+      this.$store.dispatch('rpayStore/initialisePaymentFlow', configuration).then(() => {
         this.componentKey += 1
         this.loading = false
       })

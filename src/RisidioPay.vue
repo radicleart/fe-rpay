@@ -97,7 +97,7 @@ export default {
     this.risidioCardMode = configuration.risidioCardMode
     this.$store.commit('rpayStore/addConfiguration', configuration)
     this.$store.commit('rpayStore/setDisplayCard', 100) // initial screen for each flow.
-    this.$store.dispatch('rpayStore/initialiseWebsockets', configuration)
+    this.$store.dispatch('rpayStore/initialiseRpayModule', configuration)
     this.$store.dispatch('rpayStacksStore/fetchMacSkyWalletInfo').then(() => {
       this.loaded = true
     }).catch(() => {

@@ -175,7 +175,16 @@ const rpayAuthStore = {
         if (userSession.isUserSignedIn()) {
           const profile = getProfile(configuration.network)
           commit('myProfile', profile)
-          commit('setAuthHeaders', defAuthHeaders(userSession))
+          const authHeaders = defAuthHeaders(userSession)
+          commit('setAuthHeaders', authHeaders)
+          const url = configuration.risidioBaseApi + '/mesh/v2/auth/getAuthorisation/' + profile.stxAddress
+          axios.get(url, authHeaders).then((response) => {
+            const authorisation = response.data
+            profile.authorisation = authorisation
+            commit('myProfile', profile)
+          }).catch(() => {
+            resolve()
+          })
           dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
             profile.accountInfo = accountInfo
             commit('myProfile', profile)
@@ -219,7 +228,8 @@ const rpayAuthStore = {
             state.userData = userData
             const profile = getProfile(configuration.network)
             commit('myProfile', profile)
-            commit('setAuthHeaders', defAuthHeaders(userSession))
+            const authHeaders = defAuthHeaders(userSession)
+            commit('setAuthHeaders', authHeaders)
             dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
               profile.accountInfo = accountInfo
               commit('myProfile', profile)
@@ -273,15 +283,28 @@ const rpayAuthStore = {
             httpMethod: 'get',
             postData: null
           }
-          const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
-          axios.post(configuration.risidioBaseApi + '/mesh/v2/accounts', callData, authHeaders).then(response => {
-            const accountInfo = response.data
-            if (accountInfo) accountInfo.balance = utils.fromMicroAmount(accountInfo.balance)
-            commit('setAccountInfo', { stxAddress: data.stxAddress, accountInfo: accountInfo })
-            resolve(accountInfo)
-          }).catch(() => {
-            resolve()
-          })
+          if (configuration.risidioStacksApi.indexOf('localhost') > -1) {
+            const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+            const url = configuration.risidioBaseApi + '/mesh/v2/accounts'
+            axios.post(url, callData, authHeaders).then(response => {
+              const accountInfo = response.data
+              if (accountInfo) accountInfo.balance = utils.fromMicroAmount(accountInfo.balance)
+              commit('setAccountInfo', { stxAddress: data.stxAddress, accountInfo: accountInfo })
+              resolve(accountInfo)
+            }).catch(() => {
+              resolve()
+            })
+          } else {
+            const url = configuration.risidioStacksApi + '/extended/v1/address/' + data.stxAddress + '/balances'
+            axios.get(url).then((response) => {
+              const accountInfo = response.data
+              if (accountInfo && accountInfo.stx) accountInfo.balance = utils.fromMicroAmount(accountInfo.stx.balance)
+              commit('setAccountInfo', { stxAddress: data.stxAddress, accountInfo: accountInfo })
+              resolve(accountInfo)
+            }).catch(() => {
+              resolve()
+            })
+          }
         })
       })
     }
