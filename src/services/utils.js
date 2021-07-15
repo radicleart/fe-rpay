@@ -2,6 +2,7 @@
 import {
   hexToCV
 } from '@stacks/transactions'
+import dataUriToBuffer from 'data-uri-to-buffer'
 import crypto from 'crypto'
 import { c32address, c32addressDecode } from 'c32check'
 
@@ -110,13 +111,13 @@ const utils = {
       img.src = url
     })
   },
+  **/
   getBase64FromImageUrl: function (dataURL) {
     const imageBuffer = dataUriToBuffer(dataURL)
     // const rawImage = dataURL.replace(/^data:image\/(png|jpg);base64,/, '')
     const mimeType = dataURL.substring(dataURL.indexOf(':') + 1, dataURL.indexOf(';')) // => image/png
     return { imageBuffer: imageBuffer, mimeType: mimeType }
   },
-  **/
   stringToHex: function (str) {
     const arr = []
     for (let i = 0; i < str.length; i++) {

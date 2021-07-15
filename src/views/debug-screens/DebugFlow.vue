@@ -7,8 +7,20 @@
         <a class="text-white mr-3" href="/?operation=minting-flow&debug=true">minting flow</a>
         <a class="text-white mr-3" href="/?operation=selling-flow&debug=true">selling flow</a>
         <a class="text-white mr-3" href="/?operation=purchase-flow&debug=true">purchase flow</a>
-        <a class="text-white mr-3" href="/?operation=marketplace-flow&debug=true">marketplace flow</a>
-        <a class="text-white mr-3" @click.prevent="privileges()">privileges</a>
+        <a class="text-white mr-3" href="/?operation=marketplace-flow&debug=true">marketplace flow</a>      </div>
+    </div>
+    <div class="mb-4 d-flex justify-content-between">
+      <div class="">
+        <a class="text-white mr-3" @click.prevent="privilegesForAddress()">privileges for stx address</a>
+        <a class="text-white mr-3" @click.prevent="privilegesForSuperAdmin()">all privileges</a>
+      </div>
+    </div>
+    <div class="mb-4 d-flex justify-content-between">
+      <div class="" v-if="authorisation">
+        {{authorisation}}
+      </div>
+      <div class="" v-if="authorisations">
+        {{authorisations}}
       </div>
     </div>
     <div class="text-right">
@@ -177,11 +189,12 @@ export default {
       message: null,
       result: null,
       globalEvent: null,
-      resultApp: null
+      resultApp: null,
+      authorisations: null,
+      authorisation: null
     }
   },
   mounted () {
-    if (this.privileges()) return
     this.$store.dispatch('rpayStacksContractStore/fetchContractData')
     this.$store.dispatch('rpaySearchStore/findAssets')
     const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
@@ -222,9 +235,14 @@ export default {
       const loaclEndM = moment(date)
       return loaclEndM.format('DD-MM-YY hh:mm')
     },
-    privileges: function () {
-      this.$store.dispatch('rpayPrivilegeStore/fetchAuthorisation', { stxAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW' }).then((result) => {
-        this.$store.dispatch('rpayPrivilegeStore/isAuthorised', { stxAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW', domain: encodeURI(location.host), privilege: 'can-mint' })
+    privilegesForAddress: function () {
+      this.$store.dispatch('rpayPrivilegeStore/fetchAuthorisation', { stxAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW' }).then((authorisation) => {
+        this.authorisation = authorisation
+      })
+    },
+    privilegesForSuperAdmin: function () {
+      this.$store.dispatch('rpayPrivilegeStore/fetchAuthorisation', { stxAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW' }).then((authorisations) => {
+        this.authorisations = authorisations
       })
     },
     loadToken: function (contractId, nftIndex, aHash) {

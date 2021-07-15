@@ -78,7 +78,7 @@ const rpayPrivilegeStore = {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         // axios.get('http://localhost:8046/mesh/v2/auth/getAuthorisation/' + data.stxAddress, authHeaders).then((result) => {
-        axios.post(configuration.risidioBaseApi + '/mesh/v2/secure/auth/authorise', authorisation, authHeaders).then((result) => {
+        axios.post(configuration.risidioBaseApi + '/mesh/v2/auth/authorise', authorisation, authHeaders).then((result) => {
           commit('setAuthorisation', result.data)
           resolve(result.data)
         }).catch((error) => {
