@@ -48,7 +48,7 @@ const purchasedItems = function (rootGetters) {
   return purchasedRecords
 }
 
-const myItemStore = {
+const rpayMyItemStore = {
   namespaced: true,
   state: {
     rootFile: null,
@@ -113,25 +113,25 @@ const myItemStore = {
     }
   },
   mutations: {
-    rootFile (state: any, rootFile: any) {
+    rootFile (state, rootFile) {
       state.rootFile = rootFile
     },
-    indexResult (state: any, indexResult: any) {
+    indexResult (state, indexResult) {
       state.indexResult = indexResult
     },
-    setMintTxId (state: any, item: any) {
+    setMintTxId (state, item) {
       const index = state.rootFile.records.findIndex((o) => o.assetHash === item.assetHash)
       state.rootFile.records[index] = item
     }
   },
   actions: {
-    initSchema ({ dispatch, state, rootGetters }, forced: boolean) {
+    initSchema ({ dispatch, state, rootGetters }, forced) {
       return new Promise((resolve) => {
         const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
         if (state.rootFile && !forced) {
           resolve(state.rootFile)
         } else {
-          dispatch('fetchItems').then((rootFile: object) => {
+          dispatch('fetchItems').then((rootFile) => {
             resolve(rootFile)
           }).catch(() => {
             rpayMyItemService.initItemSchema(profile)
@@ -142,7 +142,7 @@ const myItemStore = {
     fetchItems ({ commit, rootGetters }) {
       return new Promise((resolve, reject) => {
         const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
-        rpayMyItemService.fetchMyItems(profile).then((rootFile: any) => {
+        rpayMyItemService.fetchMyItems(profile).then((rootFile) => {
           commit('rootFile', rootFile)
           resolve(rootFile)
         }).catch((error) => {
@@ -213,13 +213,13 @@ const myItemStore = {
         })
       })
     },
-    findItemByAssetHash ({ state }, assetHash: string) {
+    findItemByAssetHash ({ state }, assetHash) {
       return new Promise((resolve) => {
         const index = state.rootFile.records.findIndex((o) => o.assetHash === assetHash)
         resolve(state.rootFile.records[index])
       })
     },
-    saveAttributesObject ({ state }: any, data: any) {
+    saveAttributesObject ({ state }, data) {
       return new Promise((resolve, reject) => {
         if (!data.attributes.dataUrl) {
           // ok the file is stored externally - carry on..
@@ -228,7 +228,7 @@ const myItemStore = {
         }
         data.attributes.storage = 'gaia'
         const fileName = data.assetHash + '_' + data.attributes.id + utils.getFileExtension(data.attributes.fileUrl, data.attributes.type)
-        rpayMyItemService.uploadFileData(fileName, data.attributes).then((gaiaUrl: string) => {
+        rpayMyItemService.uploadFileData(fileName, data.attributes).then((gaiaUrl) => {
           state.gaiaUrl = gaiaUrl
           data.attributes.fileUrl = gaiaUrl
           resolve(data.attributes)
@@ -237,7 +237,7 @@ const myItemStore = {
         })
       })
     },
-    saveItem ({ state, rootGetters, commit, dispatch }: any, item: any) {
+    saveItem ({ state, rootGetters, commit, dispatch }, item) {
       return new Promise((resolve, reject) => {
         const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
         item.uploader = profile.username
@@ -321,4 +321,4 @@ const myItemStore = {
     }
   }
 }
-export default myItemStore
+export default rpayMyItemStore

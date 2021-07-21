@@ -212,7 +212,8 @@ const rpayStacksContractStore = {
   state: {
     registry: null,
     gaiaAssets: [],
-    stacksTransactions: []
+    stacksTransactions: [],
+    myContractAssets: null
   },
   getters: {
     getRegistry: state => {
@@ -296,6 +297,9 @@ const rpayStacksContractStore = {
       const tokens = state.registry.applications[index].tokenContract.tokens
       return tokens.filter((o) => o.owner === data.stxAddress)
     },
+    getMyContractAssets: state => data => {
+      return state.myContractAssets
+    },
     getGaiaAssets: state => {
       return state.gaiaAssets
     },
@@ -320,6 +324,9 @@ const rpayStacksContractStore = {
       registry = removeStatusOneApps(registry, data.contractId)
       registry = resolvePrincipals(registry, data.network)
       state.registry = registry
+    },
+    setMyContractAssets (state, myContractAssets) {
+      state.myContractAssets = myContractAssets
     },
     setToken (state, data) {
       replaceTokenFromHash(state, data)
@@ -347,10 +354,10 @@ const rpayStacksContractStore = {
     }
   },
   actions: {
-    updateCahe ({ rootGetters }, cacheUpdate) {
+    updateCache ({ rootGetters }, cacheUpdate) {
       return new Promise(function (resolve, reject) {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        axios.post(configuration.risidioBaseApi + '/mesh/v2/register/cacheUpdate', cacheUpdate).then(() => {
+        axios.post(configuration.risidioBaseApi + '/mesh/v2/cache/update', cacheUpdate).then(() => {
           resolve(cacheUpdate)
         }).catch((error) => {
           reject(new Error('Unable index record: ' + error))
@@ -441,7 +448,20 @@ const rpayStacksContractStore = {
         })
       })
     },
-    getAssetByNftIndex ({ state, commit, rootGetters }, nftIndex) {
+    fetchAssetsByOwner ({ commit, rootGetters }) {
+      return new Promise((resolve, reject) => {
+        const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const path = configuration.risidioBaseApi + '/mesh/v2/assets/' + configuration.risidioProjectId + '/' + profile.stxAddress
+        axios.get(path).then((response) => {
+          commit('setMyContractAssets', response.data)
+          resolve(response.data)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    fetchAssetByNftIndex ({ state, commit, rootGetters }, nftIndex) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]

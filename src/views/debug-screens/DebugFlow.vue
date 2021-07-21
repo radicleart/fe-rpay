@@ -236,12 +236,12 @@ export default {
       return loaclEndM.format('DD-MM-YY hh:mm')
     },
     privilegesForAddress: function () {
-      this.$store.dispatch('rpayPrivilegeStore/fetchAuthorisation', { stxAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW' }).then((authorisation) => {
+      this.$store.dispatch('rpayPrivilegeStore/fetchPrivilegesForAllUsers', { stxAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW' }).then((authorisation) => {
         this.authorisation = authorisation
       })
     },
     privilegesForSuperAdmin: function () {
-      this.$store.dispatch('rpayPrivilegeStore/fetchAuthorisation', { stxAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW' }).then((authorisations) => {
+      this.$store.dispatch('rpayPrivilegeStore/fetchUserAuthorisation', { stxAddress: 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW' }).then((authorisations) => {
         this.authorisations = authorisations
       })
     },

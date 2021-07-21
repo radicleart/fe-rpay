@@ -14,13 +14,27 @@ const isSuperAdmin = function (resolve, rootGetters) {
   }
   return true
 }
-
 const rpayPrivilegeStore = {
   namespaced: true,
   state: {
-    authorisations: []
+    authorisations: [],
+    availablePrivileges: []
   },
   getters: {
+    getAvailablePrivileges: state => {
+      return state.availablePrivileges
+    },
+    hasPrivilege: (state, getters, rootState, rootGetters) => priv => {
+      const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
+      if (profile.authorisation && profile.authorisation.stxAddress === profile.stxAddress) {
+        if (profile.authorisation.domains) {
+          const domain = profile.authorisation.domains.find((o) => o.host === location.hostname)
+          const index = domain.privileges.findIndex((o) => o === priv)
+          return index > -1
+        }
+      }
+      return false
+    },
     getAuthorisation: state => stxAddress => {
       const index = state.authorisations.findIndex((o) => o.stxAddress === stxAddress)
       const priv = state.authorisations[index]
@@ -42,11 +56,26 @@ const rpayPrivilegeStore = {
     },
     setAuthorisations (state, authorisations) {
       state.authorisations = authorisations
+    },
+    setAvailablePrivileges (state, availablePrivileges) {
+      state.availablePrivileges = availablePrivileges
     }
-
   },
   actions: {
-    fetchAuthorisations ({ commit, rootGetters }) {
+    fetchAvailablePrivileges ({ commit, rootGetters }) {
+      return new Promise((resolve, reject) => {
+        if (!isSuperAdmin(resolve, rootGetters)) return
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        axios.get(configuration.risidioBaseApi + '/mesh/v2/auth/getPrivileges', authHeaders).then((result) => {
+          commit('setAvailablePrivileges', result.data)
+          resolve(result.data)
+        }).catch((error) => {
+          reject(new Error('Unable fetchAvailablePrivileges: ' + error))
+        })
+      })
+    },
+    fetchPrivilegesForAllUsers ({ commit, rootGetters }) {
       return new Promise((resolve, reject) => {
         if (!isSuperAdmin(resolve, rootGetters)) return
         const configuration = rootGetters['rpayStore/getConfiguration']
@@ -59,7 +88,7 @@ const rpayPrivilegeStore = {
         })
       })
     },
-    fetchAuthorisation ({ commit, rootGetters }, data) {
+    fetchUserAuthorisation ({ commit, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
@@ -86,7 +115,7 @@ const rpayPrivilegeStore = {
         })
       })
     },
-    isAuthorised ({ rootGetters }, data) {
+    fetchHasPrivilege ({ rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]

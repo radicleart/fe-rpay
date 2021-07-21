@@ -26,6 +26,18 @@ const setupAccountApi = function (commit, stacksApi) {
   commit('setAccountApi', accountApi)
 }
 
+const setSuperAdmin = function (profile, privs) {
+  if (privs && privs.domains) {
+    const dom = privs.domains.find((o) => o.host === location.hostname)
+    if (dom) {
+      const index = dom.privileges.findIndex((o) => o === 'super-admin')
+      if (index > -1) {
+        profile.superAdmin = true
+      }
+    }
+  }
+}
+
 const BLOCKSTACK_LOGIN = Number(process.env.VUE_APP_BLOCKSTACK_LOGIN)
 
 const defAuthHeaders = function (profile) {
@@ -54,6 +66,7 @@ const defAuthHeaders = function (profile) {
 
 const getProfile = function (network) {
   let myProfile = {}
+  myProfile.authorisation = {}
   try {
     const account = userSession.loadUserData()
     if (account) {
@@ -63,30 +76,12 @@ const getProfile = function (network) {
         name = uname.substring(0, uname.indexOf('.'))
       }
       const stxAddress = (network === 'mainnet') ? account.profile.stxAddress.mainnet : account.profile.stxAddress.testnet
-
-      const isAdmin =
-        uname === 'mike.personal.id' ||
-        uname === 'risidio.btc' ||
-        // celine
-        account.identityAddress.indexOf('1FwYY6Xjp2xDBn62WvTvX9LY6PH2EvQSJ1') > -1 ||
-        uname.indexOf('1FwYY6Xjp2xDBn62WvTvX9LY6PH2EvQSJ1') > -1 ||
-        uname.indexOf('radicle_art') > -1 ||
-        uname.indexOf('mijoco') > -1 ||
-        stxAddress === 'SP3QSAJQ4EA8WXEDSRRKMZZ29NH91VZ6C5X88FGZQ' ||
-        stxAddress === 'SP8J1AZT3M85QCVTN2CNKFMBSKJXR1NQ9EWDEGCE' || // cx
-        stxAddress === 'ST8J1AZT3M85QCVTN2CNKFMBSKJXR1NQ9DTRS56F' || // cx
-        stxAddress === 'SPZRAE52H2NC2MDBEV8W99RFVPK8Q9BW8H88XV9N' || // cx
-        stxAddress === 'SP1CS4FVXC59S65C3X1J3XRNZGWTG212JT7CG73AG' || // dash
-        stxAddress === 'SP162D87CY84QVVCMJKNKGHC7GGXFGA0TAR9D0XJW' || // jim
-        stxAddress === 'ST162D87CY84QVVCMJKNKGHC7GGXFGA0TAV32Q5TK' // jim testnet
-
       myProfile = {
         gaiaHubConfig: account.gaiaHubConfig,
         identityAddress: account.identityAddress,
         hubUrl: account.hubUrl,
         loggedIn: true,
         stxAddress: stxAddress,
-        superAdmin: isAdmin,
         name: name,
         description: account.profile.description,
         avatarUrl: account.profile.avatarUrl,
@@ -177,13 +172,10 @@ const rpayAuthStore = {
           commit('myProfile', profile)
           const authHeaders = defAuthHeaders(profile)
           commit('setAuthHeaders', authHeaders)
-          const url = configuration.risidioBaseApi + '/mesh/v2/auth/getAuthorisation/' + profile.stxAddress
-          axios.get(url, authHeaders).then((response) => {
-            const authorisation = response.data
-            profile.authorisation = authorisation
+          dispatch('rpayPrivilegeStore/fetchUserAuthorisation', { stxAddress: profile.stxAddress }, { root: true }).then((privs) => {
+            profile.authorisation = privs
+            setSuperAdmin(profile, privs)
             commit('myProfile', profile)
-          }).catch(() => {
-            resolve()
           })
           dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
             profile.accountInfo = accountInfo
@@ -194,6 +186,11 @@ const rpayAuthStore = {
           userSession.handlePendingSignIn().then(() => {
             const profile = getProfile(configuration.network)
             commit('myProfile', profile)
+            dispatch('rpayPrivilegeStore/fetchUserAuthorisation', { stxAddress: profile.stxAddress }, { root: true }).then((privs) => {
+              profile.authorisation = privs
+              setSuperAdmin(profile, privs)
+              commit('myProfile', profile)
+            })
             dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
               profile.accountInfo = accountInfo
               commit('myProfile', profile)
@@ -230,8 +227,14 @@ const rpayAuthStore = {
             commit('myProfile', profile)
             const authHeaders = defAuthHeaders(profile)
             commit('setAuthHeaders', authHeaders)
+            dispatch('rpayPrivilegeStore/fetchUserAuthorisation', { stxAddress: profile.stxAddress }, { root: true }).then((auth) => {
+              profile.authorisation = auth
+              setSuperAdmin(profile, auth)
+              commit('myProfile', profile)
+            })
             dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
               profile.accountInfo = accountInfo
+              dispatch('rpayStacksContractStore/fetchAssetsByOwner', { root: true })
               commit('myProfile', profile)
               resolve(profile)
             })

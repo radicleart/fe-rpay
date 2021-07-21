@@ -9,7 +9,14 @@ import { AppConfig, UserSession } from '@stacks/connect'
 import { Storage } from '@stacks/storage'
 import utils from '@/services/utils'
 
-const ITEM_ROOT_PATH = process.env.VUE_APP_ITEM_ROOT_PATH
+const getItemRootPath = function () {
+  let itemRootPath = 'items_v003.json'
+  if (location.origin === 'prom.risidio.com') itemRootPath = 'items_v003.json'
+  else if (location.origin === 'prom.com') itemRootPath = 'items_v003.json'
+  return itemRootPath
+}
+// Clumsey way to do this but each app has the right to evolve its own gaia meta data root
+const ITEM_ROOT_PATH = getItemRootPath()
 
 const appConfig = new AppConfig(['store_write', 'publish_data'])
 const userSession = new UserSession({ appConfig })
@@ -32,7 +39,7 @@ const rpayMyItemService = {
         return
       }
       const rootFile = getNewRootFile()
-      storage.getFile(ITEM_ROOT_PATH, { decrypt: false }).then((file: string) => {
+      storage.getFile(ITEM_ROOT_PATH, { decrypt: false }).then((file) => {
         if (!file) {
           storage.putFile(ITEM_ROOT_PATH, JSON.stringify(rootFile), { encrypt: false })
           resolve(rootFile)
@@ -61,7 +68,7 @@ const rpayMyItemService = {
   },
   fetchUserItems: function (username) {
     return new Promise((resolve, reject) => {
-      storage.getFile(ITEM_ROOT_PATH, { username: username, decrypt: false }).then((file: string) => {
+      storage.getFile(ITEM_ROOT_PATH, { username: username, decrypt: false }).then((file) => {
         if (!file) {
           resolve(null)
         } else {
@@ -79,7 +86,7 @@ const rpayMyItemService = {
         resolve(getNewRootFile())
         return
       }
-      storage.getFile(ITEM_ROOT_PATH, { decrypt: false }).then((file: string) => {
+      storage.getFile(ITEM_ROOT_PATH, { decrypt: false }).then((file) => {
         if (!file) {
           const rootFile = getNewRootFile()
           storage.putFile(ITEM_ROOT_PATH, JSON.stringify(rootFile), { encrypt: false })
@@ -90,7 +97,7 @@ const rpayMyItemService = {
         }
       }).catch(() => {
         const rootFile = getNewRootFile()
-        storage.putFile(ITEM_ROOT_PATH, JSON.stringify(rootFile), { encrypt: false }).then((file: string) => {
+        storage.putFile(ITEM_ROOT_PATH, JSON.stringify(rootFile), { encrypt: false }).then((file) => {
           const rootFile = JSON.parse(file)
           resolve(rootFile)
         })
@@ -135,8 +142,8 @@ const rpayMyItemService = {
   },
   saveItem: function (rootFile) {
     return new Promise((resolve) => {
-      rootFile.updated = moment({}).valueOf()
-      storage.getFile(ITEM_ROOT_PATH, { decrypt: false }).then((file: string) => {
+      rootFile.updated = new Date().getTime()
+      storage.getFile(ITEM_ROOT_PATH, { decrypt: false }).then((file) => {
         let rootFile2 = JSON.parse(file)
         rootFile2 = rootFile
         storage.putFile(ITEM_ROOT_PATH, JSON.stringify(rootFile2), { encrypt: false }).then(() => {
@@ -155,7 +162,7 @@ const rpayMyItemService = {
   },
   saveAsset: function (item) {
     return new Promise((resolve) => {
-      storage.getFile(item.assetHash + '.json', { decrypt: false }).then((file: string) => {
+      storage.getFile(item.assetHash + '.json', { decrypt: false }).then((file) => {
         let item2 = JSON.parse(file)
         item2 = item
         storage.putFile(item.assetHash + '.json', JSON.stringify(item2), { encrypt: false }).then(() => {

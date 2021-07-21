@@ -29,9 +29,10 @@ const rpayTransactionStore = {
     }
   },
   actions: {
-    fetchTransactionInfo ({ commit }, txId) {
+    fetchTransactionInfo ({ commit, rootGetters }, txId) {
       return new Promise((resolve, reject) => {
-        const stacksNode = process.env.VUE_APP_STACKS_API + '/extended/v1/tx/' + txId
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const stacksNode = configuration.risidioStacksApi + '/extended/v1/tx/' + txId
         axios.get(stacksNode).then((result) => {
           commit('setTransaction', result.data)
           resolve(result.data)

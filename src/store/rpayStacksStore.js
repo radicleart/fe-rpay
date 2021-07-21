@@ -71,6 +71,7 @@ const pollTxStatus = function (result, stacksApi, dispatch, data) {
           result.response = response
           window.eventBus.$emit('rpayEvent', result)
           const cacheUpdate = {
+            type: 'token',
             nftIndex: data.nftIndex,
             contractId: data.contractAddress + '.' + data.contractName
           }
