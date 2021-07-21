@@ -38,6 +38,7 @@ const unsubscribeApiNews = function () {
   }
 }
 
+/**
 const subscribeApiNews = function (commit, connectUrl, contractId, assetHash, network) {
   if (!socket) socket = new SockJS(connectUrl + '/api-news')
   if (!stompClient) stompClient = Stomp.over(socket)
@@ -55,6 +56,7 @@ const subscribeApiNews = function (commit, connectUrl, contractId, assetHash, ne
     console.log(error)
   })
 }
+**/
 
 const pollTxStatus = function (result, stacksApi, dispatch, data) {
   return new Promise((resolve) => {
@@ -67,15 +69,17 @@ const pollTxStatus = function (result, stacksApi, dispatch, data) {
           const hexResolved = utils.fromHex(response[meth2].hex)
           resolve(hexResolved)
           clearInterval(intval)
-          result.opcode = 'stx-transaction-finished'
-          result.response = response
-          window.eventBus.$emit('rpayEvent', result)
           const cacheUpdate = {
             type: 'token',
+            functionName: result.functionName,
             nftIndex: data.nftIndex,
             contractId: data.contractAddress + '.' + data.contractName
           }
-          dispatch('rpayStacksContractStore/updateCache', cacheUpdate, { root: true })
+          dispatch('rpayStacksContractStore/updateCache', cacheUpdate, { root: true }).then(() => {
+            result.opcode = 'stx-transaction-finished'
+            result.response = response
+            window.eventBus.$emit('rpayEvent', result)
+          })
         }
       }).catch((e) => {
         console.log(e)
@@ -86,7 +90,7 @@ const pollTxStatus = function (result, stacksApi, dispatch, data) {
         resolve()
       }
       counter++
-    }, 5000)
+    }, 15000)
   })
 }
 
@@ -95,18 +99,20 @@ const captureResult = function (dispatch, commit, rootGetters, result, data) {
   const contractId = result.contractAddress + '.' + result.contractName
   const stacksTransaction = { contractId: contractId, timestamp: Date.now(), txId: result.txId, assetHash: result.assetHash, type: result.functionName, status: 1 }
   dispatch('rpayStacksContractStore/postStacksTransaction', stacksTransaction, { root: true })
-  const useApi = configuration.risidioBaseApi + '/mesh/v2/registry/' + contractId + '/' + result.assetHash
-  const connectUrl = configuration.risidioBaseApi + '/mesh'
   result.opcode = 'stx-transaction-sent'
   window.eventBus.$emit('rpayEvent', result)
   if (configuration.risidioStacksApi.indexOf('stacks-node-api') > -1) {
     pollTxStatus(result, configuration.risidioStacksApi, dispatch, data)
   }
+  /**
+  const useApi = configuration.risidioBaseApi + '/mesh/v2/registry/' + contractId + '/' + result.assetHash
+  const connectUrl = configuration.risidioBaseApi + '/mesh'
   subscribeApiNews(commit, connectUrl, contractId, result.assetHash, configuration.network)
   axios.get(useApi).then(() => {
   }).catch((error) => {
     console.log(error)
   })
+  **/
 }
 
 const resolveError = function (commit, reject, error) {
