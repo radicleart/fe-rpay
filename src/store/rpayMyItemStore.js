@@ -180,7 +180,7 @@ const rpayMyItemStore = {
         state.rootFile.records.splice(index, 1)
 
         console.log(state.rootFile.records)
-        rpayMyItemService.saveItem(state.rootFile).then((res) => {
+        rpayMyItemService.saveRootFile(state.rootFile).then((res) => {
           resolve(res)
         })
       })
@@ -213,6 +213,20 @@ const rpayMyItemStore = {
         })
       })
     },
+    deleteMediaItemSimple ({ dispatch }, mediaItem) {
+      return new Promise((resolve, reject) => {
+        if (mediaItem.storage !== 'gaia') {
+          return
+        }
+        const lio = mediaItem.fileUrl.lastIndexOf('/')
+        const coverImageFileName = mediaItem.fileUrl.substring(lio + 1)
+        rpayMyItemService.deleteFile(coverImageFileName).then(() => {
+          resolve(true)
+        }).catch(() => {
+          resolve(false)
+        })
+      })
+    },
     findItemByAssetHash ({ state }, assetHash) {
       return new Promise((resolve) => {
         const index = state.rootFile.records.findIndex((o) => o.assetHash === assetHash)
@@ -234,6 +248,14 @@ const rpayMyItemStore = {
           resolve(data.attributes)
         }).catch((err) => {
           reject(err)
+        })
+      })
+    },
+    saveUserProfile ({ state }, userProfile) {
+      return new Promise((resolve) => {
+        state.rootFile.userProfile = userProfile
+        rpayMyItemService.saveRootFile(state.rootFile).then((res) => {
+          resolve(res)
         })
       })
     },
@@ -303,7 +325,7 @@ const rpayMyItemStore = {
           }).catch((error) => {
             console.log(error)
           })
-          rpayMyItemService.saveItem(state.rootFile).then((rootFile) => {
+          rpayMyItemService.saveRootFile(state.rootFile).then((rootFile) => {
             commit('rootFile', rootFile)
             resolve(item)
             if (item.privacy === 'public' && contractAsset && contractAsset.nftIndex > -1) {

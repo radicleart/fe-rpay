@@ -104,15 +104,6 @@ const captureResult = function (dispatch, commit, rootGetters, result, data) {
   if (configuration.risidioStacksApi.indexOf('stacks-node-api') > -1) {
     pollTxStatus(result, configuration.risidioStacksApi, dispatch, data)
   }
-  /**
-  const useApi = configuration.risidioBaseApi + '/mesh/v2/registry/' + contractId + '/' + result.assetHash
-  const connectUrl = configuration.risidioBaseApi + '/mesh'
-  subscribeApiNews(commit, connectUrl, contractId, result.assetHash, configuration.network)
-  axios.get(useApi).then(() => {
-  }).catch((error) => {
-    console.log(error)
-  })
-  **/
 }
 
 const resolveError = function (commit, reject, error) {

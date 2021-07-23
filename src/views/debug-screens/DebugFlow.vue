@@ -176,6 +176,7 @@
 <script>
 import { APP_CONSTANTS } from '@/app-constants'
 import moment from 'moment'
+import utils from '@/services/utils'
 
 export default {
   name: 'MintingFlow',
@@ -195,6 +196,7 @@ export default {
     }
   },
   mounted () {
+    this.$store.dispatch('rpayStacksContractStore/fetchAssetsByOwner', 'ST1R1061ZT6KPJXQ7PAXPFB6ZAZ6ZWW28G8HXK9G5')
     this.$store.dispatch('rpayStacksContractStore/fetchContractData')
     this.$store.dispatch('rpaySearchStore/findAssets')
     const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]

@@ -26,7 +26,7 @@ const getNewRootFile = function () {
   const now = new Date().getTime()
   const newRootFile = {
     created: now,
-    artistProfile: {},
+    userProfile: {},
     records: []
   }
   return newRootFile
@@ -140,7 +140,7 @@ const rpayMyItemService = {
       })
     })
   },
-  saveItem: function (rootFile) {
+  saveRootFile: function (rootFile) {
     return new Promise((resolve) => {
       rootFile.updated = new Date().getTime()
       storage.getFile(ITEM_ROOT_PATH, { decrypt: false }).then((file) => {

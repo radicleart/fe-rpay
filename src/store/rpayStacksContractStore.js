@@ -297,7 +297,7 @@ const rpayStacksContractStore = {
       const tokens = state.registry.applications[index].tokenContract.tokens
       return tokens.filter((o) => o.owner === data.stxAddress)
     },
-    getMyContractAssets: state => data => {
+    getMyContractAssets: state => {
       return state.myContractAssets
     },
     getGaiaAssets: state => {
@@ -419,10 +419,10 @@ const rpayStacksContractStore = {
         const configuration = rootGetters['rpayStore/getConfiguration']
         // if project id is set in config then read search index of this
         // project. Otherwise search projects recursively
-        let path = configuration.risidioBaseApi + '/mesh/v2/registry'
+        let path = configuration.risidioBaseApi + '/mesh/v2/tokensAllProjects'
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         if (configuration.risidioProjectId) {
-          path = configuration.risidioBaseApi + '/mesh/v2/registry/' + configuration.risidioProjectId
+          path = configuration.risidioBaseApi + '/mesh/v2/tokensByProject/' + configuration.risidioProjectId
         }
         axios.get(path, authHeaders).then(response => {
           commit('setRegistry', { registry: response.data, contractId: configuration.risidioProjectId, network: configuration.network })
@@ -448,11 +448,12 @@ const rpayStacksContractStore = {
         })
       })
     },
-    fetchAssetsByOwner ({ commit, rootGetters }) {
+    fetchAssetsByOwner ({ commit, rootGetters }, stxAddress) {
       return new Promise((resolve, reject) => {
-        const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
+        // b32Address[0] -> network : 22=mainnet, 26=testnet
+        const b32Address = utils.convertAddressFrom(stxAddress)
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const path = configuration.risidioBaseApi + '/mesh/v2/assets/' + configuration.risidioProjectId + '/' + profile.stxAddress
+        const path = configuration.risidioBaseApi + '/mesh/v2/tokensByProjectAndOwner/' + configuration.risidioProjectId + '/' + b32Address[1]
         axios.get(path).then((response) => {
           commit('setMyContractAssets', response.data)
           resolve(response.data)
@@ -465,7 +466,7 @@ const rpayStacksContractStore = {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
-        const path = configuration.risidioBaseApi + '/mesh/v2/registry/' + configuration.risidioProjectId + '/' + nftIndex
+        const path = configuration.risidioBaseApi + '/mesh/v2/tokenByIndex/' + configuration.risidioProjectId + '/' + nftIndex
         axios.get(path, authHeaders).then(response => {
           loadAssetsFromGaia(commit, state.registry, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId).then((contractAsset) => {
             commit('setToken', { network: configuration.network, token: contractAsset })

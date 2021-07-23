@@ -234,7 +234,7 @@ const rpayAuthStore = {
             })
             dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
               profile.accountInfo = accountInfo
-              dispatch('rpayStacksContractStore/fetchAssetsByOwner', { root: true })
+              dispatch('rpayStacksContractStore/fetchAssetsByOwner', profile.stxAddress, { root: true })
               commit('myProfile', profile)
               resolve(profile)
             })
