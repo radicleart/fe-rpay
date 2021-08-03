@@ -115,6 +115,30 @@ const rpayPrivilegeStore = {
         })
       })
     },
+    addPrivilege ({ commit, rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        if (!isSuperAdmin(resolve, rootGetters)) return
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        axios.post(configuration.risidioBaseApi + '/mesh/v2/auth/add/' + data.stxAddress + '/' + data.privilege + '/' + location.hostname, authHeaders).then((result) => {
+          resolve(result.data)
+        }).catch((error) => {
+          reject(new Error('Unable index record: ' + error))
+        })
+      })
+    },
+    removePrivilege ({ commit, rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        if (!isSuperAdmin(resolve, rootGetters)) return
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        axios.post(configuration.risidioBaseApi + '/mesh/v2/auth/remove/' + data.stxAddress + '/' + data.privilege + '/' + location.hostname, authHeaders).then((result) => {
+          resolve(result.data)
+        }).catch((error) => {
+          reject(new Error('Unable index record: ' + error))
+        })
+      })
+    },
     fetchHasPrivilege ({ rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']

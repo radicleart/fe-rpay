@@ -8,6 +8,7 @@ import rpayMyItemService from '@/services/rpayMyItemService'
 import { APP_CONSTANTS } from '@/app-constants'
 import moment from 'moment'
 import utils from '@/services/utils'
+import axios from 'axios'
 
 const STX_CONTRACT_ADDRESS = process.env.VUE_APP_STACKS_CONTRACT_ADDRESS
 const STX_CONTRACT_NAME = process.env.VUE_APP_STACKS_CONTRACT_NAME
@@ -116,6 +117,14 @@ const rpayMyItemStore = {
     rootFile (state, rootFile) {
       state.rootFile = rootFile
     },
+    updateGaiaAsset (state, item) {
+      const index = state.rootFile.records.findIndex((o) => o.assetHash === item.assetHash)
+      if (index < 0) {
+        state.rootFile.records.splice(0, 0, item)
+      } else {
+        state.rootFile.records.splice(index, 1, item)
+      }
+    },
     indexResult (state, indexResult) {
       state.indexResult = indexResult
     },
@@ -139,10 +148,32 @@ const rpayMyItemStore = {
         }
       })
     },
-    fetchItems ({ commit, rootGetters }) {
+    fetchItems ({ state, dispatch, commit, rootGetters }) {
       return new Promise((resolve, reject) => {
         const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
         rpayMyItemService.fetchMyItems(profile).then((rootFile) => {
+          if (rootFile && rootFile.records) {
+            const tokens = rootGetters['rpayStacksContractStore/getMyContractAssets']
+            rootFile.records.forEach((ga) => {
+              if (!ga.attributes && ga.nftMedia) {
+                ga.attributes = ga.nftMedia
+                ga.nftMedia = null
+              }
+              if (tokens) ga.contractAsset = tokens.find((o) => o.tokenInfo.assetHash === ga.assetHash)
+            })
+          }
+          const hashes = rootFile.records.map(record => record.assetHash)
+          dispatch('rpayStacksContractStore/fetchAssetFirstsByHashes', hashes, { root: true }).then((tokens) => {
+            state.rootFile.records.forEach((ga) => {
+              if (tokens) {
+                const t = tokens.find((o) => o.tokenInfo.assetHash === ga.assetHash)
+                if (t) {
+                  ga.contractAsset = t
+                  commit('updateGaiaAsset', ga)
+                }
+              }
+            })
+          })
           commit('rootFile', rootFile)
           resolve(rootFile)
         }).catch((error) => {
@@ -259,6 +290,52 @@ const rpayMyItemStore = {
         })
       })
     },
+    registerExhibitRequest ({ rootGetters }, data) {
+      return new Promise(function (resolve, reject) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        data.domain = location.hostname
+        axios.post(configuration.risidioBaseApi + '/mesh/v2/register-to-exhibit', data).then((result) => {
+          resolve(result)
+        }).catch((error) => {
+          reject(new Error('Unable to register email: ' + error))
+        })
+      })
+    },
+    fetchExhibitRequests ({ rootGetters }, status) {
+      return new Promise(function (resolve, reject) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        let url = configuration.risidioBaseApi + '/mesh/v2/exhibit-requests'
+        if (status && status > -1) {
+          url = configuration.risidioBaseApi + '/mesh/v2/exhibit-requests/' + status
+        }
+        axios.get(url).then((results) => {
+          resolve(results.data)
+        }).catch((error) => {
+          reject(new Error('Unable to fetch exhibit requests: ' + error))
+        })
+      })
+    },
+    fetchExhibitRequest ({ rootGetters }, stxAddress) {
+      return new Promise(function (resolve, reject) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.get(configuration.risidioBaseApi + '/mesh/v2/exhibit-request/' + stxAddress).then((results) => {
+          resolve(results.data)
+        }).catch((error) => {
+          reject(new Error('Unable to fetch exhibit requests: ' + error))
+        })
+      })
+    },
+    updateExhibitRequestStatus ({ rootGetters }, data) {
+      return new Promise(function (resolve, reject) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        data.domain = location.hostname
+        axios.put(configuration.risidioBaseApi + '/mesh/v2/change-exhibit-status', data).then((result) => {
+          resolve(result)
+        }).catch((error) => {
+          reject(new Error('Unable to register email: ' + error))
+        })
+      })
+    },
     saveItem ({ state, rootGetters, commit, dispatch }, item) {
       return new Promise((resolve, reject) => {
         const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
@@ -270,7 +347,6 @@ const rpayMyItemStore = {
           reject(new Error('Unable to save your data...'))
           return
         }
-        const contractAsset = rootGetters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](item.assetHash)
         if (item.contractAsset) item.contractAsset = null
         if (typeof item.nftIndex === 'undefined') item.nftIndex = -1
         if (item.attributes && item.attributes.coverImage && item.attributes.coverImage.fileUrl) {
@@ -328,6 +404,7 @@ const rpayMyItemStore = {
           rpayMyItemService.saveRootFile(state.rootFile).then((rootFile) => {
             commit('rootFile', rootFile)
             resolve(item)
+            const contractAsset = rootGetters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](item.assetHash)
             if (item.privacy === 'public' && contractAsset && contractAsset.nftIndex > -1) {
               searchIndexService.addRecord(item).then((result) => {
                 console.log(result)

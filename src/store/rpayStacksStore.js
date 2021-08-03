@@ -38,26 +38,6 @@ const unsubscribeApiNews = function () {
   }
 }
 
-/**
-const subscribeApiNews = function (commit, connectUrl, contractId, assetHash, network) {
-  if (!socket) socket = new SockJS(connectUrl + '/api-news')
-  if (!stompClient) stompClient = Stomp.over(socket)
-  stompClient.debug = () => {}
-  socket.onclose = function () {
-    stompClient.disconnect()
-  }
-  stompClient.connect({}, function () {
-    stompClient.subscribe('/queue/contract-news-' + contractId + '-' + assetHash, function (response) {
-      const token = JSON.parse(response.body)
-      commit('rpayStacksContractStore/setToken', { network: network, token: token }, { root: true })
-    })
-  },
-  function (error) {
-    console.log(error)
-  })
-}
-**/
-
 const pollTxStatus = function (result, stacksApi, dispatch, data) {
   return new Promise((resolve) => {
     let counter = 0
@@ -65,7 +45,7 @@ const pollTxStatus = function (result, stacksApi, dispatch, data) {
       axios.get(stacksApi + 'extended/v1/tx/' + result.txId).then(response => {
         const meth1 = 'tx_status'
         if (response[meth1] === 'success') {
-          const meth2 = 'tx_status'
+          const meth2 = 'tx_result'
           const hexResolved = utils.fromHex(response[meth2].hex)
           resolve(hexResolved)
           clearInterval(intval)

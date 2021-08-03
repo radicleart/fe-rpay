@@ -177,6 +177,10 @@ const rpayAuthStore = {
             setSuperAdmin(profile, privs)
             commit('myProfile', profile)
           })
+          dispatch('rpayMyItemStore/fetchExhibitRequest', profile.stxAddress, { root: true }).then((exhibitRequest) => {
+            profile.exhibitRequest = exhibitRequest
+            commit('myProfile', profile)
+          })
           dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
             profile.accountInfo = accountInfo
             commit('myProfile', profile)
@@ -189,6 +193,10 @@ const rpayAuthStore = {
             dispatch('rpayPrivilegeStore/fetchUserAuthorisation', { stxAddress: profile.stxAddress }, { root: true }).then((privs) => {
               profile.authorisation = privs
               setSuperAdmin(profile, privs)
+              commit('myProfile', profile)
+            })
+            dispatch('rpayMyItemStore/fetchExhibitRequest', profile.stxAddress, { root: true }).then((exhibitRequest) => {
+              profile.exhibitRequest = exhibitRequest
               commit('myProfile', profile)
             })
             dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
@@ -232,9 +240,13 @@ const rpayAuthStore = {
               setSuperAdmin(profile, auth)
               commit('myProfile', profile)
             })
+            dispatch('rpayMyItemStore/fetchExhibitRequest', profile.stxAddress, { root: true }).then((exhibitRequest) => {
+              profile.exhibitRequest = exhibitRequest
+              commit('myProfile', profile)
+            })
             dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
               profile.accountInfo = accountInfo
-              dispatch('rpayStacksContractStore/fetchAssetsByOwner', profile.stxAddress, { root: true })
+              dispatch('rpayStacksContractStore/fetchAssetsByOwner', { stxAddress: profile.stxAddress, mine: true }, { root: true })
               commit('myProfile', profile)
               resolve(profile)
             })

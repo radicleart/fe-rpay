@@ -87,7 +87,7 @@ export default {
       this.$store.registerModule('rpayStore', rpayStore)
       this.$store.commit('rpayStore/addConfiguration', configuration)
     }
-    this.$store.dispatch('rpayStacksContractStore/fetchContractData', configuration).then(() => {
+    this.$store.dispatch('rpayStacksContractStore/fetchContractDataFirstEditions', configuration).then(() => {
       this.configured = true
     })
     // parse and store the main configuration object

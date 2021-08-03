@@ -131,6 +131,9 @@ const rpayPurchaseStore = {
     setDbOffers: (state, dbOffers) => {
       state.dbOffers = dbOffers
     },
+    addRegisteredEmail (state, data) {
+      state.emailData.push(data)
+    },
     addOffer: (state, dbOffer) => {
       const index = state.dbOffers.findIndex((o) => o.id === dbOffer.id)
       if (index < 0) {

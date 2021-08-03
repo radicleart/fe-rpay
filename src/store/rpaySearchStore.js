@@ -2,7 +2,8 @@
 import searchIndexService from '@/services/searchIndexService'
 import { APP_CONSTANTS } from '@/app-constants'
 
-const matchContractAssets = function (rootGetters, resultSet) {
+const matchContractAssets = function (commit, dispatch, rootGetters, resultSet) {
+  /**
   const matched = []
   resultSet.forEach((result) => {
     const contractAsset = rootGetters['rpayStacksContractStore/getAssetFromContractByHash'](result.assetHash)
@@ -16,6 +17,18 @@ const matchContractAssets = function (rootGetters, resultSet) {
     }
   })
   return matched
+  **/
+  const hashes = resultSet.map((o) => o.assetHash)
+  dispatch('rpayStacksContractStore/fetchAssetFirstsByHashes', hashes, { root: true }).then((tokens) => {
+    resultSet.forEach((result) => {
+      if (tokens) {
+        const token = tokens.find((o) => o.tokenInfo.assetHash === result.assetHash)
+        if (token) {
+          commit('addContractAsset', token)
+        }
+      }
+    })
+  })
 }
 
 const matchContractAsset = function (rootGetters, result) {
@@ -55,7 +68,7 @@ const sortResults = function (state, resultSet) {
 const rpaySearchStore = {
   namespaced: true,
   state: {
-    searchResults: null,
+    searchResults: [],
     projects: null,
     currentSearch: null,
     doSorting: false
@@ -65,7 +78,7 @@ const rpaySearchStore = {
       if (state.searchResults && state.doSorting) {
         return sortResults(state, state.searchResults)
       }
-      return state.searchResults
+      return state.searchResults.filter((o) => o.contractAsset)
     },
     getCurrentSearch: (state) => {
       return state.currentSearch
@@ -98,6 +111,15 @@ const rpaySearchStore = {
         state.searchResults = []
       }
       if (result) state.searchResults.push(result)
+    },
+    addContractAsset (state, contractAsset) {
+      const index = state.searchResults.findIndex((o) => o.assetHash === contractAsset.tokenInfo.assetHash)
+      if (index > -1) {
+        state.searchResults[index].contractAsset = contractAsset
+      }
+      state.searchResults.forEach((sr) => {
+        sr.update = new Date().getTime()
+      })
     },
     setProjects: (state, projects) => {
       state.projects = projects
@@ -172,7 +194,7 @@ const rpaySearchStore = {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         searchIndexService.fetchAllNamesIndex(configuration.risidioBaseApi).then((resultSet) => {
-          commit('setUsers', matchContractAssets(rootGetters, resultSet))
+          commit('setUsers', resultSet)
           resolve(resultSet)
         }).catch((error) => {
           reject(new Error('Unable index record: ' + error))
@@ -191,7 +213,7 @@ const rpaySearchStore = {
         })
       })
     },
-    findBySearchTerm ({ commit, rootGetters }, query) {
+    findBySearchTerm ({ commit, dispatch, rootGetters }, query) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         if (query && query.length > 0) {
@@ -206,7 +228,8 @@ const rpaySearchStore = {
         } else {
           query += '*'
           searchIndexService.findAssets(configuration.risidioBaseApi).then((resultSet) => {
-            commit('setSearchResults', matchContractAssets(rootGetters, resultSet))
+            commit('setSearchResults', resultSet)
+            matchContractAssets(commit, dispatch, rootGetters, resultSet)
             resolve(resultSet)
           }).catch((error) => {
             reject(new Error('Unable index record: ' + error))
@@ -214,13 +237,13 @@ const rpaySearchStore = {
         }
       })
     },
-    findByProjectId ({ commit, rootGetters }, projectId) {
+    findByProjectId ({ commit, dispatch, rootGetters }, projectId) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         searchIndexService.findByProjectId(configuration.risidioBaseApi, projectId).then((resultSet) => {
-          const contractResults = matchContractAssets(rootGetters, resultSet)
-          commit('setSearchResults', contractResults)
-          resolve(contractResults)
+          commit('setSearchResults', resultSet)
+          matchContractAssets(commit, dispatch, rootGetters, resultSet)
+          resolve(resultSet)
         }).catch((error) => {
           reject(new Error('Unable index record: ' + error))
         })
