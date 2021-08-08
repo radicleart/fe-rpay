@@ -108,7 +108,7 @@ const rpayAuthStore = {
     accountApi: null,
     authHeaders: null,
     accounts: [],
-    appName: 'Risidio Music NFTs',
+    appName: '#1 NFTs',
     appLogo: '/img/sticksnstones_logo.8217b8f7.png'
   },
   getters: {

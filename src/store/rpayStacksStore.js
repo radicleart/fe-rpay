@@ -19,12 +19,6 @@ import {
 } from '@stacks/network'
 import axios from 'axios'
 import BigNum from 'bn.js'
-import SockJS from 'sockjs-client'
-import Stomp from '@stomp/stompjs'
-// import { connectWebSocketClient } from '@stacks/blockchain-api-client'
-
-let socket = null
-let stompClient = null
 
 const network = new StacksTestnet()
 const precision = 1000000
@@ -32,57 +26,50 @@ const contractDeployFee = 60000
 const testnet = new StacksTestnet()
 const mainnet = new StacksMainnet()
 
-const unsubscribeApiNews = function () {
-  if (socket && stompClient) {
-    stompClient.disconnect()
-  }
-}
-
-const pollTxStatus = function (result, stacksApi, dispatch, data) {
-  return new Promise((resolve) => {
-    let counter = 0
-    const intval = setInterval(function () {
-      axios.get(stacksApi + 'extended/v1/tx/' + result.txId).then(response => {
-        const meth1 = 'tx_status'
-        if (response[meth1] === 'success') {
-          const meth2 = 'tx_result'
-          const hexResolved = utils.fromHex(response[meth2].hex)
-          resolve(hexResolved)
-          clearInterval(intval)
-          const cacheUpdate = {
-            type: 'token',
-            functionName: result.functionName,
-            nftIndex: data.nftIndex,
-            contractId: data.contractAddress + '.' + data.contractName
-          }
-          dispatch('rpayStacksContractStore/updateCache', cacheUpdate, { root: true }).then(() => {
-            result.opcode = 'stx-transaction-finished'
-            result.response = response
-            window.eventBus.$emit('rpayEvent', result)
-          })
-        }
-      }).catch((e) => {
-        console.log(e)
-        clearInterval(intval)
-      })
-      if (counter === 90) {
-        clearInterval(intval)
-        resolve()
-      }
-      counter++
-    }, 15000)
+const sendCacheUpdate = function (dispatch, txId, functionName, data) {
+  return new Promise(() => {
+    const cacheUpdate = {
+      type: 'token',
+      txId: txId,
+      functionName: functionName,
+      nftIndex: data.nftIndex,
+      assetHash: data.assetHash,
+      contractId: data.contractAddress + '.' + data.contractName
+    }
+    dispatch('rpayStacksContractStore/updateCache', cacheUpdate, { root: true })
   })
 }
 
-const captureResult = function (dispatch, commit, rootGetters, result, data) {
+const captureResult = function (dispatch, rootGetters, result, data) {
   const configuration = rootGetters['rpayStore/getConfiguration']
-  const contractId = result.contractAddress + '.' + result.contractName
-  const stacksTransaction = { contractId: contractId, timestamp: Date.now(), txId: result.txId, assetHash: result.assetHash, type: result.functionName, status: 1 }
-  dispatch('rpayStacksContractStore/postStacksTransaction', stacksTransaction, { root: true })
   result.opcode = 'stx-transaction-sent'
+  result.mintInfo = {
+    txStatus: 'sent',
+    txResult: null,
+    nftIndex: -1,
+    txId: result.txId
+  }
+  sendCacheUpdate(dispatch, result.txId, result.functionName, data)
   window.eventBus.$emit('rpayEvent', result)
+  const timer1 = setInterval(function () {
+    dispatch('rpayTransactionStore/watchTransactionInfo', result.txId, { root: true }).then((txData) => {
+      if (txData.tx_status !== 'pending') {
+        const nftIndex = (txData.tx_status === 'success') ? utils.fromHex(data.functionName, txData.tx_result.repr) : -1
+        result.opcode = 'stx-transaction-update'
+        result.mintInfo = {
+          txStatus: txData.tx_status,
+          txResult: txData.tx_result,
+          nftIndex: nftIndex,
+          txId: result.txId
+        }
+        sendCacheUpdate(dispatch, result.txId, result.functionName, data)
+        window.eventBus.$emit('rpayEvent', result)
+        clearInterval(timer1)
+      }
+    })
+  }, 15000)
   if (configuration.risidioStacksApi.indexOf('stacks-node-api') > -1) {
-    pollTxStatus(result, configuration.risidioStacksApi, dispatch, data)
+    // pollTxStatus(result, configuration.risidioStacksApi, dispatch, data)
   }
 }
 
@@ -170,7 +157,6 @@ const rpayStacksStore = {
   actions: {
     cleanup ({ state }) {
       return new Promise((resolve, reject) => {
-        unsubscribeApiNews()
         resolve(null)
       })
     },
@@ -236,10 +222,11 @@ const rpayStacksStore = {
             name: state.appName,
             icon: state.appLogo
           },
-          finished: (response) => {
+          onFinish: (response) => {
             const result = {
               txId: response.txId,
               txRaw: response.txRaw,
+              stacksTransaction: response.stacksTransaction,
               network: 15,
               assetHash: data.assetHash,
               contractAddress: data.contractAddress,
@@ -247,7 +234,7 @@ const rpayStacksStore = {
               functionName: data.functionName,
               functionArgs: data.functionArgs
             }
-            captureResult(dispatch, commit, rootGetters, result, data)
+            captureResult(dispatch, rootGetters, result, data)
             resolve(result)
           }
         }
@@ -295,7 +282,7 @@ const rpayStacksStore = {
               functionArgs: data.functionArgs
             }
             dispatch('fetchMacSkyWalletInfo')
-            captureResult(dispatch, commit, rootGetters, result, data)
+            captureResult(dispatch, rootGetters, result, data)
             resolve(result)
           }).catch((error) => {
             dispatch('fetchMacSkyWalletInfo')
@@ -307,7 +294,7 @@ const rpayStacksStore = {
               result.contractName = data.contractName
               result.functionName = data.functionName
               result.assetHash = data.assetHash
-              captureResult(dispatch, commit, rootGetters, result, data)
+              captureResult(dispatch, rootGetters, result, data)
               resolve(result)
             }).catch((error) => {
               reject(error)

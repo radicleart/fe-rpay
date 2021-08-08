@@ -29,15 +29,19 @@ const rpayTransactionStore = {
     }
   },
   actions: {
-    fetchTransactionInfo ({ commit, rootGetters }, txId) {
+    watchTransactionInfo ({ commit, rootGetters }, txId) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const stacksNode = configuration.risidioStacksApi + '/extended/v1/tx/' + txId
         axios.get(stacksNode).then((result) => {
-          commit('setTransaction', result.data)
-          resolve(result.data)
+          axios.post(configuration.risidioBaseApi + '/mesh/v2/register/transaction', stacksTransaction).then(() => {
+            commit('setTransaction', result.data)
+            resolve(result.data)
+          }).catch(() => {
+            reject(new Error('Unable watch transaction: ' + txId))
+          })
         }).catch(() => {
-          reject(new Error('Address not registered on: ' + process.env.VUE_APP_NETWORK))
+          reject(new Error('Unable call stacks node for transaction: ' + txId))
         })
       })
     }

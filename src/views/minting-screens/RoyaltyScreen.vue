@@ -62,6 +62,7 @@ export default {
       const networkConfig = this.$store.getters[APP_CONSTANTS.KEY_PREFERRED_NETWORK]
       networkConfig.assetHash = configuration.gaiaAsset.assetHash
       networkConfig.editions = configuration.gaiaAsset.editions
+      networkConfig.metaDataUrl = 'http://localhost:8081/gaia/data.json'
       networkConfig.editionCost = 0
       networkConfig.beneficiaries = configuration.minter.beneficiaries
       const methos = (configuration.network === 'local') ? 'callContractRisidio' : 'callContractBlockstack'

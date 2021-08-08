@@ -1,8 +1,8 @@
 import { APP_CONSTANTS } from '@/app-constants'
 import moment from 'moment'
 import utils from '@/services/utils'
-import BigNum from 'bn.js'
 import axios from 'axios'
+import BigNum from 'bn.js'
 import {
   bufferCV,
   listCV,
@@ -47,8 +47,8 @@ const rpayPurchaseStore = {
   state: {
     dbOffers: [],
     provider: 'stacks',
-    buttonText: ['AUCTION CLOSED', 'BUY NOW', 'PLACE BID', 'MAKE AN OFFER'],
-    badgeText: ['AUCTION CLOSED', 'BUY NOW', 'AUCTION ENDS', 'FOR SALE']
+    buttonText: ['NOT FOR SALE', 'BUY NOW', 'PLACE BID', 'MAKE AN OFFER'],
+    badgeText: ['NOT FOR SALE', 'BUY NOW', 'AUCTION ENDS', 'FOR SALE']
   },
   getters: {
     getRecipientAddress: (state, getters, rootState, rootGetters) => (owner) => {
@@ -106,6 +106,9 @@ const rpayPurchaseStore = {
     getSalesInfoText: (state, rootGetters) => contractAsset => {
       const saleData = contractAsset.saleData
       if (!saleData || saleData.saleType === 0) {
+        if (contractAsset.tokenInfo.maxEditions >= contractAsset.editionCounter) {
+          return 'LIMITED EDITIONS'
+        }
         return 'NOT FOR SALE'
       } else if (saleData.saleType === 1) {
         return 'Buy now for ' + (saleData.buyNowOrStartingPrice)
@@ -122,8 +125,13 @@ const rpayPurchaseStore = {
       const saleLabel = (saleType) ? state.buttonText[saleType] : state.buttonText[0]
       return saleLabel
     },
-    getSalesBadgeLabel: state => saleType => {
-      const saleLabel = (saleType) ? state.badgeText[saleType] : state.badgeText[0]
+    getSalesBadgeLabel: state => contractAsset => {
+      const saleLabel = (contractAsset.saleData.saleType) ? state.badgeText[contractAsset.saleData.saleType] : state.badgeText[0]
+      if (contractAsset.saleData.saleType === 0) {
+        if (contractAsset.tokenInfo.maxEditions >= contractAsset.editionCounter) {
+          return 'LIMITED EDITIONS'
+        }
+      }
       return saleLabel
     }
   },
@@ -230,21 +238,21 @@ const rpayPurchaseStore = {
             postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
           }
         }
-        const amount = new BigNum(utils.toOnChainAmount(data.mintingFee))
         let postConds = []
+        const amount = new BigNum(utils.toOnChainAmount(data.mintingFee))
         if (data.postConditions) {
           postConds = data.postConditions
         } else {
           postConds.push(makeStandardSTXPostCondition(
             postCondAddress,
             FungibleConditionCode.Equal,
-            new BigNum(amount)
+            amount // uintCV(utils.toOnChainAmount(data.mintingFee))
           ))
         }
-
         data.postConditions = postConds
-        const buffer = Buffer.from(data.assetHash, 'hex')
+        const buffer = bufferCV(Buffer.from(data.assetHash, 'hex'))
         const metaDataUrl = bufferCV(Buffer.from(data.metaDataUrl, 'utf8'))
+        // const metaDataUrl = stringUtf8CV(data.metaDataUrl)
         const editions = uintCV(data.editions)
         const editionCost = uintCV(data.editionCost)
         const addressList = []
@@ -261,7 +269,7 @@ const rpayPurchaseStore = {
         }
         const addresses = listCV(addressList)
         const shares = listCV(shareList)
-        data.functionArgs = [bufferCV(buffer), metaDataUrl, editions, editionCost, addresses, shares]
+        data.functionArgs = [buffer, metaDataUrl, editions, editionCost, addresses, shares]
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch((data.methos || methos), data, { root: true }).then((result) => {
           result.opcode = 'stx-transaction-sent'
@@ -288,7 +296,7 @@ const rpayPurchaseStore = {
         const standardSTXPostCondition = makeStandardSTXPostCondition(
           postCondAddress,
           FungibleConditionCode.LessEqual,
-          new BigNum(amount)
+          amount
         )
         data.postConditions = [standardSTXPostCondition]
         data.functionArgs = [uintCV(data.nftIndex)]

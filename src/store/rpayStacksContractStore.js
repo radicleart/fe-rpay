@@ -15,8 +15,9 @@ const sortResults = function (gaiaAssets) {
   }
 }
 
-const loadAssetsFromGaia = function (tokens, commit) {
+const loadAssetsFromGaia = function (tokens, commit, network) {
   tokens.forEach((token) => {
+    token = utils.resolvePrincipalsToken(network, token)
     axios.get(token.tokenInfo.metaDataUrl).then(response => {
       const gaiaAsset = response.data
       gaiaAsset.contractAsset = token
@@ -25,7 +26,13 @@ const loadAssetsFromGaia = function (tokens, commit) {
       commit('addGaiaAsset', {
         name: 'Unknown in Gaia',
         assetHash: token.tokenInfo.assetHash,
-        attributes: null,
+        attributes: {
+          artworkFile: {
+            fileUrl: 'https://images.prismic.io/radsoc/f60d92d0-f733-46e2-9cb7-c59e33a15fc1_download.jpeg?auto=compress,format',
+            type: 'image/jpg',
+            name: 'Waiting Image'
+          }
+        },
         contractAsset: token
       })
       console.log(error)
@@ -33,7 +40,7 @@ const loadAssetsFromGaia = function (tokens, commit) {
   })
 }
 
-const subscribeApiNews = function (commit, connectUrl, contractId) {
+const subscribeApiNews = function (commit, connectUrl, contractId, network) {
   if (!socket) socket = new SockJS(connectUrl + '/api-news')
   if (!stompClient) stompClient = Stomp.over(socket)
   stompClient.debug = () => {}
@@ -44,84 +51,18 @@ const subscribeApiNews = function (commit, connectUrl, contractId) {
     if (!contractId) {
       stompClient.subscribe('/queue/contract-news', function (response) {
         const cacheUpdateResult = JSON.parse(response.body)
-        loadAssetsFromGaia(cacheUpdateResult.tokens, commit)
+        loadAssetsFromGaia(cacheUpdateResult.tokens, commit, network)
       })
     } else {
       stompClient.subscribe('/queue/contract-news-' + contractId, function (response) {
         const cacheUpdateResult = JSON.parse(response.body)
-        loadAssetsFromGaia(cacheUpdateResult.tokens, commit)
+        loadAssetsFromGaia(cacheUpdateResult.tokens, commit, network)
       })
     }
   },
   function (error) {
     console.log(error)
   })
-}
-
-const resolvePrincipalsTokens = function (network, tokens) {
-  const resolvedTokens = []
-  tokens.forEach((token) => {
-    resolvedTokens.push(resolvePrincipalsToken(network, token))
-  })
-  return resolvedTokens
-}
-
-const resolvePrincipalsToken = function (network, token) {
-  token.owner = utils.convertAddress(network, token.owner)
-  token.tokenInfo.editionCost = utils.fromMicroAmount(token.tokenInfo.editionCost)
-  if (token.offerHistory) {
-    token.offerHistory.forEach((offer) => {
-      offer.offerer = utils.convertAddress(network, offer.offerer)
-      offer.amount = utils.fromMicroAmount(offer.amount)
-    })
-  }
-  if (token.transferHistory) {
-    token.transferHistory.forEach((transfer) => {
-      transfer.from = utils.convertAddress(network, transfer.from)
-      transfer.to = utils.convertAddress(network, transfer.to)
-      transfer.amount = utils.fromMicroAmount(transfer.amount)
-    })
-  }
-  if (token.saleData) {
-    token.saleData.buyNowOrStartingPrice = utils.fromMicroAmount(token.saleData.buyNowOrStartingPrice)
-    token.saleData.incrementPrice = utils.fromMicroAmount(token.saleData.incrementPrice)
-    token.saleData.reservePrice = utils.fromMicroAmount(token.saleData.reservePrice)
-  }
-  if (token.beneficiaries) {
-    let idx = 0
-    token.beneficiaries.shares.forEach((share) => {
-      token.beneficiaries.shares[idx].value = utils.fromMicroAmount(share.value) / 100
-      token.beneficiaries.addresses[idx].valueHex = utils.convertAddress(network, token.beneficiaries.addresses[idx].valueHex)
-      idx++
-    })
-  }
-  if (token.bidHistory && token.bidHistory.length > 0) {
-    const cycledBidHistory = []
-    token.bidHistory.forEach((bid) => {
-      bid.amount = utils.fromMicroAmount(bid.amount)
-      bid.bidder = utils.convertAddress(network, bid.bidder)
-      if (token.saleData.saleCycleIndex === bid.saleCycle) {
-        cycledBidHistory.push(bid)
-      }
-    })
-    token.cycledBidHistory = cycledBidHistory
-  }
-  return token
-}
-
-const resolvePrincipals = function (registry, network) {
-  if (!registry || !registry.administrator) return
-  registry.administrator = utils.convertAddress(network, registry.administrator)
-  if (registry.applications) {
-    registry.applications.forEach((app) => {
-      app.owner = utils.convertAddress(network, app.owner)
-      if (app.tokenContract) {
-        app.tokenContract.administrator = utils.convertAddress(network, app.tokenContract.administrator)
-        app.tokenContract.mintPrice = utils.fromMicroAmount(app.tokenContract.mintPrice)
-      }
-    })
-  }
-  return registry
 }
 
 const removeStatusOneApps = function (registry, contractId) {
@@ -231,6 +172,14 @@ const rpayStacksContractStore = {
     getMyContractAssets: state => {
       return state.myContractAssets
     },
+    getAssetByHashAndEdition: state => data => {
+      let ga = null
+      try {
+        ga = state.gaiaAssets.find((o) => o.contractAsset.tokenInfo.assetHash === data.assetHash && o.contractAsset.tokenInfo.edition === data.edition)
+        if (ga) return ga
+      } catch (err) {}
+      return null
+    },
     getGaiaAssets: state => {
       return state.gaiaAssets
     },
@@ -252,11 +201,11 @@ const rpayStacksContractStore = {
     setRegistry (state, data) {
       let registry = data.registry
       registry = removeStatusOneApps(registry, data.contractId)
-      registry = resolvePrincipals(registry, data.network)
+      registry = utils.resolvePrincipals(registry, data.network)
       state.registry = registry
     },
     addGaiaAsset (state, gaiaAsset) {
-      const index = state.gaiaAssets.findIndex((o) => o.assetHash === gaiaAsset.assetHash)
+      const index = state.gaiaAssets.findIndex((o) => o.contractAsset.nftIndex === gaiaAsset.contractAsset.nftIndex)
       if (index === -1) {
         state.gaiaAssets.splice(0, 0, gaiaAsset)
       } else {
@@ -277,23 +226,13 @@ const rpayStacksContractStore = {
   },
   actions: {
     updateCache ({ rootGetters }, cacheUpdate) {
-      return new Promise(function (resolve, reject) {
+      return new Promise(function (resolve) {
         const configuration = rootGetters['rpayStore/getConfiguration']
         axios.post(configuration.risidioBaseApi + '/mesh/v2/cache/update', cacheUpdate).then(() => {
           resolve(cacheUpdate)
-        }).catch((error) => {
-          reject(new Error('Unable index record: ' + error))
-        })
-      })
-    },
-    postStacksTransaction ({ commit, rootGetters }, stacksTransaction) {
-      return new Promise(function (resolve, reject) {
-        const configuration = rootGetters['rpayStore/getConfiguration']
-        axios.post(configuration.risidioBaseApi + '/mesh/v2/register/transaction', stacksTransaction).then(() => {
-          commit('addStacksTransactions', stacksTransaction)
-          resolve(stacksTransaction)
-        }).catch((error) => {
-          reject(new Error('Unable index record: ' + error))
+        }).catch(() => {
+          cacheUpdate.failed = true
+          resolve(cacheUpdate)
         })
       })
     },
@@ -359,9 +298,9 @@ const rpayStacksContractStore = {
           const path = configuration.risidioBaseApi + '/mesh/v2/tokensByContractIdAndEdition/' + configuration.risidioProjectId + '/' + 1
           const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
           axios.get(path, authHeaders).then(response => {
-            const tokens = resolvePrincipalsTokens(configuration.network, response.data)
-            loadAssetsFromGaia(tokens, commit)
-            subscribeApiNews(commit, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId)
+            // const tokens = utils.resolvePrincipalsTokens(configuration.network, response.data)
+            loadAssetsFromGaia(response.data, commit, configuration.network)
+            subscribeApiNews(commit, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId, configuration.network)
           }).catch(() => {
             resolve(null)
           })
@@ -386,11 +325,11 @@ const rpayStacksContractStore = {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const path = configuration.risidioBaseApi + '/mesh/v2/tokensByProjectAndOwner/' + configuration.risidioProjectId + '/' + b32Address[1]
         axios.get(path).then((response) => {
-          const tokens = resolvePrincipalsTokens(configuration.network, response.data)
+          const tokens = utils.resolvePrincipalsTokens(configuration.network, response.data)
           if (data.mine) {
             commit('setMyContractAssets', tokens)
           }
-          loadAssetsFromGaia(tokens, commit)
+          loadAssetsFromGaia(response.data, commit, configuration.network)
           resolve(tokens)
         }).catch((error) => {
           reject(error)
@@ -403,9 +342,8 @@ const rpayStacksContractStore = {
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         const path = configuration.risidioBaseApi + '/mesh/v2/tokenByIndex/' + configuration.risidioProjectId + '/' + nftIndex
         axios.get(path, authHeaders).then((response) => {
-          const token = resolvePrincipalsToken(configuration.network, response.data)
-          loadAssetsFromGaia([token], commit)
-          resolve(token)
+          loadAssetsFromGaia([response.data], commit, configuration.network)
+          resolve(null)
         }).catch((error) => {
           reject(error)
         })
@@ -417,9 +355,26 @@ const rpayStacksContractStore = {
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         const path = configuration.risidioBaseApi + '/mesh/v2/tokenByHash/' + assetHash
         axios.get(path, authHeaders).then((response) => {
-          const token = resolvePrincipalsToken(configuration.network, response.data)
-          loadAssetsFromGaia([token], commit)
-          resolve(token)
+          loadAssetsFromGaia([response.data], commit, configuration.network)
+          resolve(null)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    fetchAssetByHashAndEdition ({ state, commit, rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const ga = rootGetters['rpayStacksContractStore/getAssetByHashAndEdition'](data)
+        if (ga) {
+          resolve(ga)
+          return
+        }
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        const path = configuration.risidioBaseApi + '/mesh/v2/tokenByAssetHashAndEdition/' + data.assetHash + '/' + data.edition
+        axios.get(path, authHeaders).then((response) => {
+          loadAssetsFromGaia([response.data], commit, configuration.network)
+          resolve(null)
         }).catch((error) => {
           reject(error)
         })
@@ -436,9 +391,9 @@ const rpayStacksContractStore = {
           hashes: assetHashes
         }
         axios.post(path, data, authHeaders).then((response) => {
-          const tokens = resolvePrincipalsTokens(configuration.network, response.data)
-          loadAssetsFromGaia(tokens, commit)
-          resolve(tokens)
+          const tokens = utils.resolvePrincipalsTokens(configuration.network, response.data)
+          loadAssetsFromGaia(tokens, commit, configuration.network)
+          resolve(null)
         }).catch((error) => {
           reject(error)
         })

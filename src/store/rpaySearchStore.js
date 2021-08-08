@@ -1,6 +1,15 @@
 
 import searchIndexService from '@/services/searchIndexService'
 import { APP_CONSTANTS } from '@/app-constants'
+import utils from '@/services/utils'
+
+const matchContractAssetsFromJson = function (commit, dispatch, rootGetters, resultSet) {
+  const configuration = rootGetters['rpayStore/getConfiguration']
+  resultSet.forEach((result) => {
+    result.contractAsset = utils.resolvePrincipalsToken(configuration.network, JSON.parse(result.contractAssetJson))
+    result.contractAssetJson = null
+  })
+}
 
 const matchContractAssets = function (commit, dispatch, rootGetters, resultSet) {
   /**
@@ -20,10 +29,12 @@ const matchContractAssets = function (commit, dispatch, rootGetters, resultSet) 
   **/
   const hashes = resultSet.map((o) => o.assetHash)
   dispatch('rpayStacksContractStore/fetchAssetFirstsByHashes', hashes, { root: true }).then((tokens) => {
+    const configuration = rootGetters['rpayStore/getConfiguration']
     resultSet.forEach((result) => {
       if (tokens) {
-        const token = tokens.find((o) => o.tokenInfo.assetHash === result.assetHash)
+        let token = tokens.find((o) => o.tokenInfo.assetHash === result.assetHash)
         if (token) {
+          token = utils.resolvePrincipalsToken(configuration.network, token)
           commit('addContractAsset', token)
         }
       }
@@ -32,10 +43,12 @@ const matchContractAssets = function (commit, dispatch, rootGetters, resultSet) 
 }
 
 const matchContractAsset = function (rootGetters, result) {
-  const contractAsset = rootGetters['rpayStacksContractStore/getAssetFromContractByHash'](result.assetHash)
+  const configuration = rootGetters['rpayStore/getConfiguration']
+  let contractAsset = rootGetters['rpayStacksContractStore/getAssetFromContractByHash'](result.assetHash)
   if (contractAsset) {
     const gaiaAsset = rootGetters[APP_CONSTANTS.KEY_GAIA_ASSET_BY_HASH](result.assetHash)
     if (gaiaAsset && gaiaAsset.attributes) result = gaiaAsset
+    contractAsset = utils.resolvePrincipalsToken(configuration.network, contractAsset)
     result.contractAsset = contractAsset
   }
   return result
@@ -241,8 +254,8 @@ const rpaySearchStore = {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         searchIndexService.findByProjectId(configuration.risidioBaseApi, projectId).then((resultSet) => {
+          matchContractAssetsFromJson(commit, dispatch, rootGetters, resultSet)
           commit('setSearchResults', resultSet)
-          matchContractAssets(commit, dispatch, rootGetters, resultSet)
           resolve(resultSet)
         }).catch((error) => {
           reject(new Error('Unable index record: ' + error))

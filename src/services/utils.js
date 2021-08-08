@@ -1,6 +1,6 @@
 // import dataUriToBuffer from 'data-uri-to-buffer'
 import {
-  hexToCV
+  hexToCV, cvToJSON
 } from '@stacks/transactions'
 import dataUriToBuffer from 'data-uri-to-buffer'
 import crypto from 'crypto'
@@ -142,13 +142,26 @@ const utils = {
     return '0x' + arr.join('')
   },
   fromHex: function (method, rawResponse) {
+    if (method === 'mint-token' || method === 'mint-edition') {
+      try {
+        if (rawResponse.indexOf('(ok u') > -1) {
+          const v1 = rawResponse.split(' u')[1]
+          const v2 = v1.split(')')[0]
+          return Number(v2)
+        } else {
+          return cvToJSON(hexToCV(rawResponse))
+        }
+      } catch (e) {
+        return -1
+      }
+    }
     const td = new TextDecoder('utf-8')
     if (!rawResponse) {
       throw new Error('No response from blockchain - is the project deployed?')
     }
     const res = hexToCV(rawResponse)
     if (rawResponse.startsWith('0x08')) {
-      throw new Error('Blockchain call returned not okay with error code: ' + res.value.value.toNumber())
+      return 'error'
     }
     if (method === 'get-mint-price') {
       return res.value.value.toNumber()
@@ -221,6 +234,81 @@ const utils = {
     } else if (method === 'get-base-token-uri') {
       return td.decode(res.buffer)
     }
+  },
+  resolvePrincipalsTokens: function (network, tokens) {
+    const resolvedTokens = []
+    tokens.forEach((token) => {
+      resolvedTokens.push(this.resolvePrincipalsToken(network, token))
+    })
+    return resolvedTokens
+  },
+  resolvePrincipalsToken: function (network, token) {
+    try {
+      token.owner = this.convertAddress(network, token.owner)
+    } catch (err) {
+      // c32address fails if the address is already converted - use this to prevent
+      // double conversions
+      return token
+    }
+    token.tokenInfo.editionCost = this.fromMicroAmount(token.tokenInfo.editionCost)
+    if (token.offerHistory) {
+      token.offerHistory.forEach((offer) => {
+        offer.offerer = this.convertAddress(network, offer.offerer)
+        offer.amount = this.fromMicroAmount(offer.amount)
+      })
+    }
+    if (token.transferHistory) {
+      token.transferHistory.forEach((transfer) => {
+        transfer.from = this.convertAddress(network, transfer.from)
+        transfer.to = this.convertAddress(network, transfer.to)
+        transfer.amount = this.fromMicroAmount(transfer.amount)
+      })
+    }
+    if (token.saleData) {
+      token.saleData.buyNowOrStartingPrice = this.fromMicroAmount(token.saleData.buyNowOrStartingPrice)
+      token.saleData.incrementPrice = this.fromMicroAmount(token.saleData.incrementPrice)
+      token.saleData.reservePrice = this.fromMicroAmount(token.saleData.reservePrice)
+    }
+    if (token.beneficiaries) {
+      let idx = 0
+      token.beneficiaries.shares.forEach((share) => {
+        token.beneficiaries.shares[idx].value = this.fromMicroAmount(share.value) / 100
+        token.beneficiaries.addresses[idx].valueHex = this.convertAddress(network, token.beneficiaries.addresses[idx].valueHex)
+        idx++
+      })
+    }
+    if (token.bidHistory && token.bidHistory.length > 0) {
+      const cycledBidHistory = []
+      token.bidHistory.forEach((bid) => {
+        bid.amount = this.fromMicroAmount(bid.amount)
+        bid.bidder = this.convertAddress(network, bid.bidder)
+        if (token.saleData.saleCycleIndex === bid.saleCycle) {
+          cycledBidHistory.push(bid)
+        }
+      })
+      token.cycledBidHistory = cycledBidHistory
+    }
+    return token
+  },
+  resolvePrincipals: function (registry, network) {
+    if (!registry || !registry.administrator) return
+    try {
+      registry.administrator = this.convertAddress(network, registry.administrator)
+    } catch (err) {
+      // c32address fails if the address is already converted - use this to prevent
+      // double conversions
+      return registry
+    }
+    if (registry.applications) {
+      registry.applications.forEach((app) => {
+        app.owner = this.convertAddress(network, app.owner)
+        if (app.tokenContract) {
+          app.tokenContract.administrator = this.convertAddress(network, app.tokenContract.administrator)
+          app.tokenContract.mintPrice = this.fromMicroAmount(app.tokenContract.mintPrice)
+        }
+      })
+    }
+    return registry
   }
 }
 export default utils
