@@ -395,7 +395,7 @@ const rpayMyItemStore = {
           // throw new Error('profile needs to refresh - please reload current page..')
         } else {
           item.metaDataUrl = profile.gaiaHubConfig.url_prefix + profile.gaiaHubConfig.address + '/' + item.assetHash + '.json'
-          item.externalUrl = location.origin + '/assets/' + item.assetHash
+          item.externalUrl = location.origin + '/assets/' + item.assetHash + '/1'
           rpayMyItemService.saveAsset(item).then((item) => {
             console.log(item)
           }).catch((error) => {

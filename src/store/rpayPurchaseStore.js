@@ -106,10 +106,7 @@ const rpayPurchaseStore = {
     getSalesInfoText: (state, rootGetters) => contractAsset => {
       const saleData = contractAsset.saleData
       if (!saleData || saleData.saleType === 0) {
-        if (contractAsset.tokenInfo.maxEditions >= contractAsset.editionCounter) {
-          return 'LIMITED EDITIONS'
-        }
-        return 'NOT FOR SALE'
+        return 'NOT ON SALE'
       } else if (saleData.saleType === 1) {
         return 'Buy now for ' + (saleData.buyNowOrStartingPrice)
       } else if (saleData.saleType === 2) {
