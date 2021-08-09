@@ -216,7 +216,7 @@ const rpayAuthStore = {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const defDetails = {
-          name: 'Risidio #1 in NFTs',
+          name: 'ThisIsNumberOne First in NFTs',
           icon: origin + '/img/logo/logo.png'
         }
         const appDetails = (configuration.appDetails) ? configuration.appDetails : defDetails

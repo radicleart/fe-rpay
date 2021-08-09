@@ -120,8 +120,8 @@ const rpayStacksStore = {
     provider: 'connect',
     result: null,
     contracts: [],
-    appName: 'Risidio Xchange',
-    appLogo: '/img/logo/Risidio_logo_256x256.png',
+    appName: 'ThisIsNumberOne - NFTS on Bitcoin',
+    appLogo: '/img/logo/logo.png',
     macsWallet: null,
     skysWallet: null
   },
