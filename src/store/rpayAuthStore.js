@@ -225,12 +225,11 @@ const rpayAuthStore = {
           userSession: userSession,
           redirectTo: '/create',
           manifestPath: '/manifest.json',
-          finished: ({ userSession, authResponse }) => {
+          onFinish: ({ userSession, authResponse }) => {
+            state.userData = userSession.loadUserData()
             window.eventBus.$emit('rpayEvent', { opcode: 'configured-logged-in', session: userSession })
-            const userData = userSession.loadUserData()
-            state.appPrivateKey = userSession.loadUserData().appPrivateKey
+            state.appPrivateKey = state.userData.appPrivateKey
             state.authResponse = authResponse
-            state.userData = userData
             const profile = getProfile(configuration.network)
             commit('myProfile', profile)
             const authHeaders = defAuthHeaders(profile)
