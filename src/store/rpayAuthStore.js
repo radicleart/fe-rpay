@@ -132,7 +132,7 @@ const rpayAuthStore = {
     getAccountInfo: state => stxAddress => {
       return state.accounts.find((o) => o.stxAddress === stxAddress)
     },
-    getAccounts: state => stxAddress => {
+    getAccounts: state => {
       return state.accounts
     }
   },
@@ -278,8 +278,11 @@ const rpayAuthStore = {
     },
     fetchAccountInfo ({ state, commit, rootGetters }, data) {
       return new Promise((resolve) => {
+        if (!data || !data.stxAddress) {
+          resolve()
+          return
+        }
         const configuration = rootGetters['rpayStore/getConfiguration']
-        if (!data || !data.stxAddress) resolve()
         const index = state.accounts.findIndex((o) => o.stxAddress === data.stxAddress)
         if (!data.force && index > -1) {
           return state.accounts.find((o) => o.stxAddress === data.stxAddress)

@@ -37,9 +37,6 @@ export default {
       mintedMessage: null
     }
   },
-  mounted () {
-    // window.eventBus.$emit('rpayEvent', { opcode: 'eth-mint-error' })
-  },
   methods: {
     rangeEvent (displayCard) {
       this.$store.commit('rpayStore/setDisplayCard', displayCard)

@@ -44,6 +44,8 @@ const getPaymentOptions = function (configuration) {
       allowedOptions.push({ text: 'Lightning', value: 'lightning', mainOption: mainOption === 'lightning' })
     } else if (option.allowFiat) {
       allowedOptions.push({ text: 'Fiat', value: 'fiat', mainOption: mainOption === 'fiat' })
+    } else if (option.allowPaypal) {
+      allowedOptions.push({ text: 'Paypal', value: 'paypal', mainOption: mainOption === 'paypal' })
     } else if (option.allowBitcoin) {
       allowedOptions.push({ text: 'Bitcoin', value: 'bitcoin', mainOption: mainOption === 'bitcoin' })
     } else if (option.allowLSAT) {
@@ -387,8 +389,8 @@ const rpayStore = {
               return
             }
           }
-          let allowed = configuration.payment.paymentOptions[1].allowBitcoin
-          allowed = allowed || configuration.payment.paymentOptions[2].allowLightning
+          const allowed = configuration.payment.paymentOptions.find((o) => o.allowBitcoin) ||
+            configuration.payment.paymentOptions.find((o) => o.allowLightning)
           if (!allowed) {
             resolve({ data: { status: 'unpaid' } })
             return

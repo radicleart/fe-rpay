@@ -63,19 +63,19 @@ const getWeb3 = function () {
 const resolveError = function (reject, error, commit) {
   let errorMessage = 'Unable to contact your <b>Meta Mask wallet</b> <br/> are you logged in and connected to the ' + NETWORK + ' network?'
   if (error && error.message && error.message.toLowerCase().indexOf('user denied') > -1) {
-    errorMessage = 'Minting process cancelled...'
+    errorMessage = 'Transfer process cancelled...'
   }
   commit(APP_CONSTANTS.SET_MINTING_MESSAGE, { opcode: 'eth-mint-error', message: errorMessage }, { root: true })
   const result = {
     opcode: 'eth-mint-error',
     message: errorMessage
   }
-  window.eventBus.$emit('rpayEvent', result)
-  reject(new Error(errorMessage))
+  reject(new Error(result))
 }
 
 const sendPayment = function (web3, data, account, resolve, reject, commit) {
   const amountToSend = web3.utils.toWei(String(data.amount), 'ether') // convert to wei value
+  window.eventBus.$emit('rpayEvent', { opcode: 'eth-payment-pending' })
   web3.eth.sendTransaction({ from: account, to: data.ethPaymentAddress, value: amountToSend }).then((res) => {
     const result = {
       txId: res.transactionHash
@@ -110,7 +110,6 @@ const mintToken = function (web3, data, account, resolve, reject, commit) {
       commit(APP_CONSTANTS.SET_MINTING_MESSAGE, result, { root: true })
       commit(APP_CONSTANTS.SET_DISPLAY_CARD, 106, { root: true })
       result.opcode = 'eth-mint-success'
-      window.eventBus.$emit('rpayEvent', result)
       resolve(result)
     }).catch((e) => {
       resolveError(reject, e, commit)
@@ -221,28 +220,34 @@ const rpayEthereumStore = {
           if (!web3) {
             reject(new Error('no ethereum provider registered - please download Meta Mask to continue!'))
           }
-          web3.eth.getAccounts(function (error, accounts) {
-            if (error) {
-              reject(new Error('Please check you are logged in to meta mask - then try again?'))
-            } else if (!accounts || accounts.length === 0) {
-              reject(new Error('No accounts - not logged in to wallet'))
-            } else {
-              if (data.opcode === 'send-payment') {
-                sendPayment(web3, data, accounts[0], resolve, reject, commit)
-              } else if (data.opcode === 'mint-token') {
-                mintToken(web3, data, accounts[0], resolve, reject, commit)
-              } else if (data.opcode === 'eth-set-base-token-uri') {
-                setBaseTokenURI(web3, data, accounts[0], resolve, reject, commit)
-              } else if (data.opcode === 'eth-get-total-supply') {
-                totalSupply(web3, accounts[0], resolve, reject)
-              } else if (data.opcode === 'eth-get-contract-data') {
-                getContractData(web3, data, accounts[0], resolve, reject)
-              } else if (data.opcode === 'eth-set-minting-fee') {
-                setMintPrice(web3, data, accounts[0], resolve, reject)
-              } else if (data.opcode === 'eth-make-withdrawal') {
-                makeWithdrawal(web3, data, accounts[0], resolve, reject)
-              }
+          web3.eth.net.getId().then((netId) => {
+            if (netId !== data.ethNetworkId) {
+              reject(new Error('Wrong ethereum network - expecting ' + data.ethNetworkId + ' but found ' + netId))
+              return
             }
+            web3.eth.getAccounts(function (error, accounts) {
+              if (error) {
+                reject(new Error('Please check you are logged in to meta mask - then try again?'))
+              } else if (!accounts || accounts.length === 0) {
+                reject(new Error('No accounts - not logged in to wallet'))
+              } else {
+                if (data.opcode === 'send-payment') {
+                  sendPayment(web3, data, accounts[0], resolve, reject, commit)
+                } else if (data.opcode === 'mint-token') {
+                  mintToken(web3, data, accounts[0], resolve, reject, commit)
+                } else if (data.opcode === 'eth-set-base-token-uri') {
+                  setBaseTokenURI(web3, data, accounts[0], resolve, reject, commit)
+                } else if (data.opcode === 'eth-get-total-supply') {
+                  totalSupply(web3, accounts[0], resolve, reject)
+                } else if (data.opcode === 'eth-get-contract-data') {
+                  getContractData(web3, data, accounts[0], resolve, reject)
+                } else if (data.opcode === 'eth-set-minting-fee') {
+                  setMintPrice(web3, data, accounts[0], resolve, reject)
+                } else if (data.opcode === 'eth-make-withdrawal') {
+                  makeWithdrawal(web3, data, accounts[0], resolve, reject)
+                }
+              }
+            })
           })
         })
       })

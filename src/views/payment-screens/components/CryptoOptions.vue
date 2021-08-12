@@ -21,7 +21,7 @@ export default {
   },
   data () {
     return {
-      selected: 'bitcoin',
+      selected: '',
       logoSq: 'https://images.prismic.io/risidio-journal/6da1afe7-fb24-4cff-be77-144d4354f41d_square.png?auto=compress,format',
       logoOn: 'https://images.prismic.io/risidio-journal/65a893ce-421d-45bf-b883-8cb77fda2763_Sans-titre-1+%283%29.png?auto=compress,format',
       logoEth: 'https://images.prismic.io/risidio-journal/6b859d7d-c60e-470f-994c-ab2ae1bff130_eht.png?auto=compress,format',
