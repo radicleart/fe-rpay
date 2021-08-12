@@ -10,6 +10,7 @@ let MESH_API = null
 let socket = null
 let stompClient = null
 const precision = 100000000
+const precisionStx = 1000000
 const setAmounts = function (tickerRates, configuration) {
   try {
     let amountFiat = configuration.payment.amountFiat
@@ -22,7 +23,7 @@ const setAmounts = function (tickerRates, configuration) {
     configuration.payment.amountBtc = Math.round(amountBtc * precision) / precision
     configuration.payment.amountSat = Math.round(amountBtc * precision)
     configuration.payment.amountEth = Math.round((amountFiat / rate.ethPrice) * precision) / precision
-    configuration.payment.amountStx = Math.round((amountFiat / rate.stxPrice) * precision) / precision
+    configuration.payment.amountStx = Math.round((amountFiat / rate.stxPrice) * precisionStx) / precisionStx
     return configuration
   } catch {
     return configuration
