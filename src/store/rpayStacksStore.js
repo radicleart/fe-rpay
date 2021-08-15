@@ -26,21 +26,21 @@ const contractDeployFee = 60000
 const testnet = new StacksTestnet()
 const mainnet = new StacksMainnet()
 
-const sendCacheUpdate = function (dispatch, txId, functionName, data) {
+const sendCacheUpdate = function (dispatch, result) {
   return new Promise(() => {
     const cacheUpdate = {
       type: 'token',
-      txId: txId,
-      functionName: functionName,
-      nftIndex: data.nftIndex,
-      assetHash: data.assetHash,
-      contractId: data.contractAddress + '.' + data.contractName
+      txId: result.mintInfo.txId,
+      functionName: result.mintInfo.functionName,
+      nftIndex: result.mintInfo.nftIndex,
+      assetHash: result.assetHash,
+      contractId: result.contractAddress + '.' + result.contractName
     }
     dispatch('rpayStacksContractStore/updateCache', cacheUpdate, { root: true })
   })
 }
 
-const captureResult = function (dispatch, rootGetters, result, data) {
+const captureResult = function (dispatch, rootGetters, result) {
   const configuration = rootGetters['rpayStore/getConfiguration']
   result.opcode = 'stx-transaction-sent'
   result.mintInfo = {
@@ -49,20 +49,15 @@ const captureResult = function (dispatch, rootGetters, result, data) {
     nftIndex: -1,
     txId: result.txId
   }
-  sendCacheUpdate(dispatch, result.txId, result.functionName, data)
+  sendCacheUpdate(dispatch, result)
   window.eventBus.$emit('rpayEvent', result)
   const timer1 = setInterval(function () {
     dispatch('rpayTransactionStore/watchTransactionInfo', result.txId, { root: true }).then((txData) => {
-      if (txData.tx_status !== 'pending') {
-        const nftIndex = (txData.tx_status === 'success') ? utils.fromHex(data.functionName, txData.tx_result.repr) : -1
+      if (txData.txStatus !== 'pending') {
+        result.contractId = result.contractAddress + '.' + result.contractName
         result.opcode = 'stx-transaction-update'
-        result.mintInfo = {
-          txStatus: txData.tx_status,
-          txResult: txData.tx_result,
-          nftIndex: nftIndex,
-          txId: result.txId
-        }
-        sendCacheUpdate(dispatch, result.txId, result.functionName, data)
+        result.mintInfo = txData
+        sendCacheUpdate(dispatch, result)
         window.eventBus.$emit('rpayEvent', result)
         clearInterval(timer1)
       }

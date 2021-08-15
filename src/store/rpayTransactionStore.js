@@ -1,4 +1,5 @@
 import axios from 'axios'
+import utils from '@/services/utils'
 
 const rpayTransactionStore = {
   namespaced: true,
@@ -29,19 +30,35 @@ const rpayTransactionStore = {
     }
   },
   actions: {
-    watchTransactionInfo ({ commit, rootGetters }, txId) {
+    watchTransactionInfo ({ rootGetters }, txId) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const stacksNode = configuration.risidioStacksApi + '/extended/v1/tx/' + txId
-        axios.get(stacksNode).then((result) => {
-          axios.post(configuration.risidioBaseApi + '/mesh/v2/register/transaction', stacksTransaction).then(() => {
+        axios.get(stacksNode).then((txData) => {
+          if (txData && txData.tx_status) {
+            const result = {}
+            result.functionName = txData.contract_call.function_name
+            result.timeSent = txData.receipt_time_iso
+            const nftIndex = (txData.tx_status === 'success') ? utils.fromHex(result.functionName, txData.tx_result.repr) : -1
+            result.opcode = 'stx-transaction-update'
+            result.txStatus = txData.tx_status
+            result.txResult = txData.tx_result
+            result.nftIndex = nftIndex
+            result.txId = txId
+            resolve(result)
+          } else {
+            resolve(false)
+          }
+          /**
+          axios.post(configuration.risidioBaseApi + '/mesh/v2/register/transaction', result).then(() => {
             commit('setTransaction', result.data)
             resolve(result.data)
           }).catch(() => {
             reject(new Error('Unable watch transaction: ' + txId))
           })
+          **/
         }).catch(() => {
-          reject(new Error('Unable call stacks node for transaction: ' + txId))
+          reject(new Error('Unable call stacks node for transaction: ' + stacksNode))
         })
       })
     }
