@@ -1,9 +1,8 @@
-// import Vue from 'vue'
-// import Vuex from 'vuex'
 import lsatHelper from './lsatHelper'
 import axios from 'axios'
 import SockJS from 'sockjs-client'
 import Stomp from '@stomp/stompjs'
+import { APP_CONSTANTS } from '@/app-constants'
 
 // Vue.use(Vuex)
 let MESH_API = null
@@ -59,7 +58,7 @@ const getPaymentOptions = function (configuration) {
   })
   return allowedOptions
 }
-const subscribeApiNews = function (commit, connectUrl, paymentId) {
+const connectApiNews = function (commit, connectUrl, paymentId) {
   if (!socket) socket = new SockJS(connectUrl + '/api-news')
   if (!stompClient) stompClient = Stomp.over(socket)
   stompClient.debug = () => {}
@@ -67,12 +66,6 @@ const subscribeApiNews = function (commit, connectUrl, paymentId) {
     stompClient.disconnect()
   }
   stompClient.connect({}, function () {
-    if (paymentId) {
-      stompClient.subscribe('/queue/payment-news-' + paymentId, function (response) {
-        const news = JSON.parse(response.body)
-        commit('setMiningNews', news)
-      })
-    }
     stompClient.subscribe('/queue/rates-news', function (response) {
       const rates = JSON.parse(response.body)
       commit('setTickerRates', rates.tickerRates)
@@ -82,42 +75,42 @@ const subscribeApiNews = function (commit, connectUrl, paymentId) {
     console.log(error)
   })
 }
+const subscribePayment = function (commit, paymentId) {
+  if (!socket || !stompClient || !paymentId) return
+  stompClient.subscribe('/queue/payment-news-' + paymentId, function (response) {
+    const invoice = { data: JSON.parse(response.body) }
+    commit('mergePaidCharge', invoice)
+    if (invoice.data.status === 'paid' || invoice.status === 'procecessing') {
+      invoice.opcode = 'btc-crypto-payment-success'
+      window.eventBus.$emit('rpayEvent', invoice)
+    }
+  })
+}
 
-const unsubscribeApiNews = function () {
+const disconnectApiNews = function () {
   if (socket && stompClient) {
     stompClient.disconnect()
   }
 }
 
 const checkPayment = function (resolve, reject, state, commit, paymentId) {
-  // if (state.timer) {
-  //  clearInterval(state.timer)
-  // }
   axios.post(MESH_API + '/v2/checkPayment/' + paymentId).then(response => {
     const invoice = response.data
-    if (!invoice.data) return
-    if (invoice.data.status === 'paid' || invoice.data.status === 'processing') {
-      // clearInterval(state.timer)
+    if (invoice.data && (invoice.data.status === 'paid' || invoice.data.status === 'processing')) {
       localStorage.setItem('OP_INVOICE', JSON.stringify(invoice))
-      commit('setInvoice', invoice)
+      commit('mergePaidCharge', invoice)
       invoice.opcode = 'btc-crypto-payment-success'
       window.eventBus.$emit('rpayEvent', invoice)
-      resolve(invoice)
     }
+    resolve(invoice)
   }).catch((error) => {
     console.log(error)
+    resolve(false)
   })
-  // state.timer = setInterval(function () {
-  // }, 30000)
 }
 
 const rpayStore = {
   namespaced: true,
-  // export default new Vuex.Store({
-  // modules: {
-  // rpayEthereumStore: rpayEthereumStore,
-  // rpayStacksStore: rpayStacksStore
-  // },
   state: {
     timer: null,
     tickerRates: null,
@@ -239,6 +232,14 @@ const rpayStore = {
     getInvoice: state => {
       return state.invoice
     },
+    isInvoiceExpired: state => invoice => {
+      try {
+        console.log(state.invoice.data.id === invoice.data.id)
+      } catch (err) {
+        console.log(invoice)
+      }
+      return lsatHelper.lsatExpired(invoice)
+    },
     getInvoiceExpired: state => {
       return lsatHelper.lsatExpired(state.invoice)
     },
@@ -329,6 +330,11 @@ const rpayStore = {
     setInvoice (state, invoice) {
       state.invoice = invoice
     },
+    mergePaidCharge (state, charge) {
+      if (charge && charge.data) {
+        state.invoice.data = Object.assign(state.invoice.data, charge.data)
+      }
+    },
     setTickerRates (state, tickerRates) {
       state.tickerRates = tickerRates
     }
@@ -336,24 +342,24 @@ const rpayStore = {
   actions: {
     cleanup ({ state }) {
       return new Promise((resolve, reject) => {
-        unsubscribeApiNews()
+        disconnectApiNews()
         resolve(null)
       })
     },
-    initialiseRpayModule ({ commit }, configuration) {
+    initialiseRates ({ commit }, configuration) {
       return new Promise(() => {
         try {
           MESH_API = configuration.risidioBaseApi + '/mesh'
           axios.get(MESH_API + '/v1/rates/ticker').then(response => {
+            connectApiNews(commit, MESH_API)
             commit('setTickerRates', response.data)
           })
-          subscribeApiNews(commit, MESH_API)
         } catch (err) {
           console.log(err)
         }
       })
     },
-    initialisePaymentFlow ({ state, commit }, configuration) {
+    initialisePaymentFlow ({ dispatch, state, commit, rootGetters }, configuration) {
       return new Promise((resolve, reject) => {
         MESH_API = configuration.risidioBaseApi + '/mesh'
         axios.get(MESH_API + '/v1/rates/ticker').then(response => {
@@ -368,19 +374,17 @@ const rpayStore = {
           commit('addConfiguration', configuration)
           if (localStorage.getItem('OP_INVOICE')) {
             const savedInvoice = JSON.parse(localStorage.getItem('OP_INVOICE'))
-            if (savedInvoice) {
-              if (savedInvoice.data.status === 'paid' || savedInvoice.data.status === 'processing') {
-                commit('setInvoice', savedInvoice)
-                savedInvoice.opcode = 'btc-crypto-payment-prior'
-                window.eventBus.$emit('rpayEvent', savedInvoice)
-                resolve(savedInvoice)
-                return
-              }
-            }
-            if (!lsatHelper.lsatExpired(savedInvoice)) {
+            if (savedInvoice && (savedInvoice.data.status === 'paid' || savedInvoice.data.status === 'processing')) {
+              localStorage.removeItem('OP_INVOICE')
+              // commit('setInvoice', savedInvoice)
+              // savedInvoice.opcode = 'btc-crypto-payment-prior'
+              // window.eventBus.$emit('rpayEvent', savedInvoice)
+              // resolve(savedInvoice)
+              // return
+            } else if (!lsatHelper.lsatExpired(savedInvoice)) {
               commit('setInvoice', savedInvoice)
               try {
-                subscribeApiNews(commit, MESH_API, savedInvoice.data.id)
+                subscribePayment(commit, savedInvoice.data.id)
               } catch (err) {
                 console.log(err)
               }
@@ -396,28 +400,11 @@ const rpayStore = {
             resolve({ data: { status: 'unpaid' } })
             return
           }
-          const data = {
-            amount: configuration.payment.amountSat,
-            description: (configuration.payment.description) ? configuration.payment.description : 'Donation to project'
-          }
-          axios.post(MESH_API + '/v2/fetchPayment', data).then(response => {
-            const invoice = response.data
+          dispatch('fetchPayment').then((invoice) => {
             localStorage.setItem('OP_INVOICE', JSON.stringify(invoice))
-            try {
-              subscribeApiNews(commit, MESH_API, invoice.data.id)
-            } catch (err) {
-              console.log(err)
-            }
-            checkPayment(resolve, reject, state, commit, invoice.data.id)
-            commit('addConfiguration', configuration)
-            commit('setInvoice', invoice)
             resolve(invoice)
-          }).catch((error) => {
-            console.log(error)
-            configuration.payment.paymentOptions[1].allowBitcoin = false
-            configuration.payment.paymentOptions[2].allowLightning = false
-            commit('addConfiguration', configuration)
-            resolve({ data: { status: 'unpaid' } })
+          }).catch(() => {
+            resolve(false)
           })
         }).catch((error) => {
           console.log(error)
@@ -428,22 +415,32 @@ const rpayStore = {
         })
       })
     },
-    checkPayment ({ state, commit }) {
+    fetchPayment ({ state, rootGetters, commit }) {
       return new Promise((resolve, reject) => {
-        if (localStorage.getItem('OP_INVOICE')) {
-          const savedInvoice = JSON.parse(localStorage.getItem('OP_INVOICE'))
-          if (savedInvoice) {
-            if (savedInvoice.data.status !== 'paid' || savedInvoice.data.status !== 'processing') {
-              checkPayment(resolve, reject, state, commit, savedInvoice.data.id)
-            } else {
-              resolve()
-            }
-          } else {
-            resolve()
-          }
-        } else {
-          resolve()
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const data = {
+          amount: configuration.payment.amountSat,
+          description: (configuration.payment.description) ? configuration.payment.description : 'Donation to project'
         }
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        axios.post(MESH_API + '/v2/fetchPayment', data, authHeaders).then(response => {
+          const invoice = response.data
+          subscribePayment(commit, invoice.data.id)
+          checkPayment(resolve, reject, state, commit, invoice.data.id)
+          commit('setInvoice', invoice)
+          resolve(invoice)
+        }).catch((error) => {
+          console.log(error)
+          configuration.payment.paymentOptions[1].allowBitcoin = false
+          configuration.payment.paymentOptions[2].allowLightning = false
+          commit('addConfiguration', configuration)
+          resolve({ data: { status: 'unpaid' } })
+        })
+      })
+    },
+    checkPayment ({ state, commit }, paymentId) {
+      return new Promise((resolve, reject) => {
+        checkPayment(resolve, reject, state, commit, paymentId)
       })
     },
     stopCheckPayment ({ state }) {

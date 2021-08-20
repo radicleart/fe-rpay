@@ -245,57 +245,61 @@ const rpayStacksStore = {
         if (data.sendAsSky) {
           sender = state.skysWallet
         }
+        dispatch('rpayAuthStore/fetchNoncesFor', sender.keyInfo.address, { root: true }).then((nonces) => {
+          const txOptions = {
+            contractAddress: data.contractAddress,
+            contractName: data.contractName,
+            functionName: data.functionName,
+            functionArgs: (data.functionArgs) ? data.functionArgs : [],
+            fee: new BigNum(1800),
+            senderKey: sender.keyInfo.privateKey,
+            nonce: new BigNum(nonces.possible_next_nonce),
+            network,
+            postConditionMode: PostConditionMode.Allow,
+            postConditions: (data.postConditions) ? data.postConditions : []
+          }
+          makeContractCall(txOptions).then((transaction) => {
+            const txdata = new Uint8Array(transaction.serialize())
+            const headers = {
+              'Content-Type': 'application/octet-stream'
+            }
+            axios.post(configuration.risidioBaseApi + '/mesh' + '/v2/broadcast', txdata, { headers: headers }).then(response => {
+              const result = {
+                txId: response.data,
+                network: 15,
+                assetHash: data.assetHash,
+                contractAddress: data.contractAddress,
+                contractName: data.contractName,
+                functionName: data.functionName,
+                functionArgs: data.functionArgs
+              }
+              dispatch('fetchMacSkyWalletInfo')
+              captureResult(dispatch, rootGetters, result, data)
+              resolve(result)
+            }).catch((error) => {
+              dispatch('fetchMacSkyWalletInfo')
+              resolveError(commit, reject, error)
+            })
+            if (configuration.network !== 'local') {
+              broadcastTransaction(transaction, network).then((result) => {
+                result.contractAddress = data.contractAddress
+                result.contractName = data.contractName
+                result.functionName = data.functionName
+                result.assetHash = data.assetHash
+                captureResult(dispatch, rootGetters, result, data)
+                resolve(result)
+              }).catch((error) => {
+                reject(error)
+              })
+            }
+          })
+        })
+        /**
         let nonce = new BigNum(sender.nonce)
         if (data && data.action === 'inc-nonce') {
           nonce = new BigNum(sender.nonce + 1)
         }
-        const txOptions = {
-          contractAddress: data.contractAddress,
-          contractName: data.contractName,
-          functionName: data.functionName,
-          functionArgs: (data.functionArgs) ? data.functionArgs : [],
-          fee: new BigNum(1800),
-          senderKey: sender.keyInfo.privateKey,
-          nonce: new BigNum(nonce),
-          network,
-          postConditionMode: PostConditionMode.Allow,
-          postConditions: (data.postConditions) ? data.postConditions : []
-        }
-        makeContractCall(txOptions).then((transaction) => {
-          const txdata = new Uint8Array(transaction.serialize())
-          const headers = {
-            'Content-Type': 'application/octet-stream'
-          }
-          axios.post(configuration.risidioBaseApi + '/mesh' + '/v2/broadcast', txdata, { headers: headers }).then(response => {
-            const result = {
-              txId: response.data,
-              network: 15,
-              assetHash: data.assetHash,
-              contractAddress: data.contractAddress,
-              contractName: data.contractName,
-              functionName: data.functionName,
-              functionArgs: data.functionArgs
-            }
-            dispatch('fetchMacSkyWalletInfo')
-            captureResult(dispatch, rootGetters, result, data)
-            resolve(result)
-          }).catch((error) => {
-            dispatch('fetchMacSkyWalletInfo')
-            resolveError(commit, reject, error)
-          })
-          if (configuration.network !== 'local') {
-            broadcastTransaction(transaction, network).then((result) => {
-              result.contractAddress = data.contractAddress
-              result.contractName = data.contractName
-              result.functionName = data.functionName
-              result.assetHash = data.assetHash
-              captureResult(dispatch, rootGetters, result, data)
-              resolve(result)
-            }).catch((error) => {
-              reject(error)
-            })
-          }
-        })
+        **/
       })
     },
     callContractBlockstackReadOnly ({ state }, data) {
@@ -544,7 +548,7 @@ const rpayStacksStore = {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const amountBN = new BigNum(amount)
         openSTXTransfer({
-          recipient: data.paymentAddress,
+          recipient: data.recipient,
           // network: network,
           amount: amountBN,
           network: (configuration.network === 'mainnet') ? mainnet : testnet,
@@ -562,59 +566,53 @@ const rpayStacksStore = {
         })
       })
     },
-    makeTransferRisidio ({ state, rootGetters }, data) {
+    makeTransferRisidio ({ dispatch, state, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         if (data.amountStx > 500) {
           resolve('no more than 500')
           return
         }
-        const amount = Math.round(data.amountStx * precision)
-        // amount = parseInt(String(amount), 16)
-        const amountBN = new BigNum(amount)
-
-        // amount = amount.div(new BigNum(1000000))
-        const senderKey = state.macsWallet.keyInfo.privateKey
-
-        let nonce = new BigNum(state.macsWallet.nonce)
-        if (data && data.action === 'inc-nonce') {
-          nonce = new BigNum(state.macsWallet.nonce + 1)
+        let sender = state.macsWallet
+        if (data.sendAsSky) {
+          sender = state.skysWallet
         }
-
-        const txOptions = {
-          recipient: data.paymentAddress,
-          amount: amountBN,
-          senderKey: senderKey,
-          network,
-          memo: 'Sending payment for game credits.',
-          nonce: nonce, // set a nonce manually if you don't want builder to fetch from a Stacks node
-          fee: new BigNum(2000) // set a tx fee if you don't want the builder to estimate
-        }
-        makeSTXTokenTransfer(txOptions).then((transaction) => {
-          const txdata = new Uint8Array(transaction.serialize())
-          const headers = {
-            'Content-Type': 'application/octet-stream'
+        dispatch('rpayAuthStore/fetchNoncesFor', sender.keyInfo.address, { root: true }).then((nonces) => {
+          const txOptions = {
+            recipient: data.recipient,
+            amount: new BigNum(utils.toOnChainAmount(data.amountStx)),
+            network,
+            memo: 'Sending payment for game credits.',
+            fee: new BigNum(1800),
+            senderKey: sender.keyInfo.privateKey,
+            nonce: new BigNum(nonces.possible_next_nonce),
           }
-          axios.post(configuration.risidioBaseApi + '/mesh/v2/broadcast', txdata, { headers: headers }).then(response => {
-            resolve(response.data)
-          }).catch(() => {
-            const useApi = configuration.risidioStacksApi + '/v2/transactions'
-            axios.post(useApi, txdata).then((response) => {
+          makeSTXTokenTransfer(txOptions).then((transaction) => {
+            const txdata = new Uint8Array(transaction.serialize())
+            const headers = {
+              'Content-Type': 'application/octet-stream'
+            }
+            axios.post(configuration.risidioBaseApi + '/mesh/v2/broadcast', txdata, { headers: headers }).then(response => {
               resolve(response.data)
-            }).catch((error) => {
-              if (error.response && error.response.data) {
-                if (error.response.data.message && error.response.data.message.indexOf('BadNonce') > -1) {
-                  reject(new Error('BadNonce! ' + error.response.data.message.substring(100)))
-                } else if (error.response.data.message && error.response.data.message.indexOf('NotEnoughFunds') > -1) {
-                  reject(new Error('Not enough funds in the macsWallet to send this - try decreasing the amount?'))
-                } else if (error.response.data.message && error.response.data.message.indexOf('ConflictingNonceInMempool') > -1) {
-                  reject(new Error('Error: ConflictingNonceInMempool'))
+            }).catch(() => {
+              const useApi = configuration.risidioStacksApi + '/v2/transactions'
+              axios.post(useApi, txdata).then((response) => {
+                resolve(response.data)
+              }).catch((error) => {
+                if (error.response && error.response.data) {
+                  if (error.response.data.message && error.response.data.message.indexOf('BadNonce') > -1) {
+                    reject(new Error('BadNonce! ' + error.response.data.message.substring(100)))
+                  } else if (error.response.data.message && error.response.data.message.indexOf('NotEnoughFunds') > -1) {
+                    reject(new Error('Not enough funds in the macsWallet to send this - try decreasing the amount?'))
+                  } else if (error.response.data.message && error.response.data.message.indexOf('ConflictingNonceInMempool') > -1) {
+                    reject(new Error('Error: ConflictingNonceInMempool'))
+                  } else {
+                    reject(error.response.data)
+                  }
                 } else {
-                  reject(error.response.data)
+                  reject(error.message)
                 }
-              } else {
-                reject(error.message)
-              }
+              })
             })
           })
         })

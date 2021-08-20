@@ -380,7 +380,7 @@ const rpayMyItemStore = {
           artworkClip: tempAttributes.artworkClip
         }
         if (!item.metaDataUrl && !profile.gaiaHubConfig) {
-          reject(new Error('Unable to load your gaia hub info - reload page and try again.'))
+          // reject(new Error('Unable to load your gaia hub info - reload page and try again.'))
           dispatch('rpayAuthStore/fetchMyAccount', { root: true }).then((profile) => {
             profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
             console.log('gaiaHubConfig', profile.gaiaHubConfig)

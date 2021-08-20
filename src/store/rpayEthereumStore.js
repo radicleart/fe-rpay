@@ -76,13 +76,22 @@ const resolveError = function (reject, error, commit) {
 const sendPayment = function (web3, data, account, resolve, reject, commit) {
   const amountToSend = web3.utils.toWei(String(data.amount), 'ether') // convert to wei value
   window.eventBus.$emit('rpayEvent', { opcode: 'eth-payment-pending' })
-  web3.eth.sendTransaction({ from: account, to: data.ethPaymentAddress, value: amountToSend }).then((res) => {
-    const result = {
-      txId: res.transactionHash
+  web3.eth.sendTransaction({ from: account, to: data.ethPaymentAddress, value: amountToSend }).on('transactionHash', function (hash) {
+    console.log(hash)
+  }).on('receipt', function (receipt) {
+    console.log(receipt)
+    // resolve(receipt)
+  }).on('confirmation', function (confirmationNumber, receipt) {
+    if (confirmationNumber === 2) {
+      const result = {
+        txId: receipt.transactionHash,
+        confirmationNumber: confirmationNumber
+      }
+      resolve(result)
     }
-    resolve(result)
-  }).catch((e) => {
-    resolveError(reject, e, commit)
+  }).on('error', function (error) {
+    console.log(error)
+    reject(error)
   })
 }
 

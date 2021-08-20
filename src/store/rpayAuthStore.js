@@ -37,6 +37,40 @@ const setSuperAdmin = function (profile, privs) {
     }
   }
 }
+const fetchProfileMetaData = function (profile, commit, dispatch, resolve) {
+  return new Promise((resolve) => {
+    const authHeaders = defAuthHeaders(profile)
+    profile.counter = 1
+    commit('setAuthHeaders', authHeaders)
+    dispatch('rpayAuthStore/fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }, { root: true }).then((accountInfo) => {
+      profile.accountInfo = accountInfo
+      commit('myProfile', profile)
+      dispatch('rpayStacksContractStore/fetchAssetsByOwner', { stxAddress: profile.stxAddress, mine: true }, { root: true })
+      profile.counter = profile.counter + 1
+      dispatch('rpayPrivilegeStore/fetchUserAuthorisation', { stxAddress: profile.stxAddress }, { root: true }).then((auth) => {
+        profile.authorisation = auth
+        setSuperAdmin(profile, auth)
+        commit('myProfile', profile)
+        profile.counter = profile.counter + 1
+        dispatch('rpayMyItemStore/fetchExhibitRequest', profile.stxAddress, { root: true }).then((exhibitRequest) => {
+          profile.exhibitRequest = exhibitRequest
+          commit('myProfile', profile)
+          profile.counter = profile.counter + 1
+          resolve(profile)
+        }).catch(() => {
+          commit('myProfile', profile)
+          resolve(profile)
+        })
+      }).catch(() => {
+        commit('myProfile', profile)
+        resolve(profile)
+      })
+    }).catch(() => {
+      commit('myProfile', profile)
+      resolve(profile)
+    })
+  })
+}
 
 const BLOCKSTACK_LOGIN = Number(process.env.VUE_APP_BLOCKSTACK_LOGIN)
 
@@ -75,7 +109,7 @@ const getProfile = function (network) {
       if (uname && !name) {
         name = uname.substring(0, uname.indexOf('.'))
       }
-      const stxAddress = (network === 'mainnet') ? account.profile.stxAddress.mainnet : account.profile.stxAddress.testnet
+      let stxAddress = (network === 'mainnet') ? account.profile.stxAddress.mainnet : account.profile.stxAddress.testnet
       myProfile = {
         gaiaHubConfig: account.gaiaHubConfig,
         identityAddress: account.identityAddress,
@@ -160,6 +194,31 @@ const rpayAuthStore = {
     }
   },
   actions: {
+    fetchMyNonces ({ commit, rootGetters }) {
+      return new Promise(resolve => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const profile = getProfile(configuration.network)
+        const url = configuration.risidioStacksApi + '/extended/v1/address/' + profile.stxAddress + '/nonces'
+        axios.get(url).then((response) => {
+          profile.nonces = response.data
+          commit('myProfile', profile)
+          resolve(profile)
+        }).catch(() => {
+          resolve()
+        })
+      })
+    },
+    fetchNoncesFor ({ rootGetters }, stxAddress) {
+      return new Promise(resolve => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const url = configuration.risidioStacksApi + '/extended/v1/address/' + stxAddress + '/nonces'
+        axios.get(url).then((response) => {
+          resolve(response.data)
+        }).catch(() => {
+          resolve()
+        })
+      })
+    },
     fetchMyAccount ({ state, commit, dispatch, rootGetters }) {
       return new Promise(resolve => {
         const configuration = rootGetters['rpayStore/getConfiguration']
@@ -169,38 +228,14 @@ const rpayAuthStore = {
 
         if (userSession.isUserSignedIn()) {
           const profile = getProfile(configuration.network)
-          commit('myProfile', profile)
-          const authHeaders = defAuthHeaders(profile)
-          commit('setAuthHeaders', authHeaders)
-          dispatch('rpayPrivilegeStore/fetchUserAuthorisation', { stxAddress: profile.stxAddress }, { root: true }).then((privs) => {
-            profile.authorisation = privs
-            setSuperAdmin(profile, privs)
-            commit('myProfile', profile)
-          })
-          dispatch('rpayMyItemStore/fetchExhibitRequest', profile.stxAddress, { root: true }).then((exhibitRequest) => {
-            profile.exhibitRequest = exhibitRequest
-            commit('myProfile', profile)
-          })
-          dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
-            profile.accountInfo = accountInfo
+          fetchProfileMetaData(profile, commit, dispatch, resolve).then((profile) => {
             commit('myProfile', profile)
             resolve(profile)
           })
         } else if (userSession.isSignInPending()) {
           userSession.handlePendingSignIn().then(() => {
             const profile = getProfile(configuration.network)
-            commit('myProfile', profile)
-            dispatch('rpayPrivilegeStore/fetchUserAuthorisation', { stxAddress: profile.stxAddress }, { root: true }).then((privs) => {
-              profile.authorisation = privs
-              setSuperAdmin(profile, privs)
-              commit('myProfile', profile)
-            })
-            dispatch('rpayMyItemStore/fetchExhibitRequest', profile.stxAddress, { root: true }).then((exhibitRequest) => {
-              profile.exhibitRequest = exhibitRequest
-              commit('myProfile', profile)
-            })
-            dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
-              profile.accountInfo = accountInfo
+            fetchProfileMetaData(profile, commit, dispatch, resolve).then((profile) => {
               commit('myProfile', profile)
               resolve(profile)
             })
@@ -231,25 +266,10 @@ const rpayAuthStore = {
             state.appPrivateKey = state.userData.appPrivateKey
             state.authResponse = authResponse
             const profile = getProfile(configuration.network)
-            commit('myProfile', profile)
-            const authHeaders = defAuthHeaders(profile)
-            commit('setAuthHeaders', authHeaders)
-            dispatch('rpayPrivilegeStore/fetchUserAuthorisation', { stxAddress: profile.stxAddress }, { root: true }).then((auth) => {
-              profile.authorisation = auth
-              setSuperAdmin(profile, auth)
-              commit('myProfile', profile)
-            })
-            dispatch('rpayMyItemStore/fetchExhibitRequest', profile.stxAddress, { root: true }).then((exhibitRequest) => {
-              profile.exhibitRequest = exhibitRequest
-              commit('myProfile', profile)
-            })
-            dispatch('fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }).then((accountInfo) => {
-              profile.accountInfo = accountInfo
-              dispatch('rpayStacksContractStore/fetchAssetsByOwner', { stxAddress: profile.stxAddress, mine: true }, { root: true })
+            fetchProfileMetaData(profile, commit, dispatch, resolve).then((profile) => {
               commit('myProfile', profile)
               resolve(profile)
             })
-            // location.assign('/')
           },
           appDetails: appDetails
         }
@@ -283,6 +303,7 @@ const rpayAuthStore = {
           return
         }
         const configuration = rootGetters['rpayStore/getConfiguration']
+        const profile = state.myProfile
         const index = state.accounts.findIndex((o) => o.stxAddress === data.stxAddress)
         if (!data.force && index > -1) {
           return state.accounts.find((o) => o.stxAddress === data.stxAddress)
@@ -293,6 +314,9 @@ const rpayAuthStore = {
         state.accountApi.getAccountInfo({ principal: data.stxAddress }).then((accountInfo) => {
           if (accountInfo) accountInfo.balance = utils.fromMicroAmount(accountInfo.balance)
           commit('setAccountInfo', { stxAddress: data.stxAddress, accountInfo: accountInfo })
+          if (profile && profile.stxAddress === data.stxAddress) {
+            profile.accountInfo = accountInfo
+          }
           resolve(accountInfo)
         }).catch(() => {
           const callData = {
@@ -307,6 +331,9 @@ const rpayAuthStore = {
               const accountInfo = response.data
               if (accountInfo) accountInfo.balance = utils.fromMicroAmount(accountInfo.balance)
               commit('setAccountInfo', { stxAddress: data.stxAddress, accountInfo: accountInfo })
+              if (profile && profile.stxAddress === data.stxAddress) {
+                profile.accountInfo = accountInfo
+              }
               resolve(accountInfo)
             }).catch(() => {
               resolve()
@@ -317,6 +344,9 @@ const rpayAuthStore = {
               const accountInfo = response.data
               if (accountInfo && accountInfo.stx) accountInfo.balance = utils.fromMicroAmount(accountInfo.stx.balance)
               commit('setAccountInfo', { stxAddress: data.stxAddress, accountInfo: accountInfo })
+              if (profile && profile.stxAddress === data.stxAddress) {
+                profile.accountInfo = accountInfo
+              }
               resolve(accountInfo)
             }).catch(() => {
               resolve()

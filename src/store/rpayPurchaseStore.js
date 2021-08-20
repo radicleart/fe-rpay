@@ -136,9 +136,6 @@ const rpayPurchaseStore = {
     setDbOffers: (state, dbOffers) => {
       state.dbOffers = dbOffers
     },
-    addRegisteredEmail (state, data) {
-      state.emailData.push(data)
-    },
     addOffer: (state, dbOffer) => {
       const index = state.dbOffers.findIndex((o) => o.id === dbOffer.id)
       if (index < 0) {
@@ -172,11 +169,10 @@ const rpayPurchaseStore = {
         })
       })
     },
-    registerForUpdates ({ commit, rootGetters }, data) {
+    registerForUpdates ({ rootGetters }, data) {
       return new Promise(function (resolve, reject) {
         const configuration = rootGetters['rpayStore/getConfiguration']
         axios.post(configuration.risidioBaseApi + '/mesh/v2/register/email', data).then((result) => {
-          commit('addRegisteredEmail', data)
           resolve(result)
         }).catch((error) => {
           reject(new Error('Unable to register email: ' + error))

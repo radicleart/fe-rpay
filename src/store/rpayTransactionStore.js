@@ -34,17 +34,20 @@ const rpayTransactionStore = {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const stacksNode = configuration.risidioStacksApi + '/extended/v1/tx/' + txId
-        axios.get(stacksNode).then((txData) => {
+        axios.get(stacksNode).then((response) => {
+          const txData = response.data
           if (txData && txData.tx_status) {
             const result = {}
-            result.functionName = txData.contract_call.function_name
-            result.timeSent = txData.receipt_time_iso
-            const nftIndex = (txData.tx_status === 'success') ? utils.fromHex(result.functionName, txData.tx_result.repr) : -1
-            result.opcode = 'stx-transaction-update'
             result.txStatus = txData.tx_status
             result.txResult = txData.tx_result
-            result.nftIndex = nftIndex
-            result.txId = txId
+            result.nonce = txData.nonce
+            result.opcode = 'stx-transaction-update'
+            if (txData.tx_type !== 'token_transfer') {
+              result.functionName = txData.contract_call.function_name
+              result.timeSent = txData.receipt_time_iso
+              result.nftIndex = (txData.tx_status === 'success') ? utils.fromHex(result.functionName, txData.tx_result.repr) : -1
+              result.txId = txId
+            }
             resolve(result)
           } else {
             resolve(false)
