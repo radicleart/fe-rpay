@@ -225,11 +225,8 @@ const rpayPurchaseStore = {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const profile = rootGetters['rpayAuthStore/getMyProfile']
         let postCondAddress = profile.stxAddress
-        if (configuration.network === 'local') {
-          postCondAddress = 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW'
-          if (data.sendAsSky) {
-            postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
-          }
+        if (configuration.network === 'local' && data.sendAsSky) {
+          postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
         }
         let postConds = []
         const amount = new BigNum(utils.toOnChainAmount(data.mintingFee))
@@ -267,7 +264,6 @@ const rpayPurchaseStore = {
         dispatch((data.methos || methos), data, { root: true }).then((result) => {
           result.opcode = 'stx-transaction-sent'
           result.assetHash = data.assetHash
-          window.eventBus.$emit('rpayEvent', result)
           resolve(result)
         }).catch((error) => {
           reject(error)
@@ -279,11 +275,8 @@ const rpayPurchaseStore = {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const profile = rootGetters['rpayAuthStore/getMyProfile']
         let postCondAddress = profile.stxAddress
-        if (configuration.network === 'local') {
-          postCondAddress = 'ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW'
-          if (data.sendAsSky) {
-            postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
-          }
+        if (configuration.network === 'local' && data.sendAsSky) {
+          postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
         }
         const amount = new BigNum(utils.toOnChainAmount(data.editionCost))
         const standardSTXPostCondition = makeStandardSTXPostCondition(
@@ -298,7 +291,6 @@ const rpayPurchaseStore = {
         dispatch((data.methos || methos), data, { root: true }).then((result) => {
           result.opcode = 'stx-transaction-sent'
           result.assetHash = data.assetHash
-          window.eventBus.$emit('rpayEvent', result)
           resolve(result)
         }).catch((err) => {
           const result = {
@@ -350,7 +342,7 @@ const rpayPurchaseStore = {
           data.owner, // postConditionAddress
           NonFungibleConditionCode.DoesNotOwn,
           nonFungibleAssetInfo, // contract and nft info
-          uintCV(data.nftIndex) // nft value as clarity type
+          data.nftIndex // uintCV(data.nftIndex) // nft value as clarity type
         )
         // const profile = rootGetters['rpayAuthStore/getMyProfile']
         // const owner = profile.stxAddress
@@ -384,16 +376,43 @@ const rpayPurchaseStore = {
     },
     buyNow ({ dispatch, rootGetters }, data) {
       return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
         const functionArgs = [uintCV(data.nftIndex), standardPrincipalCV(data.owner), standardPrincipalCV(data.recipient)]
+        const profile = rootGetters['rpayAuthStore/getMyProfile']
+        let postCondAddress = profile.stxAddress
+        if (configuration.network === 'local' && data.sendAsSky) {
+          postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
+        }
+        let postConds = []
+        const amount = new BigNum(utils.toOnChainAmount(data.buyNowOrStartingPrice))
+        if (data.postConditions) {
+          postConds = data.postConditions
+        } else {
+          postConds.push(makeStandardSTXPostCondition(
+            postCondAddress,
+            FungibleConditionCode.Equal,
+            amount // uintCV(utils.toOnChainAmount(data.mintingFee))
+          ))
+          const nonFungibleAssetInfo = createAssetInfo(
+            data.contractAddress,
+            data.contractName,
+            'my-nft'
+          )
+          postConds.push(makeStandardNonFungiblePostCondition(
+            data.owner,
+            NonFungibleConditionCode.DoesNotOwn,
+            nonFungibleAssetInfo,
+            uintCV(data.nftIndex)
+          ))
+        }
         const callData = {
-          postConditions: data.postConditions,
+          postConditions: postConds,
           contractAddress: data.contractAddress,
           contractName: data.contractName,
           functionName: 'buy-now',
           functionArgs: functionArgs,
           sendAsSky: data.sendAsSky
         }
-        const configuration = rootGetters['rpayStore/getConfiguration']
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, callData, { root: true }).then((result) => {
           resolve(result)

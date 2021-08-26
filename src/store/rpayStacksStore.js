@@ -26,40 +26,22 @@ const contractDeployFee = 60000
 const testnet = new StacksTestnet()
 const mainnet = new StacksMainnet()
 
-const sendCacheUpdate = function (dispatch, result) {
-  return new Promise(() => {
-    const cacheUpdate = {
-      type: 'token',
-      txId: result.mintInfo.txId,
-      functionName: result.mintInfo.functionName,
-      nftIndex: result.mintInfo.nftIndex,
-      assetHash: result.assetHash,
-      contractId: result.contractAddress + '.' + result.contractName
-    }
-    dispatch('rpayStacksContractStore/updateCache', cacheUpdate, { root: true })
-  })
-}
-
 const captureResult = function (dispatch, rootGetters, result) {
   const configuration = rootGetters['rpayStore/getConfiguration']
   result.opcode = 'stx-transaction-sent'
-  result.mintInfo = {
-    txStatus: 'sent',
-    txResult: null,
-    nftIndex: -1,
-    txId: result.txId
-  }
-  sendCacheUpdate(dispatch, result)
+  result.txStatus = 'sent'
   window.eventBus.$emit('rpayEvent', result)
   const timer1 = setInterval(function () {
-    dispatch('rpayTransactionStore/watchTransactionInfo', result.txId, { root: true }).then((txData) => {
+    dispatch('rpayTransactionStore/readTransactionInfo', result.txId, { root: true }).then((txData) => {
       if (txData.txStatus !== 'pending') {
-        result.contractId = result.contractAddress + '.' + result.contractName
-        result.opcode = 'stx-transaction-update'
-        result.mintInfo = txData
-        sendCacheUpdate(dispatch, result)
-        window.eventBus.$emit('rpayEvent', result)
+        if (txData.txStatus !== 'success') {
+          dispatch('rpayStacksContractStore/updateCache', txData, { root: true })
+        }
+        window.eventBus.$emit('rpayEvent', txData)
         clearInterval(timer1)
+      } else if (result.txStatus === 'sent') {
+        result.txStatus = 'pending'
+        window.eventBus.$emit('rpayEvent', txData)
       }
     })
   }, 15000)

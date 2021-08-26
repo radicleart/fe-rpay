@@ -270,7 +270,7 @@ const rpayStacksContractStore = {
       })
     },
     cleanup ({ state }) {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         unsubscribeApiNews()
         resolve(null)
       })

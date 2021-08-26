@@ -1,6 +1,6 @@
 {
   "name": "risidio-pay",
-  "version": "0.5.34",
+  "version": "0.5.53",
   "private": false,
   "files": [
     "dist"
@@ -28,6 +28,7 @@
     "test:unit": "vue-cli-service test:unit"
   },
   "dependencies": {
+    "@babel/eslint-parser": "^7.15.0",
     "@stacks/blockchain-api-client": "^0.62.3",
     "@stacks/connect": "^5.5.0",
     "@stacks/network": "^2.0.1-beta.1",

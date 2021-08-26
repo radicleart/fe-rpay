@@ -141,11 +141,25 @@ const utils = {
     }
     return '0x' + arr.join('')
   },
-  fromHex: function (method, rawResponse) {
+  nftIndexFromArgs: function (functionArgs) {
+    try {
+      if (functionArgs && functionArgs.length > 0) {
+        return cvToJSON(functionArgs[0])
+      }
+    } catch (e) {
+      return -1
+    }
+  },
+  jsonFromTxResult: function (tx) {
+    return cvToJSON(hexToCV(tx.tx_result.hex))
+  },
+  fromHex: function (method, rawResponse, strResponse) {
+    const jsonResult = cvToJSON(hexToCV(tx.tx_result.hex))
+    console.log(jsonResult)
     if (method === 'mint-token' || method === 'mint-edition') {
       try {
-        if (rawResponse.indexOf('(ok u') > -1) {
-          const v1 = rawResponse.split(' u')[1]
+        if (strResponse.indexOf('(ok u') > -1) {
+          const v1 = strResponse.split(' u')[1]
           const v2 = v1.split(')')[0]
           return Number(v2)
         } else {
@@ -165,6 +179,8 @@ const utils = {
     }
     if (method === 'get-mint-price') {
       return res.value.value.toNumber()
+    } else if (method === 'set-sale-data') {
+      return strResponse.indexOf('(ok u') > -1
     } else if (method === 'get-balance') {
       return res.value.value.toNumber()
     } else if (method === 'get-mint-counter') {

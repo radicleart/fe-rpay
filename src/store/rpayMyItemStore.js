@@ -347,7 +347,11 @@ const rpayMyItemStore = {
           reject(new Error('Unable to save your data...'))
           return
         }
-        if (item.contractAsset) item.contractAsset = null
+        let token = null
+        if (item.contractAsset) {
+          token = item.contractAsset
+          item.contractAsset = null
+        }
         if (typeof item.nftIndex === 'undefined') item.nftIndex = -1
         if (item.attributes && item.attributes.coverImage && item.attributes.coverImage.fileUrl) {
           const mintedUrl = encodeURI(item.attributes.coverImage.fileUrl)
@@ -402,10 +406,10 @@ const rpayMyItemStore = {
             console.log(error)
           })
           rpayMyItemService.saveRootFile(state.rootFile).then((rootFile) => {
+            item.contractAsset = token
             commit('rootFile', rootFile)
             resolve(item)
-            const contractAsset = rootGetters[APP_CONSTANTS.KEY_ASSET_FROM_CONTRACT_BY_HASH](item.assetHash)
-            if (item.privacy === 'public' && contractAsset && contractAsset.nftIndex > -1) {
+            if (item.privacy === 'public' && token && token.nftIndex > -1) {
               searchIndexService.addRecord(item).then((result) => {
                 console.log(result)
               }).catch((error) => {

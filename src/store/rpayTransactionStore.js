@@ -30,7 +30,7 @@ const rpayTransactionStore = {
     }
   },
   actions: {
-    watchTransactionInfo ({ rootGetters }, txId) {
+    readTransactionInfo ({ rootGetters }, txId) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const stacksNode = configuration.risidioStacksApi + '/extended/v1/tx/' + txId
@@ -38,28 +38,24 @@ const rpayTransactionStore = {
           const txData = response.data
           if (txData && txData.tx_status) {
             const result = {}
+            result.txId = txId
             result.txStatus = txData.tx_status
             result.txResult = txData.tx_result
-            result.nonce = txData.nonce
             result.opcode = 'stx-transaction-update'
             if (txData.tx_type !== 'token_transfer') {
+              result.contractId = txData.contract_call.contract_id
               result.functionName = txData.contract_call.function_name
-              result.timeSent = txData.receipt_time_iso
-              result.nftIndex = (txData.tx_status === 'success') ? utils.fromHex(result.functionName, txData.tx_result.repr) : -1
-              result.txId = txId
+              if (txData.tx_result && txData.tx_status !== 'pending') {
+                const jsonRes = utils.jsonFromTxResult(txData)
+                if (result.functionName.indexOf('mint-') === 0 && jsonRes.success && jsonRes.value.type === 'uint') {
+                  result.nftIndex = jsonRes.value.value
+                }
+              }
             }
             resolve(result)
           } else {
             resolve(false)
           }
-          /**
-          axios.post(configuration.risidioBaseApi + '/mesh/v2/register/transaction', result).then(() => {
-            commit('setTransaction', result.data)
-            resolve(result.data)
-          }).catch(() => {
-            reject(new Error('Unable watch transaction: ' + txId))
-          })
-          **/
         }).catch(() => {
           reject(new Error('Unable call stacks node for transaction: ' + stacksNode))
         })

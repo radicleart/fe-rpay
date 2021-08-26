@@ -29,8 +29,10 @@ const rpayPrivilegeStore = {
       if (profile.authorisation && profile.authorisation.stxAddress === profile.stxAddress) {
         if (profile.authorisation.domains) {
           const domain = profile.authorisation.domains.find((o) => o.host === location.hostname)
-          const index = domain.privileges.findIndex((o) => o === priv)
-          return index > -1
+          if (domain) {
+            const index = domain.privileges.findIndex((o) => o === priv)
+            return index > -1
+          }
         }
       }
       return false
