@@ -208,6 +208,7 @@ const rpayTransactionStore = {
                 }
               }
             }
+            dispatch('updateTransaction', result)
             resolve(result)
           } else {
             resolve(false)
