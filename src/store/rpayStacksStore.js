@@ -7,6 +7,7 @@ import {
   broadcastTransaction,
   makeContractDeploy,
   bufferCV,
+  cvToValue,
   uintCV,
   intCV,
   serializeCV,
@@ -27,27 +28,33 @@ const testnet = new StacksTestnet()
 const mainnet = new StacksMainnet()
 
 const captureResult = function (dispatch, rootGetters, result) {
-  const configuration = rootGetters['rpayStore/getConfiguration']
   result.opcode = 'stx-transaction-sent'
-  result.txStatus = 'sent'
+  result.txStatus = 'pending'
+  try {
+    if (result.functionName === 'mint-token') {
+      result.asstHash = cvToValue(result.functionArgs[0]).substring(2)
+    } else {
+      result.nftIndex = cvToValue(result.functionArgs[0])
+    }
+  } catch (err) {
+    console.log('no nft index in first arg for function - ' + result.functionName)
+  }
+  result.contractId = result.contractAddress + '.' + result.contractName
+  result.timestamp = new Date().getTime()
+  dispatch('rpayTransactionStore/registerTransaction', result, { root: true }).then(() => {
+    dispatch('rpayStacksContractStore/updateCache', result, { root: true })
+  })
   window.eventBus.$emit('rpayEvent', result)
   const timer1 = setInterval(function () {
-    dispatch('rpayTransactionStore/readTransactionInfo', result.txId, { root: true }).then((txData) => {
+    dispatch('rpayTransactionStore/fetchTransactionFromChainByTxId', result.txId, { root: true }).then((txData) => {
+      dispatch('rpayTransactionStore/updateTransaction', txData, { root: true })
       if (txData.txStatus !== 'pending') {
-        if (txData.txStatus !== 'success') {
-          dispatch('rpayStacksContractStore/updateCache', txData, { root: true })
-        }
         window.eventBus.$emit('rpayEvent', txData)
+        dispatch('rpayStacksContractStore/updateCache', result, { root: true })
         clearInterval(timer1)
-      } else if (result.txStatus === 'sent') {
-        result.txStatus = 'pending'
-        window.eventBus.$emit('rpayEvent', txData)
       }
     })
   }, 15000)
-  if (configuration.risidioStacksApi.indexOf('stacks-node-api') > -1) {
-    // pollTxStatus(result, configuration.risidioStacksApi, dispatch, data)
-  }
 }
 
 const resolveError = function (commit, reject, error) {
@@ -211,7 +218,7 @@ const rpayStacksStore = {
               functionName: data.functionName,
               functionArgs: data.functionArgs
             }
-            captureResult(dispatch, rootGetters, result, data)
+            captureResult(dispatch, rootGetters, result)
             resolve(result)
           }
         }
@@ -256,7 +263,7 @@ const rpayStacksStore = {
                 functionArgs: data.functionArgs
               }
               dispatch('fetchMacSkyWalletInfo')
-              captureResult(dispatch, rootGetters, result, data)
+              captureResult(dispatch, rootGetters, result)
               resolve(result)
             }).catch((error) => {
               dispatch('fetchMacSkyWalletInfo')
@@ -267,8 +274,7 @@ const rpayStacksStore = {
                 result.contractAddress = data.contractAddress
                 result.contractName = data.contractName
                 result.functionName = data.functionName
-                result.assetHash = data.assetHash
-                captureResult(dispatch, rootGetters, result, data)
+                captureResult(dispatch, rootGetters, result)
                 resolve(result)
               }).catch((error) => {
                 reject(error)
@@ -299,7 +305,7 @@ const rpayStacksStore = {
         })
       })
     },
-    callContractReadOnly ({ commit, state, rootGetters }, data) {
+    callContractReadOnly ({ commit, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const path = '/v2/contracts/call-read/' + data.contractAddress + '/' + data.contractName + '/' + data.functionName
@@ -317,15 +323,14 @@ const rpayStacksStore = {
         if (configuration.network === 'local') {
           const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
           axios.post(configuration.risidioBaseApi + '/mesh' + '/v2/accounts', txOptions, authHeaders).then(response => {
-            data.result = utils.fromHex(data.functionName, response.data.result)
+            data.result = utils.jsonFromTxResult(response.data.result)
             resolve(data)
           }).catch((error) => {
             resolveError(commit, reject, error)
           })
         } else {
           axios.post(configuration.risidioStacksApi + path, txOptions.postData, { headers: headers }).then(response => {
-            // dispatch('fetchMacSkyWalletInfo')
-            data.result = utils.fromHex(data.functionName, response.data.result)
+            data.result = utils.jsonFromTxResult(response.data.result)
             resolve(data)
           }).catch((error) => {
             resolveError(commit, reject, error)

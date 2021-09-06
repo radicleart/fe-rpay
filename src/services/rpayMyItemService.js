@@ -154,24 +154,25 @@ const rpayMyItemService = {
       }).catch(() => {
         storage.putFile(ITEM_ROOT_PATH, JSON.stringify(rootFile), { encrypt: false }).then(() => {
           resolve(rootFile)
+          console.log('recovered from unexpected lack of file..')
         }).catch(() => {
           // reject(error)
         })
       })
     })
   },
-  saveAsset: function (item) {
+  saveAsset: function (item, assetPath) {
     return new Promise((resolve) => {
       storage.getFile(item.assetHash + '.json', { decrypt: false }).then((file) => {
         let item2 = JSON.parse(file)
         item2 = item
-        storage.putFile(item.assetHash + '.json', JSON.stringify(item2), { encrypt: false }).then(() => {
+        storage.putFile(assetPath, JSON.stringify(item2), { encrypt: false }).then(() => {
           resolve(item)
         }).catch(() => {
           // reject(error)
         })
       }).catch(() => {
-        storage.putFile(item.assetHash + '.json', JSON.stringify(item), { encrypt: false }).then(() => {
+        storage.putFile(assetPath, JSON.stringify(item), { encrypt: false }).then(() => {
           resolve(item)
         }).catch(() => {
           // reject(error)

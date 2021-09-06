@@ -58,19 +58,19 @@ export default {
     }
     this.$store.dispatch('rpayStacksContractStore/fetchContractDataFirstEditions', configuration).then(() => {
       this.configured = true
-    })
-    this.$store.commit('rpayStore/addConfiguration', configuration)
-    this.$store.commit('rpayStore/setDisplayCard', 100) // initial screen for each flow.
-    this.$store.dispatch('rpayStore/initialiseRates', configuration)
-    this.$store.dispatch('rpayStacksStore/fetchMacSkyWalletInfo').then(() => {
+      this.$store.commit('rpayStore/addConfiguration', configuration)
+      this.$store.commit('rpayStore/setDisplayCard', 100) // initial screen for each flow.
+      this.$store.dispatch('rpayStore/initialiseRates', configuration)
+      this.$store.dispatch('rpayStacksStore/fetchMacSkyWalletInfo').then(() => {
+        this.loaded = true
+      }).catch(() => {
+        // error here just means blockchain not running - can ignore and continue.
+      })
       this.loaded = true
-    }).catch(() => {
-      // error here just means blockchain not running - can ignore and continue.
+      if (!agetter) {
+        window.eventBus.$emit('rpayEvent', { opcode: 'configured' })
+      }
     })
-    this.loaded = true
-    if (!agetter) {
-      window.eventBus.$emit('rpayEvent', { opcode: 'configured' })
-    }
   },
   methods: {
     parseConfiguration: function () {

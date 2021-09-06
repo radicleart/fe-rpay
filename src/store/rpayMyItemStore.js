@@ -364,7 +364,8 @@ const rpayMyItemStore = {
         if (item.privacy !== 'public') {
           item.privacy = 'private'
         }
-        item.projectId = STX_CONTRACT_ADDRESS + '.' + STX_CONTRACT_NAME
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        item.projectId = configuration.risidioProjectId
         item.domain = location.hostname
         item.objType = 'artwork'
         item.updated = moment({}).valueOf()
@@ -398,9 +399,13 @@ const rpayMyItemStore = {
           })
           // throw new Error('profile needs to refresh - please reload current page..')
         } else {
-          item.metaDataUrl = profile.gaiaHubConfig.url_prefix + profile.gaiaHubConfig.address + '/' + item.assetHash + '.json'
+          let assetPath = item.assetHash + '.json'
+          if (item.currentRunKey) {
+            assetPath = item.currentRunKey + '/' + item.assetHash + '.json'
+          }
+          item.metaDataUrl = profile.gaiaHubConfig.url_prefix + profile.gaiaHubConfig.address + '/' + assetPath
           item.externalUrl = location.origin + '/assets/' + item.assetHash + '/1'
-          rpayMyItemService.saveAsset(item).then((item) => {
+          rpayMyItemService.saveAsset(item, assetPath).then((item) => {
             console.log(item)
           }).catch((error) => {
             console.log(error)

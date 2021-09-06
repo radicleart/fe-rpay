@@ -45,7 +45,7 @@ const fetchProfileMetaData = function (profile, commit, dispatch, resolve) {
     dispatch('rpayAuthStore/fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }, { root: true }).then((accountInfo) => {
       profile.accountInfo = accountInfo
       commit('myProfile', profile)
-      dispatch('rpayStacksContractStore/fetchAssetsByOwner', { stxAddress: profile.stxAddress, mine: true }, { root: true })
+      // dispatch('rpayStacksContractStore/fetchAssetsByOwner', { stxAddress: profile.stxAddress, mine: true }, { root: true })
       profile.counter = profile.counter + 1
       dispatch('rpayPrivilegeStore/fetchUserAuthorisation', { stxAddress: profile.stxAddress }, { root: true }).then((auth) => {
         profile.authorisation = auth
@@ -134,7 +134,6 @@ const rpayAuthStore = {
     myProfile: {
       username: null,
       loggedIn: false,
-      showAdmin: false,
       userData: null,
       authResponse: null,
       appPrivateKey: null
@@ -142,8 +141,6 @@ const rpayAuthStore = {
     accountApi: null,
     authHeaders: null,
     accounts: [],
-    appName: '#1 NFTs',
-    appLogo: '/img/sticksnstones_logo.8217b8f7.png'
   },
   getters: {
     getMyProfile: state => {

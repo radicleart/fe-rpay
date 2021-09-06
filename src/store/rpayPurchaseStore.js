@@ -108,7 +108,7 @@ const rpayPurchaseStore = {
       if (!saleData || saleData.saleType === 0) {
         return 'NOT ON SALE'
       } else if (saleData.saleType === 1) {
-        return 'Buy now for ' + (saleData.buyNowOrStartingPrice)
+        return 'Buy now for ' + (saleData.buyNowOrStartingPrice) + ' STX'
       } else if (saleData.saleType === 2) {
         const currentBid = intCurrentBid(contractAsset)
         return 'Place a bid - next bid is ' + (currentBid.nextBidAmount) + ' STX'
@@ -290,6 +290,7 @@ const rpayPurchaseStore = {
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch((data.methos || methos), data, { root: true }).then((result) => {
           result.opcode = 'stx-transaction-sent'
+          result.nftIndex = data.nftIndex
           result.assetHash = data.assetHash
           resolve(result)
         }).catch((err) => {

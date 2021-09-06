@@ -12,21 +12,6 @@ const matchContractAssetsFromJson = function (commit, dispatch, rootGetters, res
 }
 
 const matchContractAssets = function (commit, dispatch, rootGetters, resultSet) {
-  /**
-  const matched = []
-  resultSet.forEach((result) => {
-    const contractAsset = rootGetters['rpayStacksContractStore/getAssetFromContractByHash'](result.assetHash)
-    if (contractAsset) {
-      const gaiaAsset = rootGetters[APP_CONSTANTS.KEY_GAIA_ASSET_BY_HASH](result.assetHash)
-      if (gaiaAsset && gaiaAsset.attributes) result = gaiaAsset
-      result.contractAsset = contractAsset
-      if (result && result.attributes && result.attributes.artworkFile && result.attributes.artworkFile.fileUrl) {
-        matched.push(result)
-      }
-    }
-  })
-  return matched
-  **/
   const hashes = resultSet.map((o) => o.assetHash)
   dispatch('rpayStacksContractStore/fetchAssetFirstsByHashes', hashes, { root: true }).then((tokens) => {
     const configuration = rootGetters['rpayStore/getConfiguration']
@@ -44,7 +29,8 @@ const matchContractAssets = function (commit, dispatch, rootGetters, resultSet) 
 
 const matchContractAsset = function (rootGetters, result) {
   const configuration = rootGetters['rpayStore/getConfiguration']
-  let contractAsset = rootGetters['rpayStacksContractStore/getAssetFromContractByHash'](result.assetHash)
+  const data = { assetHash: result.assetHash, edition: 1 }
+  let contractAsset = rootGetters['rpayStacksContractStore/getAssetByHashAndEdition'](data)
   if (contractAsset) {
     const gaiaAsset = rootGetters[APP_CONSTANTS.KEY_GAIA_ASSET_BY_HASH](result.assetHash)
     if (gaiaAsset && gaiaAsset.attributes) result = gaiaAsset
@@ -98,7 +84,8 @@ const rpaySearchStore = {
     },
     getAsset: (state, getters, rootState, rootGetters) => (assetHash) => {
       let item = null
-      const contractAsset = rootGetters['rpayStacksContractStore/getAssetFromContractByHash'](assetHash)
+      const data = { assetHash: assetHash, edition: 1 }
+      const contractAsset = rootGetters['rpayStacksContractStore/getAssetByHashAndEdition'](data)
       if (assetHash && state.searchResults && state.searchResults.length > 0) {
         const asset = state.searchResults.find(o => o.assetHash === assetHash)
         item = asset

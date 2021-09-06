@@ -147,10 +147,11 @@ const utils = {
         return cvToJSON(functionArgs[0])
       }
     } catch (e) {
-      return -1
+      return null
     }
   },
   jsonFromTxResult: function (tx) {
+    if (!tx || !tx.tx_result) return null
     return cvToJSON(hexToCV(tx.tx_result.hex))
   },
   fromHex: function (method, rawResponse, strResponse) {

@@ -1,39 +1,195 @@
 import axios from 'axios'
 import utils from '@/services/utils'
+import SockJS from 'sockjs-client'
+import Stomp from '@stomp/stompjs'
+
+let socket = null
+let stompClient = null
+
+const unsubscribeApiNews = function () {
+  if (socket && stompClient) {
+    stompClient.disconnect()
+  }
+}
+
+const subscribeApiNews = function (commit, connectUrl, contractId, network) {
+  if (!socket) socket = new SockJS(connectUrl + '/api-news')
+  if (!stompClient) stompClient = Stomp.over(socket)
+  stompClient.debug = () => {}
+  socket.onclose = function () {
+    stompClient.disconnect()
+  }
+  stompClient.connect({}, function () {
+    stompClient.subscribe('/queue/transaction-news', function (response) {
+      const pendingTxs = JSON.parse(response.body)
+      commit('setPendingTransactions', pendingTxs)
+    })
+  },
+  function (error) {
+    console.log(error)
+  })
+}
 
 const rpayTransactionStore = {
   namespaced: true,
   modules: {
   },
   state: {
-    transactions: []
+    transactions: [],
+    pendingTransactions: []
   },
   getters: {
     getTransaction: state => txId => {
       if (!txId) return { error: 'invalid transaction id' }
-      const index = state.transactions.findIndex((o) => o.tx_id === txId)
+      const index = state.transactions.findIndex((o) => o.txId === txId)
       if (index > -1) {
         return state.transactions[index]
       } else {
-        return { error: 'transaction not found for id: ' + txId }
+        return null
       }
+    },
+    getPendingByNftIndex: state => nftIndex => {
+      return state.pendingTransactions.filter((o) => o.nftIndex === nftIndex)
+    },
+    getPendingByAssetHash: state => assetHash => {
+      return state.pendingTransactions.filter((o) => o.assetHash === assetHash)
+    },
+    getTransactionsByNftIndex: state => nftIndex => {
+      return state.transactions.filter((o) => o.nftIndex === nftIndex)
+    },
+    getTransactionsByAssetHash: state => assetHash => {
+      return state.transactions.filter((o) => o.assetHash === assetHash)
+    },
+    getTransactionsByTxStatus: state => txStatus => {
+      return state.transactions.filter((o) => o.txStatus === txStatus)
+    },
+    getTransactionsByFunctionName: state => functionName => {
+      return state.transactions.filter((o) => o.functionName === functionName)
+    },
+    getTransactionsByTxStatusAndNftIndex: state => data => {
+      return state.transactions.filter((o) => o.txStatus === txStatus && o.nftIndex === nftIndex)
     }
   },
   mutations: {
+    setPendingTransactions (state, transactions) {
+      state.pendingTransactions = transactions
+    },
     setTransaction (state, transaction) {
-      const index = state.transactions.findIndex((o) => o.tx_id === transaction.tx_id)
+      const index = state.transactions.findIndex((o) => o.txId === transaction.txId)
       if (index > -1) {
         state.transactions.splice(index, 1, transaction)
       } else {
         state.transactions.splice(0, 0, transaction)
       }
+    },
+    setTransactions (state, transactions) {
+      transactions.forEach((transaction) => {
+        const index = state.transactions.findIndex((o) => o.txId === transaction.txId)
+        if (index > -1) {
+          state.transactions.splice(index, 1, transaction)
+        } else {
+          state.transactions.splice(0, 0, transaction)
+        }
+      })
     }
   },
   actions: {
-    readTransactionInfo ({ rootGetters }, txId) {
+    initialiseTransactionListener ({ rootGetters, commit }) {
+      return new Promise((resolve) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        subscribeApiNews(commit, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId, configuration.network)
+        resolve(null)
+      })
+    },
+    cleanup ({ state }) {
+      return new Promise((resolve) => {
+        unsubscribeApiNews()
+        resolve(null)
+      })
+    },
+    registerTransaction ({ rootGetters, commit }, txData) {
+      return new Promise(function (resolve, reject) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.post(configuration.risidioBaseApi + '/mesh/v2/transaction', txData).then((response) => {
+          commit('setTransaction', response.data)
+          resolve(response.data)
+        }).catch(() => {
+          resolve(null)
+        })
+      })
+    },
+    updateTransaction ({ rootGetters, commit }, txData) {
+      return new Promise(function (resolve, reject) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.put(configuration.risidioBaseApi + '/mesh/v2/transaction', txData).then((response) => {
+          commit('setTransaction', response.data)
+          resolve(response.data)
+        }).catch(() => {
+          resolve(null)
+        })
+      })
+    },
+    fetchTransactionsByContractIdAndNftIndex ({ rootGetters, commit }, nftIndex) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const stacksNode = configuration.risidioStacksApi + '/extended/v1/tx/' + txId
+        axios.get(configuration.risidioBaseApi + '/mesh/v2/transactions/' + configuration.risidioProjectId + '/' + nftIndex).then((response) => {
+          commit('setTransactions', response.data)
+          resolve(response.data)
+        }).catch((error) => {
+          reject(new Error('Unable to fetch offers: ' + error))
+        })
+      })
+    },
+    fetchTransactionsByContractIdAndAssetHash ({ rootGetters, commit }, assetHash) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.get(configuration.risidioBaseApi + '/mesh/v2/transactionsByAssetHash/' + configuration.risidioProjectId + '/' + assetHash).then((response) => {
+          commit('setTransactions', response.data)
+          resolve(response.data)
+        }).catch((error) => {
+          reject(new Error('Unable to fetch offers: ' + error))
+        })
+      })
+    },
+    fetchTransactionsByContractIdAndTxStatus ({ rootGetters, commit }, txStatus) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.get(configuration.risidioBaseApi + '/mesh/v2/transactionsByTxStatus/' + configuration.risidioProjectId + '/' + txStatus).then((response) => {
+          commit('setTransactions', response.data)
+          resolve(response.data)
+        }).catch((error) => {
+          reject(new Error('Unable to fetch offers: ' + error))
+        })
+      })
+    },
+    fetchTransactionsByContractIdAndTxStatus ({ rootGetters, commit }, txStatus) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.get(configuration.risidioBaseApi + '/mesh/v2/transactionsByFunctionName/' + configuration.risidioProjectId + '/' + txStatus).then((response) => {
+          commit('setTransactions', response.data)
+          resolve(response.data)
+        }).catch((error) => {
+          reject(new Error('Unable to fetch offers: ' + error))
+        })
+      })
+    },
+    fetchTransactionByTxId ({ rootGetters, commit }, txId) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.get(configuration.risidioBaseApi + '/mesh/v2/transaction/' + txId).then((response) => {
+          commit('setTransactions', response.data)
+          resolve(response.data)
+        }).catch((error) => {
+          reject(new Error('Unable to fetch offers: ' + error))
+        })
+      })
+    },
+    fetchTransactionFromChainByTxId ({ dispatch, rootGetters }, txId) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        let onchainTxId = txId
+        if (!onchainTxId.startsWith('0x')) onchainTxId = '0x' + txId
+        const stacksNode = configuration.risidioStacksApi + '/extended/v1/tx/' + onchainTxId
         axios.get(stacksNode).then((response) => {
           const txData = response.data
           if (txData && txData.tx_status) {
