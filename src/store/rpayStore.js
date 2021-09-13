@@ -80,9 +80,11 @@ const subscribePayment = function (commit, paymentId) {
   stompClient.subscribe('/queue/payment-news-' + paymentId, function (response) {
     const invoice = { data: JSON.parse(response.body) }
     commit('mergePaidCharge', invoice)
-    if (invoice.data.status === 'paid' || invoice.status === 'procecessing') {
-      invoice.opcode = 'btc-crypto-payment-success'
-      window.eventBus.$emit('rpayEvent', invoice)
+    if (invoice && invoice.data) {
+      if (invoice.data.status === 'paid' || invoice.data.status === 'processing') {
+        invoice.opcode = 'btc-crypto-payment-success'
+        window.eventBus.$emit('rpayEvent', invoice)
+      }
     }
   })
 }
@@ -402,6 +404,7 @@ const rpayStore = {
           }
           dispatch('fetchPayment').then((invoice) => {
             localStorage.setItem('OP_INVOICE', JSON.stringify(invoice))
+            if (invoice) subscribePayment(commit, invoice.data.id)
             resolve(invoice)
           }).catch(() => {
             resolve(false)
@@ -420,7 +423,7 @@ const rpayStore = {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const data = {
           amount: configuration.payment.amountSat,
-          description: (configuration.payment.description) ? configuration.payment.description : 'Donation to project'
+          description: (configuration.payment.description) ? configuration.payment.description : 'Stacksmate STX swap'
         }
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.post(MESH_API + '/v2/fetchPayment', data, authHeaders).then(response => {

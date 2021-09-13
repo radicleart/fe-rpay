@@ -56,7 +56,7 @@ export default {
       this.$store.registerModule('rpayStore', rpayStore)
       this.$store.commit('rpayStore/addConfiguration', configuration)
     }
-    this.$store.dispatch('rpayStacksContractStore/fetchContractDataFirstEditions', configuration).then(() => {
+    this.$store.dispatch('rpayStacksContractStore/fetchContractDataFirstEditions').then(() => {
       this.configured = true
       this.$store.commit('rpayStore/addConfiguration', configuration)
       this.$store.commit('rpayStore/setDisplayCard', 100) // initial screen for each flow.

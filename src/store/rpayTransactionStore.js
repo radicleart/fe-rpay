@@ -48,6 +48,16 @@ const rpayTransactionStore = {
         return null
       }
     },
+    getPending: state => item => {
+      let results = []
+      if (item.contractAsset) {
+        results = state.pendingTransactions.filter((o) => o.nftIndex === item.contractAsset.nftIndex)
+      } else {
+        results = state.pendingTransactions.filter((o) => o.assetHash === item.assetHash)
+      }
+      if (results.length === 0) return null
+      return results
+    },
     getPendingByNftIndex: state => nftIndex => {
       return state.pendingTransactions.filter((o) => o.nftIndex === nftIndex)
     },
@@ -67,7 +77,7 @@ const rpayTransactionStore = {
       return state.transactions.filter((o) => o.functionName === functionName)
     },
     getTransactionsByTxStatusAndNftIndex: state => data => {
-      return state.transactions.filter((o) => o.txStatus === txStatus && o.nftIndex === nftIndex)
+      return state.transactions.filter((o) => o.txStatus === data.txStatus && o.nftIndex === data.nftIndex)
     }
   },
   mutations: {
@@ -109,8 +119,19 @@ const rpayTransactionStore = {
     },
     registerTransaction ({ rootGetters, commit }, txData) {
       return new Promise(function (resolve, reject) {
+        const stacksTx = {
+          timestamp: txData.timestamp || new Date().getTime(),
+          nftIndex: txData.nftIndex,
+          contractId: txData.contractId,
+          functionName: txData.functionName,
+          assetHash: txData.assetHash,
+          txId: txData.txId,
+          type: txData.type,
+          txStatus: txData.txStatus
+        }
+        commit('setTransaction', stacksTx)
         const configuration = rootGetters['rpayStore/getConfiguration']
-        axios.post(configuration.risidioBaseApi + '/mesh/v2/transaction', txData).then((response) => {
+        axios.post(configuration.risidioBaseApi + '/mesh/v2/transaction', stacksTx).then((response) => {
           commit('setTransaction', response.data)
           resolve(response.data)
         }).catch(() => {
@@ -120,8 +141,18 @@ const rpayTransactionStore = {
     },
     updateTransaction ({ rootGetters, commit }, txData) {
       return new Promise(function (resolve, reject) {
+        const stacksTx = {
+          timestamp: txData.timestamp || new Date().getTime(),
+          nftIndex: txData.nftIndex,
+          contractId: txData.contractId,
+          functionName: txData.functionName,
+          assetHash: txData.assetHash,
+          txId: txData.txId,
+          type: txData.type,
+          txStatus: txData.txStatus
+        }
         const configuration = rootGetters['rpayStore/getConfiguration']
-        axios.put(configuration.risidioBaseApi + '/mesh/v2/transaction', txData).then((response) => {
+        axios.put(configuration.risidioBaseApi + '/mesh/v2/transaction', stacksTx).then((response) => {
           commit('setTransaction', response.data)
           resolve(response.data)
         }).catch(() => {
@@ -162,7 +193,7 @@ const rpayTransactionStore = {
         })
       })
     },
-    fetchTransactionsByContractIdAndTxStatus ({ rootGetters, commit }, txStatus) {
+    fetchTransactionsByContractIdAndFunctionName ({ rootGetters, commit }, txStatus) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         axios.get(configuration.risidioBaseApi + '/mesh/v2/transactionsByFunctionName/' + configuration.risidioProjectId + '/' + txStatus).then((response) => {

@@ -134,13 +134,14 @@ const rpayMyItemStore = {
     }
   },
   actions: {
-    initSchema ({ dispatch, state, rootGetters }, forced) {
+    initSchema ({ commit, dispatch, state, rootGetters }, forced) {
       return new Promise((resolve) => {
         const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
         if (state.rootFile && !forced) {
           resolve(state.rootFile)
         } else {
           dispatch('fetchItems').then((rootFile) => {
+            commit('rootFile', rootFile)
             resolve(rootFile)
           }).catch(() => {
             rpayMyItemService.initItemSchema(profile)
@@ -336,7 +337,58 @@ const rpayMyItemStore = {
         })
       })
     },
-    saveItem ({ state, rootGetters, commit, dispatch }, item) {
+    quickSaveItem ({ commit, rootGetters, state }, item) {
+      return new Promise((resolve) => {
+        const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
+        item.updated = moment({}).valueOf()
+        const rootFile = state.rootFile
+        const index = rootFile.records.findIndex((o) => o.assetHash === item.assetHash)
+        if (index < 0) {
+          rootFile.records.splice(0, 0, item)
+        } else {
+          rootFile.records.splice(index, 1, item)
+        }
+        let assetPath = item.assetHash + '.json'
+        if (item.currentRunKey) {
+          assetPath = item.currentRunKey + '/' + item.assetHash + '.json'
+        }
+        if (!profile.gaiaHubConfig) {
+          try {
+            const session = JSON.parse(localStorage.getItem('blockstack-session'))
+            profile.gaiaHubConfig = session.userData.gaiaHubConfig
+          } catch (err) {
+            window.location.reload()
+            return
+          }
+        }
+        if (!profile.gaiaHubConfig) {
+          window.location.reload()
+          return
+        }
+        item.metaDataUrl = profile.gaiaHubConfig.url_prefix + profile.gaiaHubConfig.address + '/' + assetPath
+        item.externalUrl = location.origin + '/assets/' + item.assetHash + '/1'
+        let token = null
+        if (item.contractAsset) {
+          token = item.contractAsset
+          item.contractAsset = null
+        }
+        rpayMyItemService.saveAsset(item, assetPath).then((item) => {
+          item.contractAsset = token
+          commit('rootFile', rootFile)
+          if (item.privacy === 'public') {
+            const configuration = rootGetters['rpayStore/getConfiguration']
+            searchIndexService.addRecord(configuration.risidioBaseApi, item)
+          }
+          rpayMyItemService.saveRootFile(rootFile).then((item) => {
+            commit('rootFile', rootFile)
+          })
+          resolve(item)
+        }).catch(() => {
+          resolve(item)
+        })
+      })
+    },
+    saveItem ({ rootGetters, dispatch }, item) {
       return new Promise((resolve, reject) => {
         const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
         item.uploader = profile.username
@@ -347,12 +399,6 @@ const rpayMyItemStore = {
           reject(new Error('Unable to save your data...'))
           return
         }
-        let token = null
-        if (item.contractAsset) {
-          token = item.contractAsset
-          item.contractAsset = null
-        }
-        if (typeof item.nftIndex === 'undefined') item.nftIndex = -1
         if (item.attributes && item.attributes.coverImage && item.attributes.coverImage.fileUrl) {
           const mintedUrl = encodeURI(item.attributes.coverImage.fileUrl)
           item.externalUrl = location.origin + '/display?asset=' + mintedUrl
@@ -369,12 +415,6 @@ const rpayMyItemStore = {
         item.domain = location.hostname
         item.objType = 'artwork'
         item.updated = moment({}).valueOf()
-        const index = state.rootFile.records.findIndex((o) => o.assetHash === item.assetHash)
-        if (index < 0) {
-          state.rootFile.records.splice(0, 0, item)
-        } else {
-          state.rootFile.records.splice(index, 1, item)
-        }
         const tempAttributes = item.attributes
         if (tempAttributes.artworkClip && tempAttributes.artworkClip.dataUrl) tempAttributes.artworkClip.dataUrl = null
         if (tempAttributes.artworkFile && tempAttributes.artworkFile.dataUrl) tempAttributes.artworkFile.dataUrl = null
@@ -384,47 +424,9 @@ const rpayMyItemStore = {
           coverImage: tempAttributes.coverImage,
           artworkClip: tempAttributes.artworkClip
         }
-        if (!item.metaDataUrl && !profile.gaiaHubConfig) {
-          // reject(new Error('Unable to load your gaia hub info - reload page and try again.'))
-          dispatch('rpayAuthStore/fetchMyAccount', { root: true }).then((profile) => {
-            profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
-            console.log('gaiaHubConfig', profile.gaiaHubConfig)
-            setTimeout(function () {
-              profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
-              console.log('gaiaHubConfig', profile.gaiaHubConfig)
-              window.location.reload()
-            }, 400)
-          }).catch((error) => {
-            console.log(error)
-          })
-          // throw new Error('profile needs to refresh - please reload current page..')
-        } else {
-          let assetPath = item.assetHash + '.json'
-          if (item.currentRunKey) {
-            assetPath = item.currentRunKey + '/' + item.assetHash + '.json'
-          }
-          item.metaDataUrl = profile.gaiaHubConfig.url_prefix + profile.gaiaHubConfig.address + '/' + assetPath
-          item.externalUrl = location.origin + '/assets/' + item.assetHash + '/1'
-          rpayMyItemService.saveAsset(item, assetPath).then((item) => {
-            console.log(item)
-          }).catch((error) => {
-            console.log(error)
-          })
-          rpayMyItemService.saveRootFile(state.rootFile).then((rootFile) => {
-            item.contractAsset = token
-            commit('rootFile', rootFile)
-            resolve(item)
-            if (item.privacy === 'public' && token && token.nftIndex > -1) {
-              searchIndexService.addRecord(item).then((result) => {
-                console.log(result)
-              }).catch((error) => {
-                console.log(error)
-              })
-            }
-          }).catch((error) => {
-            reject(error)
-          })
-        }
+        dispatch('quickSaveItem', item).then((item) => {
+          resolve(item)
+        })
       })
     }
   }

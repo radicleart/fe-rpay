@@ -1,4 +1,3 @@
-import moment from 'moment'
 import axios from 'axios'
 import SockJS from 'sockjs-client'
 import Stomp from '@stomp/stompjs'
@@ -13,35 +12,6 @@ const sortResults = function (gaiaAssets) {
     return gaiaAssets.sort((g1, g2) => g1.contractAsset.nftIndex - g2.contractAsset.nftIndex)
   } catch (err) {
     return gaiaAssets
-  }
-}
-
-const myGaiaAssets = function (state, timeInMilliseconds) {
-  const myGaiaAssets = []
-  try {
-    const myContractAssets = state.myContractAssets
-    if (state.myContractAssets) {
-      for (let i = 0; i < myContractAssets.length; i++) {
-        const token = myContractAssets[i]
-        const index = state.gaiaAssets.findIndex((o) => o.assetHash === token.tokenInfo.assetHash)
-        if (index > -1) {
-          const ga = state.gaiaAssets[index]
-          ga.contractAsset = token
-          if (!timeInMilliseconds) {
-            myGaiaAssets.push(ga)
-          } else if (ga.mintInfo && ga.mintInfo.timestamp) {
-            const mintTime = ga.mintInfo.timestamp
-            if (mintTime > timeInMilliseconds) {
-              ga.contractAsset = token
-              myGaiaAssets.push(ga)
-            }
-          }
-        }
-      }
-    }
-    return myGaiaAssets
-  } catch (err) {
-    return myGaiaAssets
   }
 }
 
@@ -84,13 +54,13 @@ const subscribeApiNews = function (commit, connectUrl, contractId, network) {
       stompClient.subscribe('/queue/contract-news', function (response) {
         const cacheUpdateResult = JSON.parse(response.body)
         // loadAssetsFromGaia(cacheUpdateResult.tokens, commit, network)
-        commit('updateTokens', {tokens: cacheUpdateResult.tokens, network: network })
+        commit('updateTokens', { tokens: cacheUpdateResult.tokens, network: network })
       })
     } else {
       stompClient.subscribe('/queue/contract-news-' + contractId, function (response) {
         const cacheUpdateResult = JSON.parse(response.body)
         // loadAssetsFromGaia(cacheUpdateResult.tokens, commit, network)
-        commit('updateTokens', {tokens: cacheUpdateResult.tokens, network: network })
+        commit('updateTokens', { tokens: cacheUpdateResult.tokens, network: network })
       })
     }
   },
@@ -184,14 +154,6 @@ const rpayStacksContractStore = {
     getMyContractAssets: state => {
       return state.myContractAssets
     },
-    getMyGaiaAssets: state => {
-      return myGaiaAssets(state)
-    },
-    getMyGaiaAssetsToday: state => {
-      const today = moment().startOf('day')
-      const timeInMilliseconds = today.valueOf()
-      return myGaiaAssets(state, timeInMilliseconds)
-    },
     getAssetByHashAndEdition: state => data => {
       let ga = null
       try {
@@ -227,14 +189,15 @@ const rpayStacksContractStore = {
     updateTokens (state, data) {
       data.tokens.forEach((token) => {
         token = utils.resolvePrincipalsToken(data.network, token)
-        let index = state.gaiaAssets.findIndex((o) => o.contractAsset.nftIndex === token.nftIndex)
+        let index = state.gaiaAssets.findIndex((o) => o.contractAsset && o.contractAsset.nftIndex === token.nftIndex)
         if (index > -1) {
           state.gaiaAssets[index].contractAsset = token
         }
-
-        index = state.myContractAssets.findIndex((o) => o.nftIndex === token.nftIndex)
-        if (index > -1) {
-          state.myContractAssets[index] = token
+        if (state.myContractAssets) {
+          index = state.myContractAssets.findIndex((o) => o.nftIndex === token.nftIndex)
+          if (index > -1) {
+            state.myContractAssets[index] = token
+          }
         }
       })
     },
@@ -257,14 +220,26 @@ const rpayStacksContractStore = {
     }
   },
   actions: {
-    updateCache ({ rootGetters }, cacheUpdate) {
+    updateCache ({ commit, rootGetters }, txData) {
       return new Promise(function (resolve) {
+        const stacksTx = {
+          timestamp: txData.timestamp || new Date().getTime(),
+          nftIndex: txData.nftIndex,
+          contractId: txData.contractId,
+          functionName: txData.functionName,
+          assetHash: txData.assetHash,
+          txId: txData.txId,
+          type: txData.type,
+          txStatus: txData.txStatus
+        }
         const configuration = rootGetters['rpayStore/getConfiguration']
-        axios.post(configuration.risidioBaseApi + '/mesh/v2/cache/update', cacheUpdate).then(() => {
-          resolve(cacheUpdate)
+        axios.post(configuration.risidioBaseApi + '/mesh/v2/cache/update', stacksTx).then((response) => {
+          const token = response.data
+          loadAssetsFromGaia([token], commit, configuration.network)
+          resolve(token)
         }).catch(() => {
-          cacheUpdate.failed = true
-          resolve(cacheUpdate)
+          stacksTx.failed = true
+          resolve(stacksTx)
         })
       })
     },
@@ -290,7 +265,7 @@ const rpayStacksContractStore = {
         })
       })
     },
-    fetchContractDataFirstEditions ({ dispatch, state, commit, rootGetters }) {
+    fetchContractDataFirstEditions ({ dispatch, commit, rootGetters }) {
       return new Promise((resolve) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         dispatch('fetchRegistry').then((registry) => {

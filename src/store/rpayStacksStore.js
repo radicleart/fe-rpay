@@ -32,9 +32,13 @@ const captureResult = function (dispatch, rootGetters, result) {
   result.txStatus = 'pending'
   try {
     if (result.functionName === 'mint-token') {
-      result.asstHash = cvToValue(result.functionArgs[0]).substring(2)
+      result.assetHash = cvToValue(result.functionArgs[0]).substring(2)
+      // console.log(typeof result.assetHash)
     } else {
       result.nftIndex = cvToValue(result.functionArgs[0])
+      if (typeof result.nftIndex === 'bigint') {
+        result.nftIndex = Number(result.nftIndex)
+      }
     }
   } catch (err) {
     console.log('no nft index in first arg for function - ' + result.functionName)
@@ -43,18 +47,19 @@ const captureResult = function (dispatch, rootGetters, result) {
   result.timestamp = new Date().getTime()
   dispatch('rpayTransactionStore/registerTransaction', result, { root: true }).then(() => {
     dispatch('rpayStacksContractStore/updateCache', result, { root: true })
+    window.eventBus.$emit('rpayEvent', result)
+    const timer1 = setInterval(function () {
+      dispatch('rpayTransactionStore/fetchTransactionFromChainByTxId', result.txId, { root: true }).then((txData) => {
+        result.txStatus = txData.txStatus
+        dispatch('rpayTransactionStore/updateTransaction', result, { root: true })
+        if (txData.txStatus !== 'pending') {
+          window.eventBus.$emit('rpayEvent', result)
+          dispatch('rpayStacksContractStore/updateCache', result, { root: true })
+          clearInterval(timer1)
+        }
+      })
+    }, 15000)
   })
-  window.eventBus.$emit('rpayEvent', result)
-  const timer1 = setInterval(function () {
-    dispatch('rpayTransactionStore/fetchTransactionFromChainByTxId', result.txId, { root: true }).then((txData) => {
-      dispatch('rpayTransactionStore/updateTransaction', txData, { root: true })
-      if (txData.txStatus !== 'pending') {
-        window.eventBus.$emit('rpayEvent', txData)
-        dispatch('rpayStacksContractStore/updateCache', result, { root: true })
-        clearInterval(timer1)
-      }
-    })
-  }, 15000)
 }
 
 const resolveError = function (commit, reject, error) {
@@ -572,7 +577,7 @@ const rpayStacksStore = {
             memo: 'Sending payment for game credits.',
             fee: new BigNum(1800),
             senderKey: sender.keyInfo.privateKey,
-            nonce: new BigNum(nonces.possible_next_nonce),
+            nonce: new BigNum(nonces.possible_next_nonce)
           }
           makeSTXTokenTransfer(txOptions).then((transaction) => {
             const txdata = new Uint8Array(transaction.serialize())

@@ -155,8 +155,6 @@ const utils = {
     return cvToJSON(hexToCV(tx.tx_result.hex))
   },
   fromHex: function (method, rawResponse, strResponse) {
-    const jsonResult = cvToJSON(hexToCV(tx.tx_result.hex))
-    console.log(jsonResult)
     if (method === 'mint-token' || method === 'mint-edition') {
       try {
         if (strResponse.indexOf('(ok u') > -1) {
@@ -288,9 +286,18 @@ const utils = {
     }
     if (token.beneficiaries) {
       let idx = 0
+      if (!token.beneficiaries.secondaries) {
+        token.beneficiaries.secondaries = []
+      }
       token.beneficiaries.shares.forEach((share) => {
         token.beneficiaries.shares[idx].value = this.fromMicroAmount(share.value) / 100
         token.beneficiaries.addresses[idx].valueHex = this.convertAddress(network, token.beneficiaries.addresses[idx].valueHex)
+        if (token.beneficiaries.secondaries[idx]) {
+          const secondary = token.beneficiaries.secondaries[idx]
+          secondary.value = this.fromMicroAmount(secondary.value) / 100
+        } else {
+          token.beneficiaries.secondaries[idx] = 0
+        }
         idx++
       })
     }

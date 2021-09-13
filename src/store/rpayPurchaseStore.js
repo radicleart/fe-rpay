@@ -247,19 +247,30 @@ const rpayPurchaseStore = {
         const editionCost = uintCV(data.editionCost)
         const addressList = []
         const shareList = []
+        const secondariesList = []
         for (let i = 0; i < 10; i++) {
           const beneficiary = data.beneficiaries[i]
           if (beneficiary) {
-            addressList.push(standardPrincipalCV(beneficiary.chainAddress))
+            if (i === 0) {
+              // address of the nft owner (i=0) is known at runtime.
+              // so we just enter the contract address as a placeholder.
+              // see payment-split method in contract.
+              addressList.push(standardPrincipalCV(data.contractAddress))
+            } else {
+              addressList.push(standardPrincipalCV(beneficiary.chainAddress))
+            }
             shareList.push(uintCV(utils.toOnChainAmount(beneficiary.royalty * 100))) // allows 2 d.p.
+            secondariesList.push(uintCV(utils.toOnChainAmount(beneficiary.secondaryRoyalty * 100))) // allows 2 d.p.
           } else {
             addressList.push(standardPrincipalCV(data.contractAddress))
             shareList.push(uintCV(0))
+            secondariesList.push(uintCV(0))
           }
         }
         const addresses = listCV(addressList)
         const shares = listCV(shareList)
-        data.functionArgs = [buffer, metaDataUrl, editions, editionCost, addresses, shares]
+        const secondaries = listCV(secondariesList)
+        data.functionArgs = [buffer, metaDataUrl, editions, editionCost, addresses, shares, secondaries]
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch((data.methos || methos), data, { root: true }).then((result) => {
           result.opcode = 'stx-transaction-sent'
@@ -391,7 +402,7 @@ const rpayPurchaseStore = {
         } else {
           postConds.push(makeStandardSTXPostCondition(
             postCondAddress,
-            FungibleConditionCode.Equal,
+            FungibleConditionCode.LessEqual, // less or equal - if the buyer is one of the royalties payment is skipped.
             amount // uintCV(utils.toOnChainAmount(data.mintingFee))
           ))
           const nonFungibleAssetInfo = createAssetInfo(

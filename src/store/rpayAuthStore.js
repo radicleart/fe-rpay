@@ -37,7 +37,7 @@ const setSuperAdmin = function (profile, privs) {
     }
   }
 }
-const fetchProfileMetaData = function (profile, commit, dispatch, resolve) {
+const fetchProfileMetaData = function (profile, commit, dispatch) {
   return new Promise((resolve) => {
     const authHeaders = defAuthHeaders(profile)
     profile.counter = 1
@@ -109,7 +109,7 @@ const getProfile = function (network) {
       if (uname && !name) {
         name = uname.substring(0, uname.indexOf('.'))
       }
-      let stxAddress = (network === 'mainnet') ? account.profile.stxAddress.mainnet : account.profile.stxAddress.testnet
+      const stxAddress = (network === 'mainnet') ? account.profile.stxAddress.mainnet : account.profile.stxAddress.testnet
       myProfile = {
         gaiaHubConfig: account.gaiaHubConfig,
         identityAddress: account.identityAddress,
@@ -140,7 +140,7 @@ const rpayAuthStore = {
     },
     accountApi: null,
     authHeaders: null,
-    accounts: [],
+    accounts: []
   },
   getters: {
     getMyProfile: state => {
@@ -225,14 +225,14 @@ const rpayAuthStore = {
 
         if (userSession.isUserSignedIn()) {
           const profile = getProfile(configuration.network)
-          fetchProfileMetaData(profile, commit, dispatch, resolve).then((profile) => {
+          fetchProfileMetaData(profile, commit, dispatch).then((profile) => {
             commit('myProfile', profile)
             resolve(profile)
           })
         } else if (userSession.isSignInPending()) {
           userSession.handlePendingSignIn().then(() => {
             const profile = getProfile(configuration.network)
-            fetchProfileMetaData(profile, commit, dispatch, resolve).then((profile) => {
+            fetchProfileMetaData(profile, commit, dispatch).then((profile) => {
               commit('myProfile', profile)
               resolve(profile)
             })
@@ -263,9 +263,11 @@ const rpayAuthStore = {
             state.appPrivateKey = state.userData.appPrivateKey
             state.authResponse = authResponse
             const profile = getProfile(configuration.network)
-            fetchProfileMetaData(profile, commit, dispatch, resolve).then((profile) => {
+            fetchProfileMetaData(profile, commit, dispatch).then((profile) => {
               commit('myProfile', profile)
-              resolve(profile)
+              dispatch('rpayMyItemStore/initSchema', true, { root: true }).then(() => {
+                resolve(profile)
+              })
             })
           },
           appDetails: appDetails
