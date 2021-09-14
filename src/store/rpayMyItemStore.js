@@ -140,7 +140,7 @@ const rpayMyItemStore = {
         if (state.rootFile && !forced) {
           resolve(state.rootFile)
         } else {
-          dispatch('fetchItems').then((rootFile) => {
+          dispatch('fetchItems', false).then((rootFile) => {
             commit('rootFile', rootFile)
             resolve(rootFile)
           }).catch(() => {
@@ -149,7 +149,7 @@ const rpayMyItemStore = {
         }
       })
     },
-    fetchItems ({ state, dispatch, commit, rootGetters }) {
+    fetchItems ({ state, dispatch, commit, rootGetters }, pullContractAssets) {
       return new Promise((resolve, reject) => {
         const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
         rpayMyItemService.fetchMyItems(profile).then((rootFile) => {
@@ -163,18 +163,20 @@ const rpayMyItemStore = {
               if (tokens) ga.contractAsset = tokens.find((o) => o.tokenInfo.assetHash === ga.assetHash)
             })
           }
-          const hashes = rootFile.records.map(record => record.assetHash)
-          dispatch('rpayStacksContractStore/fetchAssetFirstsByHashes', hashes, { root: true }).then((tokens) => {
-            state.rootFile.records.forEach((ga) => {
-              if (tokens) {
-                const t = tokens.find((o) => o.tokenInfo.assetHash === ga.assetHash)
-                if (t) {
-                  ga.contractAsset = t
-                  commit('updateGaiaAsset', ga)
+          if (pullContractAssets) {
+            const hashes = rootFile.records.map(record => record.assetHash)
+            dispatch('rpayStacksContractStore/fetchAssetFirstsByHashes', hashes, { root: true }).then((tokens) => {
+              state.rootFile.records.forEach((ga) => {
+                if (tokens) {
+                  const t = tokens.find((o) => o.tokenInfo.assetHash === ga.assetHash)
+                  if (t) {
+                    ga.contractAsset = t
+                    commit('updateGaiaAsset', ga)
+                  }
                 }
-              }
+              })
             })
-          })
+          }
           commit('rootFile', rootFile)
           resolve(rootFile)
         }).catch((error) => {

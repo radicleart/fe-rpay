@@ -247,6 +247,56 @@ const rpayPurchaseStore = {
         const editionCost = uintCV(data.editionCost)
         const addressList = []
         const shareList = []
+        for (let i = 0; i < 10; i++) {
+          const beneficiary = data.beneficiaries[i]
+          if (beneficiary) {
+            addressList.push(standardPrincipalCV(beneficiary.chainAddress))
+            shareList.push(uintCV(utils.toOnChainAmount(beneficiary.royalty * 100))) // allows 2 d.p.
+          } else {
+            addressList.push(standardPrincipalCV(data.contractAddress))
+            shareList.push(uintCV(0))
+          }
+        }
+        const addresses = listCV(addressList)
+        const shares = listCV(shareList)
+        data.functionArgs = [buffer, metaDataUrl, editions, editionCost, addresses, shares]
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        dispatch((data.methos || methos), data, { root: true }).then((result) => {
+          result.opcode = 'stx-transaction-sent'
+          result.assetHash = data.assetHash
+          resolve(result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    mintTokenV2 ({ dispatch, rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const profile = rootGetters['rpayAuthStore/getMyProfile']
+        let postCondAddress = profile.stxAddress
+        if (configuration.network === 'local' && data.sendAsSky) {
+          postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
+        }
+        let postConds = []
+        const amount = new BigNum(utils.toOnChainAmount(data.mintingFee))
+        if (data.postConditions) {
+          postConds = data.postConditions
+        } else {
+          postConds.push(makeStandardSTXPostCondition(
+            postCondAddress,
+            FungibleConditionCode.Equal,
+            amount // uintCV(utils.toOnChainAmount(data.mintingFee))
+          ))
+        }
+        data.postConditions = postConds
+        const buffer = bufferCV(Buffer.from(data.assetHash, 'hex'))
+        const metaDataUrl = bufferCV(Buffer.from(data.metaDataUrl, 'utf8'))
+        // const metaDataUrl = stringUtf8CV(data.metaDataUrl)
+        const editions = uintCV(data.editions)
+        const editionCost = uintCV(data.editionCost)
+        const addressList = []
+        const shareList = []
         const secondariesList = []
         for (let i = 0; i < 10; i++) {
           const beneficiary = data.beneficiaries[i]
