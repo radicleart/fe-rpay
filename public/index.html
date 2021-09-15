@@ -40,11 +40,11 @@
       }
       let useNetwork = 'local'
       let risidioBaseApi = 'http://api.risidio.local'
-      if (location.href.indexOf('https://trpay.risidio.com') > -1) {
-        risidioBaseApi = 'https://tapi.risidio.com'
+      if (location.href.indexOf('https://rpay.brightblock.org') > -1) {
+        risidioBaseApi = 'https://tapi.brightblock.org'
         useNetwork = 'testnet'
-      } else if (location.href.indexOf('https://rpay.risidio.com') > -1) {
-        risidioBaseApi = 'https://api.risidio.com'
+      } else if (location.href.indexOf('https://rpay.brightblock.org') > -1) {
+        risidioBaseApi = 'https://api.brightblock.org'
         useNetwork = 'mainnet'
       }
       const lookAndFeel = {

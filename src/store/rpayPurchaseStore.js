@@ -404,7 +404,7 @@ const rpayPurchaseStore = {
           data.owner, // postConditionAddress
           NonFungibleConditionCode.DoesNotOwn,
           nonFungibleAssetInfo, // contract and nft info
-          data.nftIndex // uintCV(data.nftIndex) // nft value as clarity type
+          uintCV(data.nftIndex)
         )
         // const profile = rootGetters['rpayAuthStore/getMyProfile']
         // const owner = profile.stxAddress
