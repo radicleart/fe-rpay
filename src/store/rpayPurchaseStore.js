@@ -123,7 +123,10 @@ const rpayPurchaseStore = {
       return saleLabel
     },
     getSalesBadgeLabel: state => contractAsset => {
-      const saleLabel = (contractAsset.saleData.saleType) ? state.badgeText[contractAsset.saleData.saleType] : state.badgeText[0]
+      let saleLabel = (contractAsset.saleData.saleType) ? state.badgeText[contractAsset.saleData.saleType] : state.badgeText[0]
+      if (contractAsset.saleData.saleCycleIndex > 1) {
+        saleLabel = 'SOLD'
+      }
       if (contractAsset.saleData.saleType === 0) {
         if (contractAsset.tokenInfo.maxEditions >= contractAsset.editionCounter) {
           return 'LIMITED EDITIONS'
