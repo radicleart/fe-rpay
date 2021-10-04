@@ -1,6 +1,6 @@
 {
   "name": "risidio-pay",
-  "version": "0.6.31",
+  "version": "0.6.77",
   "private": false,
   "files": [
     "dist"
@@ -39,7 +39,7 @@
     "c32check": "^1.1.2",
     "data-uri-to-buffer": "^3.0.1",
     "jsontokens": "^3.0.0",
-    "moment": "^2.29.1",
+    "luxon": "^2.0.2",
     "regenerator-runtime": "^0.13.9",
     "risidio-rates": "^1.0.10",
     "sockjs-client": "^1.5.1",

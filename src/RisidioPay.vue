@@ -7,7 +7,6 @@
 import Vue from 'vue'
 import rpayStore from './store/rpayStore'
 import rpaySearchStore from '@/store/rpaySearchStore'
-import rpayEthereumStore from './store/rpayEthereumStore'
 import rpayAuthStore from './store/rpayAuthStore'
 import rpayMyItemStore from './store/rpayMyItemStore'
 import rpayCategoryStore from './store/rpayCategoryStore'
@@ -16,6 +15,9 @@ import rpayPrivilegeStore from './store/rpayPrivilegeStore'
 import rpayStacksContractStore from './store/rpayStacksContractStore'
 import rpayStacksStore from './store/rpayStacksStore'
 import rpayPurchaseStore from './store/rpayPurchaseStore'
+import rpayProjectStore from './store/rpayProjectStore'
+// import rpayEthereumStore from './store/rpayEthereumStore'
+// const rpayEthereumStore = () => import(/* webpackChunkName: "rpayEthereumStore" */ '@/views/Index.vue')
 
 if (!window.eventBus) {
   window.eventBus = new Vue()
@@ -44,7 +46,7 @@ export default {
     const agetter = this.$store.getters['rpayStore/getDisplayCard']
     if (!agetter) {
       this.$store.registerModule('rpaySearchStore', rpaySearchStore)
-      this.$store.registerModule('rpayEthereumStore', rpayEthereumStore)
+      // this.$store.registerModule('rpayEthereumStore', rpayEthereumStore)
       this.$store.registerModule('rpayAuthStore', rpayAuthStore)
       this.$store.registerModule('rpayMyItemStore', rpayMyItemStore)
       this.$store.registerModule('rpayTransactionStore', rpayTransactionStore)
@@ -52,6 +54,7 @@ export default {
       this.$store.registerModule('rpayCategoryStore', rpayCategoryStore)
       this.$store.registerModule('rpayStacksStore', rpayStacksStore)
       this.$store.registerModule('rpayPurchaseStore', rpayPurchaseStore)
+      this.$store.registerModule('rpayProjectStore', rpayProjectStore)
       this.$store.registerModule('rpayStacksContractStore', rpayStacksContractStore)
       this.$store.registerModule('rpayStore', rpayStore)
       this.$store.commit('rpayStore/addConfiguration', configuration)

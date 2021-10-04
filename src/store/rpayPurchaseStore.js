@@ -1,5 +1,5 @@
 import { APP_CONSTANTS } from '@/app-constants'
-import moment from 'moment'
+import { DateTime } from 'luxon'
 import utils from '@/services/utils'
 import axios from 'axios'
 import BigNum from 'bn.js'
@@ -87,19 +87,17 @@ const rpayPurchaseStore = {
     getFormattedBiddingEndTime: (state, getters, rootState, rootGetters) => (contractAsset) => {
       let fbet = null
       if (contractAsset.saleData && contractAsset.saleData.biddingEndTime) {
-        const loaclEndM = moment(contractAsset.saleData.biddingEndTime)
-        // if (loaclEndM.isBefore(moment({}))) {
-        // loaclEndM = moment({}).add(2, 'days')
-        // }
-        // const loaclEnd = loaclEndM.format('DD-MM-YY hh:mm')
-        const loaclEnd = loaclEndM.format('ddd, MMMM Do, h:mma') + ' BST'
-        fbet = loaclEnd
+        const dt = DateTime.fromMillis(contractAsset.saleData.biddingEndTime)
+        dt.plus({ days: 1 })
+        // const loaclEndM = moment(contractAsset.saleData.biddingEndTime)
+        // const loaclEnd = loaclEndM.format('ddd, MMMM Do, h:mma') + ' BST'
       } else {
-        const dd = moment({}).add(2, 'days')
-        dd.hour(10)
-        dd.minute(0)
-        // fbet = dd.format()
-        fbet = dd.format('ddd, MMMM Do, h:mma') + ' BST'
+        const dt = DateTime.local()
+        dt.plus({ days: 1 })
+        // const dd = moment({}).add(2, 'days')
+        dt.set({ hour: 10, minute: 0 })
+        // fbet = dd.format('ddd, MMMM Do, h:mma') + ' BST'
+        fbet = dt.format('LLL')
       }
       return fbet
     },
@@ -211,10 +209,10 @@ const rpayPurchaseStore = {
           functionName: 'set-sale-data',
           functionArgs: functionArgs
         }
-        if (getProvider(data) === 'risidio') {
-          callData.sendAsSky = (data.owner === 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG')
-        }
         const configuration = rootGetters['rpayStore/getConfiguration']
+        if (configuration.network === 'local' && data.sendAsSky) {
+          callData.sendAsSky = true
+        }
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, callData, { root: true }).then((result) => {
           resolve(result)
@@ -400,7 +398,7 @@ const rpayPurchaseStore = {
         const nonFungibleAssetInfo = createAssetInfo(
           data.contractAddress,
           data.contractName,
-          'my-nft'
+          data.contractName.split('-')[0]
         )
         // Post-condition check failure on non-fungible asset ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW.thisisnumberone-v1::my-nft owned by STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG: UInt(3) Sent
         const standardNonFungiblePostCondition = makeStandardNonFungiblePostCondition(
@@ -461,7 +459,7 @@ const rpayPurchaseStore = {
           const nonFungibleAssetInfo = createAssetInfo(
             data.contractAddress,
             data.contractName,
-            'my-nft'
+            data.contractName.split('-')[0]
           )
           postConds.push(makeStandardNonFungiblePostCondition(
             data.owner,

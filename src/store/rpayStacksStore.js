@@ -33,11 +33,31 @@ const captureResult = function (dispatch, rootGetters, result) {
   try {
     if (result.functionName === 'mint-token') {
       result.assetHash = cvToValue(result.functionArgs[0]).substring(2)
+      const configuration = rootGetters['rpayStore/getConfiguration']
+      const application = rootGetters['rpayStacksContractStore/getApplicationFromRegistryByContractId'](configuration.risidioProjectId)
+      result.amount = application.tokenContract.mintPrice * 1000000
       // console.log(typeof result.assetHash)
     } else {
       result.nftIndex = cvToValue(result.functionArgs[0])
       if (typeof result.nftIndex === 'bigint') {
         result.nftIndex = Number(result.nftIndex)
+      }
+      if (result.functionName === 'set-sale-data') {
+        result.saleType = Number(cvToValue(result.functionArgs[1]))
+        result.amount = Number(cvToValue(result.functionArgs[4]))
+      } else if (result.functionName === 'buy-now') {
+        try {
+          result.amount = Number(cvToValue(result.stacksTransaction.postConditions.values[0].amount))
+        } catch (e) {
+          // should be amount in the post condition
+        }
+        result.from = cvToValue(result.functionArgs[1])
+        result.to = cvToValue(result.functionArgs[2])
+      } else if (result.functionName === 'transfer') {
+        result.from = cvToValue(result.functionArgs[1])
+        result.to = cvToValue(result.functionArgs[2])
+      } else if (result.functionName === 'opening-bid' || result.functionName === 'place-bid') {
+        result.amount = Number(cvToValue(result.functionArgs[1]))
       }
     }
   } catch (err) {
@@ -109,7 +129,7 @@ const rpayStacksStore = {
     provider: 'connect',
     result: null,
     contracts: [],
-    appName: 'ThisIsNumberOne - NFTS on Bitcoin',
+    appName: 'NFTS on Bitcoin',
     appLogo: '/img/logo/logo.png',
     macsWallet: null,
     skysWallet: null

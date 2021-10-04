@@ -250,12 +250,28 @@ const utils = {
       return td.decode(res.buffer)
     }
   },
+  resolveStacksTransactions: function (network, transactions) {
+    transactions.forEach((transaction) => {
+      if (transaction.amount) transaction.amount = this.fromMicroAmount(transaction.amount)
+    })
+    return transactions
+  },
   resolvePrincipalsTokens: function (network, tokens) {
     const resolvedTokens = []
     tokens.forEach((token) => {
       resolvedTokens.push(this.resolvePrincipalsToken(network, token))
     })
     return resolvedTokens
+  },
+  resolvePrincipalsGaiaToken: function (network, gaiaAsset) {
+    gaiaAsset.contractAsset = this.resolvePrincipalsToken(network, gaiaAsset.contractAsset)
+    return gaiaAsset
+  },
+  resolvePrincipalsGaiaTokens: function (network, gaiaAssets) {
+    gaiaAssets.forEach((gaiaAsset) => {
+      gaiaAsset.contractAsset = this.resolvePrincipalsToken(network, gaiaAsset.contractAsset)
+    })
+    return gaiaAssets
   },
   resolvePrincipalsToken: function (network, token) {
     try {

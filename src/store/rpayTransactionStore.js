@@ -1,11 +1,12 @@
 import axios from 'axios'
 import utils from '@/services/utils'
-import SockJS from 'sockjs-client'
-import Stomp from '@stomp/stompjs'
+// import SockJS from 'sockjs-client'
+// import Stomp from '@stomp/stompjs'
 
-let socket = null
-let stompClient = null
+// let socket = null
+// let stompClient = null
 
+/**
 const unsubscribeApiNews = function () {
   if (socket && stompClient) {
     stompClient.disconnect()
@@ -29,6 +30,7 @@ const subscribeApiNews = function (commit, connectUrl, contractId, network) {
     console.log(error)
   })
 }
+**/
 
 const rpayTransactionStore = {
   namespaced: true,
@@ -106,14 +108,14 @@ const rpayTransactionStore = {
   actions: {
     initialiseTransactionListener ({ rootGetters, commit }) {
       return new Promise((resolve) => {
-        const configuration = rootGetters['rpayStore/getConfiguration']
-        subscribeApiNews(commit, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId, configuration.network)
+        // const configuration = rootGetters['rpayStore/getConfiguration']
+        // subscribeApiNews(commit, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId, configuration.network)
         resolve(null)
       })
     },
     cleanup ({ state }) {
       return new Promise((resolve) => {
-        unsubscribeApiNews()
+        // unsubscribeApiNews()
         resolve(null)
       })
     },
@@ -126,7 +128,10 @@ const rpayTransactionStore = {
           functionName: txData.functionName,
           assetHash: txData.assetHash,
           txId: txData.txId,
-          type: txData.type,
+          saleType: txData.saleType,
+          amount: txData.amount,
+          from: txData.from,
+          to: txData.to,
           txStatus: txData.txStatus
         }
         commit('setTransaction', stacksTx)
@@ -148,7 +153,10 @@ const rpayTransactionStore = {
           functionName: txData.functionName,
           assetHash: txData.assetHash,
           txId: txData.txId,
-          type: txData.type,
+          saleType: txData.saleType,
+          amount: txData.amount,
+          from: txData.from,
+          to: txData.to,
           txStatus: txData.txStatus
         }
         const configuration = rootGetters['rpayStore/getConfiguration']
@@ -228,7 +236,7 @@ const rpayTransactionStore = {
             result.txId = txId
             result.txStatus = txData.tx_status
             result.txResult = txData.tx_result
-            result.opcode = 'stx-transaction-update'
+            // result.opcode = 'stx-transaction-update'
             if (txData.tx_type !== 'token_transfer') {
               result.contractId = txData.contract_call.contract_id
               result.functionName = txData.contract_call.function_name
@@ -239,13 +247,52 @@ const rpayTransactionStore = {
                 }
               }
             }
+            if (txData.tx_status === 'success') {
+              dispatch('rpayStacksContractStore/updateCache', result, { root: true })
+            }
             dispatch('updateTransaction', result)
             resolve(result)
           } else {
             resolve(false)
           }
         }).catch(() => {
-          reject(new Error('Unable call stacks node for transaction: ' + stacksNode))
+          // the stacks node that services these can be a bit flaky / intermittent
+          resolve(false)
+        })
+      })
+    },
+    fetchNFTEventsFromStacks ({ rootGetters }) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const url = configuration.risidioStacksApi + '/extended/v1/address/' + configuration.risidioProjectId + '/nft_events'
+        axios.get(url).then((response) => {
+          resolve(response.data)
+        }).catch(() => {
+          reject(new Error('Unable call stacks node for nft events'))
+        })
+      })
+    },
+    fetchNFTEvents ({ rootGetters }, nftIndex) {
+      return new Promise(function (resolve) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const url = configuration.risidioBaseApi + '/mesh/v2/transactions/' + configuration.risidioProjectId + '/' + nftIndex
+        axios.get(url).then((response) => {
+          const txs = utils.resolveStacksTransactions(configuration.network, response.data)
+          resolve(txs)
+        }).catch((error) => {
+          resolve(new Error('Unable to find token filters: ' + error))
+        })
+      })
+    },
+    fetchNFTEventsByHash ({ rootGetters }, assetHash) {
+      return new Promise(function (resolve) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const url = configuration.risidioBaseApi + '/mesh/v2/transactionsByAssetHash/' + configuration.risidioProjectId + '/' + assetHash
+        axios.get(url).then((response) => {
+          const txs = utils.resolveStacksTransactions(configuration.network, response.data)
+          resolve(txs)
+        }).catch((error) => {
+          resolve(new Error('Unable to find token filters: ' + error))
         })
       })
     }

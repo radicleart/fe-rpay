@@ -1,5 +1,5 @@
 import rpayStore from '@/store/rpayStore'
-import moment from 'moment'
+import { Duration, DateTime } from 'luxon'
 import SockJS from 'sockjs-client'
 import Stomp from '@stomp/stompjs'
 
@@ -29,15 +29,16 @@ const lsatHelper = {
       return false
     }
     const expiry = invoice.data.lightning_invoice.expires_at * 1000 // + 3600000
-    const expired = moment(expiry).isBefore(moment({}))
+    const now = new Date().getTime()
+    const expired = expiry < now
     return expired
   },
   lsatExpires (invoice) {
     if (!invoice || !invoice.data || !invoice.data.lightning_invoice) {
-      return moment({})
+      return new Date().getTime()
     }
     const expires = invoice.data.lightning_invoice.expires_at * 1000 // + 3600000
-    return moment(expires).format('YYYY-MM-DD HH:mm')
+    return DateTime.fromMillis(expires).format('YYYY-MM-DD HH:mm')
   },
   lsatDuration (invoice) {
     if (!invoice.data || !invoice.data.lightning_invoice) {
@@ -47,12 +48,11 @@ const lsatHelper = {
         seconds: 59
       }
     }
-    const expires = moment(invoice.data.lightning_invoice.expires_at * 1000)
-    const duration = moment.duration(expires.diff(moment({})))
+    const duration = Duration.fromMillis(invoice.data.lightning_invoice.expires_at * 1000)
     const timeout = {
       hours: 0, // duration.asHours(),
-      minutes: duration._data.minutes,
-      seconds: duration._data.seconds
+      minutes: duration.minutes,
+      seconds: duration.seconds
     }
     return timeout
   }

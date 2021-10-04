@@ -6,7 +6,6 @@
 import searchIndexService from '@/services/searchIndexService'
 import rpayMyItemService from '@/services/rpayMyItemService'
 import { APP_CONSTANTS } from '@/app-constants'
-import moment from 'moment'
 import utils from '@/services/utils'
 import axios from 'axios'
 
@@ -298,7 +297,7 @@ const rpayMyItemStore = {
         const configuration = rootGetters['rpayStore/getConfiguration']
         data.domain = location.hostname
         axios.post(configuration.risidioBaseApi + '/mesh/v2/register-to-exhibit', data).then((result) => {
-          resolve(result)
+          resolve(result.data)
         }).catch((error) => {
           reject(new Error('Unable to register email: ' + error))
         })
@@ -311,8 +310,8 @@ const rpayMyItemStore = {
         if (status && status > -1) {
           url = configuration.risidioBaseApi + '/mesh/v2/exhibit-requests/' + status
         }
-        axios.get(url).then((results) => {
-          resolve(results.data)
+        axios.get(url).then((result) => {
+          resolve(result.data)
         }).catch((error) => {
           reject(new Error('Unable to fetch exhibit requests: ' + error))
         })
@@ -333,7 +332,7 @@ const rpayMyItemStore = {
         const configuration = rootGetters['rpayStore/getConfiguration']
         data.domain = location.hostname
         axios.put(configuration.risidioBaseApi + '/mesh/v2/change-exhibit-status', data).then((result) => {
-          resolve(result)
+          resolve(result.data)
         }).catch((error) => {
           reject(new Error('Unable to register email: ' + error))
         })
@@ -342,7 +341,7 @@ const rpayMyItemStore = {
     quickSaveItem ({ commit, rootGetters, state }, item) {
       return new Promise((resolve) => {
         const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
-        item.updated = moment({}).valueOf()
+        item.updated = new Date().getTime()
         const rootFile = state.rootFile
         const index = rootFile.records.findIndex((o) => o.assetHash === item.assetHash)
         if (index < 0) {
@@ -402,9 +401,12 @@ const rpayMyItemStore = {
           return
         }
         if (item.attributes && item.attributes.coverImage && item.attributes.coverImage.fileUrl) {
-          const mintedUrl = encodeURI(item.attributes.coverImage.fileUrl)
-          item.externalUrl = location.origin + '/display?asset=' + mintedUrl
+          // const mintedUrl = encodeURI(item.attributes.coverImage.fileUrl)
+          item.external_url = item.attributes.coverImage.fileUrl
           item.image = item.attributes.coverImage.fileUrl
+        }
+        if (item.attributes.artworkFile && item.attributes.artworkFile.type.indexOf('image') > -1) {
+          item.image = item.attributes.artworkFile.fileUrl
         }
         if (!item.privacy) {
           item.privacy = 'public'
@@ -416,7 +418,7 @@ const rpayMyItemStore = {
         item.projectId = configuration.risidioProjectId
         item.domain = location.hostname
         item.objType = 'artwork'
-        item.updated = moment({}).valueOf()
+        item.updated = new Date().getTime()
         const tempAttributes = item.attributes
         if (tempAttributes.artworkClip && tempAttributes.artworkClip.dataUrl) tempAttributes.artworkClip.dataUrl = null
         if (tempAttributes.artworkFile && tempAttributes.artworkFile.dataUrl) tempAttributes.artworkFile.dataUrl = null

@@ -25,13 +25,6 @@ export const APP_CONSTANTS = {
   KEY_EXCHANGE_RATES: 'rpayStore/getExchangeRates',
   KEY_TICKER_RATES: 'rpayStore/getTickerRates',
 
-  KEY_CATEGORIES: 'rpayCategoryStore/getCategories',
-  KEY_SECTION_HEIGHT: 'rpayCategoryStore/getSectionHeight',
-  KEY_SECTION_WIDTH: 'rpayCategoryStore/getSectionWidth',
-  KEY_GALLERY_IMAGE_WIDTH: 'rpayCategoryStore/getGalleryImageHeight',
-  KEY_EXCHANGE_RATE: 'rpayStore/getExchangeRateFormatted',
-  KEY_STX_AMOUNT: 'rpayStore/getStxAmountFormatted',
-
   KEY_DB_OFFERS: 'rpayPurchaseStore/getDbOffers',
   KEY_BIDDING_CURRENT_BID: 'rpayPurchaseStore/getCurrentBid',
   KEY_BIDDING_NEXT_BID: 'rpayPurchaseStore/getNextBid',
