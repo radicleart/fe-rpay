@@ -457,22 +457,22 @@ const rpayStacksStore = {
         })
       })
     },
-    lookupContractInterface ({ commit, rootGetters }, projectId) {
+    lookupContractInterface ({ commit, rootGetters }, contractId) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const contractAddress = projectId.split('.')[0]
-        const contractName = projectId.split('.')[1]
+        const contractAddress = contractId.split('.')[0]
+        const contractName = contractId.split('.')[1]
         const txOptions = {
           path: '/v2/contracts/interface/' + contractAddress + '/' + contractName + '?proof=0',
           httpMethod: 'GET'
         }
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.post(configuration.risidioBaseApi + '/mesh' + '/v2/accounts', txOptions, authHeaders).then(response => {
-          resolve({ projectId: projectId, interface: response.data })
+          resolve({ contractId: contractId, interface: response.data })
           // commit('addValue', response)
         }).catch(() => {
           axios.get(configuration.risidioStacksApi + '/v2/contracts/interface/' + contractAddress + '/' + contractName + '?proof=0').then(response => {
-            resolve({ projectId: projectId, interface: response.data })
+            resolve({ contractId: contractId, interface: response.data })
           }).catch((error) => {
             resolveError(commit, reject, error)
           })
@@ -484,7 +484,7 @@ const rpayStacksStore = {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const txOptions = {
           codeBody: datum.codeBody,
-          contractName: datum.projectId.split('.')[1],
+          contractName: datum.contractId.split('.')[1],
           appDetails: {
             name: state.appName,
             icon: state.appLogo
@@ -508,7 +508,7 @@ const rpayStacksStore = {
     deployContractRisidio ({ commit, state, rootGetters }, project) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const contractName = project.projectId.split('.')[1]
+        const contractName = project.contractId.split('.')[1]
         const network = new StacksTestnet()
         const txOptions = {
           contractName: contractName,

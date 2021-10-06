@@ -342,6 +342,17 @@ const rpayMyItemStore = {
       return new Promise((resolve) => {
         const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
         item.updated = new Date().getTime()
+        if (!state.rootFile) {
+          const now = new Date().getTime()
+          state.rootFile = {
+            now: now,
+            newRootFile: {
+              created: now,
+              userProfile: {},
+              records: []
+            }
+          }
+        }
         const rootFile = state.rootFile
         const index = rootFile.records.findIndex((o) => o.assetHash === item.assetHash)
         if (index < 0) {
@@ -367,12 +378,20 @@ const rpayMyItemStore = {
           return
         }
         item.metaDataUrl = profile.gaiaHubConfig.url_prefix + profile.gaiaHubConfig.address + '/' + assetPath
-        item.externalUrl = location.origin + '/assets/' + item.assetHash + '/1'
         let token = null
         if (item.contractAsset) {
           token = item.contractAsset
+          item.external_url = location.origin + '/nfts/' + token.nftIndex
           item.contractAsset = null
         }
+        if (item.externalUrl) delete item.externalUrl
+        if (item.imageUrl) delete item.imageUrl
+        if (item.contractAsset) delete item.contractAsset
+        if (item.nftIndex) delete item.nftIndex
+        if (item.nftMedia) delete item.nftMedia
+        if (item.objType) delete item.objType
+        if (item.domain) delete item.domain
+
         rpayMyItemService.saveAsset(item, assetPath).then((item) => {
           item.contractAsset = token
           commit('rootFile', rootFile)
@@ -393,21 +412,19 @@ const rpayMyItemStore = {
       return new Promise((resolve, reject) => {
         const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
         item.uploader = profile.username
-        if (!item.owner) item.owner = profile.username
         // the item can be saved once there is an asset hash - all other fields can be added later..
         // e.g. || !item.attributes.artworkFile || !item.attributes.coverImage || !item.attributes.artworkFile
         if (!profile.loggedIn || !item.assetHash) {
           reject(new Error('Unable to save your data...'))
           return
         }
-        if (item.attributes && item.attributes.coverImage && item.attributes.coverImage.fileUrl) {
-          // const mintedUrl = encodeURI(item.attributes.coverImage.fileUrl)
-          item.external_url = item.attributes.coverImage.fileUrl
-          item.image = item.attributes.coverImage.fileUrl
-        }
+
         if (item.attributes.artworkFile && item.attributes.artworkFile.type.indexOf('image') > -1) {
           item.image = item.attributes.artworkFile.fileUrl
+        } else if (item.attributes && item.attributes.coverImage && item.attributes.coverImage.fileUrl) {
+          item.image = item.attributes.coverImage.fileUrl
         }
+
         if (!item.privacy) {
           item.privacy = 'public'
         }
@@ -416,9 +433,6 @@ const rpayMyItemStore = {
         }
         const configuration = rootGetters['rpayStore/getConfiguration']
         item.projectId = configuration.risidioProjectId
-        item.domain = location.hostname
-        item.objType = 'artwork'
-        item.updated = new Date().getTime()
         const tempAttributes = item.attributes
         if (tempAttributes.artworkClip && tempAttributes.artworkClip.dataUrl) tempAttributes.artworkClip.dataUrl = null
         if (tempAttributes.artworkFile && tempAttributes.artworkFile.dataUrl) tempAttributes.artworkFile.dataUrl = null
@@ -427,6 +441,12 @@ const rpayMyItemStore = {
           artworkFile: tempAttributes.artworkFile,
           coverImage: tempAttributes.coverImage,
           artworkClip: tempAttributes.artworkClip
+        }
+        if (item.attributes.artworkFile.type.indexOf('image') === -1) {
+          if (item.attributes.artworkFile.type.indexOf('youtube') > -1) {
+            item.youtube_url = item.attributes.artworkFile.fileUrl
+          }
+          item.animation_url = item.attributes.artworkFile.fileUrl
         }
         dispatch('quickSaveItem', item).then((item) => {
           resolve(item)

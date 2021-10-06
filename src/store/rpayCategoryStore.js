@@ -72,7 +72,7 @@ const rpayCategoryStore = {
       } else if (item.attributes) {
         if (item.attributes.artworkFile && item.attributes.artworkFile.fileUrl && item.attributes.artworkFile.type.indexOf('image') > -1) {
           return item.attributes.artworkFile.fileUrl
-        } else if (item.attributes.coverImage && item.attributes.coverImage.fileUrl && item.attributes.coverImage.type.indexOf('image') > -1) {
+        } else if (item.attributes.coverImage && item.attributes.coverImage.fileUrl) {
           return item.attributes.coverImage.fileUrl
         }
       }
