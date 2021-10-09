@@ -11,7 +11,7 @@ const rpayCategoryStore = {
     runCounts: [],
     loopRuns: [],
     loopSpins: null,
-    waitingImage: 'https://images.prismic.io/radsoc/f60d92d0-f733-46e2-9cb7-c59e33a15fc1_download.jpeg?auto=compress,format',
+    waitingImage: 'https://images.prismic.io/dbid/cc7d59a2-65f4-45a2-b6e5-df136e2fd952_OS_thumb.png?auto=compress,format',
     categories: [
       {
         icon: 'easel',
@@ -101,6 +101,9 @@ const rpayCategoryStore = {
     getCategories: state => {
       return state.categories
     },
+    getLoopRunsByStatus: state => status => {
+      return (state.loopRuns) ? state.loopRuns.filter((o) => o.status === status) : []
+    },
     getLoopRuns: state => {
       return state.loopRuns
     },
@@ -174,6 +177,18 @@ const rpayCategoryStore = {
         })
       })
     },
+    updateLoopRunAndAllocations ({ rootGetters, commit }, data) {
+      return new Promise(resolve => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const url = configuration.risidioBaseApi + '/mesh/v2/loopRunAndAllocations'
+        axios.post(url, data).then((response) => {
+          commit('setLoopRun', response.data.loopRun)
+          resolve(response.data)
+        }).catch(() => {
+          resolve(null)
+        })
+      })
+    },
     fetchLatestLoopRunForStxAddress ({ rootGetters, commit }, data) {
       return new Promise(resolve => {
         const configuration = rootGetters['rpayStore/getConfiguration']
@@ -227,6 +242,17 @@ const rpayCategoryStore = {
         })
       })
     },
+    fetchLoopRuns ({ commit, rootGetters }) {
+      return new Promise(resolve => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.get(configuration.risidioBaseApi + '/mesh/v2/loopRuns').then((response) => {
+          commit('setLoopRuns', response.data)
+          resolve(response.data)
+        }).catch(() => {
+          resolve(null)
+        })
+      })
+    },
     fetchMintCountForCollection ({ state, rootGetters, commit }, runKey) {
       return new Promise(resolve => {
         const configuration = rootGetters['rpayStore/getConfiguration']
@@ -235,6 +261,16 @@ const rpayCategoryStore = {
           state.loopRun.tokenCount = response.data
           commit('addMintCountToCollection', { runKey: runKey, count: state.loopRun.tokenCount })
           resolve(state.loopRun.tokenCount)
+        }).catch(() => {
+          resolve(null)
+        })
+      })
+    },
+    clearMintAllocations ({ rootGetters }, data) {
+      return new Promise(resolve => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.delete(configuration.risidioBaseApi + '/mesh/v2/clearAllocations', data).then((response) => {
+          resolve(response.data)
         }).catch(() => {
           resolve(null)
         })

@@ -29,7 +29,7 @@ const loadAssetsFromGaia = function (tokens, commit, network) {
           assetHash: token.tokenInfo.assetHash,
           attributes: {
             artworkFile: {
-              fileUrl: 'https://images.prismic.io/radsoc/f60d92d0-f733-46e2-9cb7-c59e33a15fc1_download.jpeg?auto=compress,format',
+              fileUrl: 'https://images.prismic.io/dbid/c19ad445-eab4-4de9-9b5a-c10eb158dc5e_black_no1.png?auto=compress,format',
               type: 'image/jpg',
               name: 'Waiting Image'
             }
@@ -323,7 +323,8 @@ const rpayStacksContractStore = {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const path = configuration.risidioBaseApi + '/mesh/v2/gaia/indexFiles'
-        axios.get(path).then((response) => {
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        axios.get(path, authHeaders).then((response) => {
           resolve(true)
         }).catch((error) => {
           reject(error)
@@ -336,7 +337,8 @@ const rpayStacksContractStore = {
         const b32Address = utils.convertAddressFrom(data.stxAddress)
         const configuration = rootGetters['rpayStore/getConfiguration']
         const path = configuration.risidioBaseApi + '/mesh/v2/tokensByProjectAndOwner/' + configuration.risidioProjectId + '/' + b32Address[1]
-        axios.get(path).then((response) => {
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        axios.get(path, authHeaders).then((response) => {
           const tokens = utils.resolvePrincipalsTokens(configuration.network, response.data)
           if (data.mine) {
             commit('setMyContractAssets', tokens)
@@ -422,7 +424,8 @@ const rpayStacksContractStore = {
         uri += '/' + data.runKey
         uri += '/' + data.page
         uri += '/' + data.pageSize
-        axios.get(uri).then((response) => {
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        axios.get(uri, authHeaders).then((response) => {
           const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data)
           resolve(gaiaAssets)
         }).catch((error) => {

@@ -132,7 +132,7 @@ const rpayProjectStore = {
           if (data.imageData) {
             const contractName = project.contractId.split('.')[1]
             uploadProjectLogo(contractName, data.imageData).then((gaiaUrl) => {
-              project.imageUrl = gaiaUrl
+              project.image = gaiaUrl
               project.updated = new Date().getTime()
               commit('setProject', project)
               axios.put(configuration.risidioBaseApi + '/mesh/v2/project', data.project)

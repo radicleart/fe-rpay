@@ -163,7 +163,7 @@ const rpayMyItemService = {
   },
   saveAsset: function (item, assetPath) {
     return new Promise((resolve) => {
-      storage.getFile(item.assetHash + '.json', { decrypt: false }).then((file) => {
+      storage.getFile(assetPath, { decrypt: false }).then((file) => {
         let item2 = JSON.parse(file)
         item2 = item
         storage.putFile(assetPath, JSON.stringify(item2), { encrypt: false }).then(() => {

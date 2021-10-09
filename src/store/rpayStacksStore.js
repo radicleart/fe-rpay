@@ -41,6 +41,8 @@ const captureResult = function (dispatch, rootGetters, result) {
       result.nftIndex = cvToValue(result.functionArgs[0])
       if (typeof result.nftIndex === 'bigint') {
         result.nftIndex = Number(result.nftIndex)
+      } else {
+        result.nftIndex = null
       }
       if (result.functionName === 'set-sale-data') {
         result.saleType = Number(cvToValue(result.functionArgs[1]))
@@ -265,7 +267,7 @@ const rpayStacksStore = {
             contractName: data.contractName,
             functionName: data.functionName,
             functionArgs: (data.functionArgs) ? data.functionArgs : [],
-            fee: new BigNum(1800),
+            fee: new BigNum(3800),
             senderKey: sender.keyInfo.privateKey,
             nonce: new BigNum(nonces.possible_next_nonce),
             network,

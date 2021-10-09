@@ -395,10 +395,10 @@ const rpayMyItemStore = {
         rpayMyItemService.saveAsset(item, assetPath).then((item) => {
           item.contractAsset = token
           commit('rootFile', rootFile)
-          if (item.privacy === 'public') {
-            const configuration = rootGetters['rpayStore/getConfiguration']
-            searchIndexService.addRecord(configuration.risidioBaseApi, item)
-          }
+          // if (item.privacy === 'public') {
+          // const configuration = rootGetters['rpayStore/getConfiguration']
+          // searchIndexService.addRecord(configuration.risidioBaseApi, item)
+          // }
           rpayMyItemService.saveRootFile(rootFile).then((item) => {
             commit('rootFile', rootFile)
           })

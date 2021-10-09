@@ -230,14 +230,14 @@ const rpayPurchaseStore = {
           postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
         }
         let postConds = []
-        const amount = new BigNum(utils.toOnChainAmount(data.mintingFee))
+        const amount = new BigNum(utils.toOnChainAmount(data.mintPrice))
         if (data.postConditions) {
           postConds = data.postConditions
         } else {
           postConds.push(makeStandardSTXPostCondition(
             postCondAddress,
             FungibleConditionCode.Equal,
-            amount // uintCV(utils.toOnChainAmount(data.mintingFee))
+            amount
           ))
         }
         data.postConditions = postConds
@@ -280,14 +280,13 @@ const rpayPurchaseStore = {
           postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
         }
         let postConds = []
-        const amount = new BigNum(utils.toOnChainAmount(data.mintingFee))
         if (data.postConditions) {
           postConds = data.postConditions
         } else {
           postConds.push(makeStandardSTXPostCondition(
             postCondAddress,
             FungibleConditionCode.Equal,
-            amount // uintCV(utils.toOnChainAmount(data.mintingFee))
+            new BigNum(utils.toOnChainAmount(data.mintPrice))
           ))
         }
         data.postConditions = postConds
@@ -296,6 +295,8 @@ const rpayPurchaseStore = {
         // const metaDataUrl = stringUtf8CV(data.metaDataUrl)
         const editions = uintCV(data.editions)
         const editionCost = uintCV(data.editionCost)
+        const buyNowPrice = uintCV(data.buyNowPrice || 0)
+        const mintPrice = uintCV(data.mintPrice || 0)
         const addressList = []
         const shareList = []
         const secondariesList = []
@@ -321,7 +322,81 @@ const rpayPurchaseStore = {
         const addresses = listCV(addressList)
         const shares = listCV(shareList)
         const secondaries = listCV(secondariesList)
-        data.functionArgs = [buffer, metaDataUrl, editions, editionCost, addresses, shares, secondaries]
+        data.functionArgs = [buffer, metaDataUrl, editions, editionCost, mintPrice, buyNowPrice, addresses, shares, secondaries]
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        dispatch((data.methos || methos), data, { root: true }).then((result) => {
+          result.opcode = 'stx-transaction-sent'
+          result.assetHash = data.assetHash
+          resolve(result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    mintTwentyTokens ({ dispatch, rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const profile = rootGetters['rpayAuthStore/getMyProfile']
+        let postCondAddress = profile.stxAddress
+        if (configuration.network === 'local' && data.sendAsSky) {
+          postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
+        }
+        let postConds = []
+        if (data.postConditions) {
+          postConds = data.postConditions
+        } else {
+          postConds.push(makeStandardSTXPostCondition(
+            postCondAddress,
+            FungibleConditionCode.Equal,
+            new BigNum(utils.toOnChainAmount(data.mintPrice * data.twenties.length))
+          ))
+        }
+        data.postConditions = postConds
+        const editions = uintCV(data.editions)
+        const editionCost = uintCV(data.editionCost)
+        const buyNowPrice = uintCV(data.buyNowPrice || 0)
+        const mintPrice = uintCV(data.mintPrice || 0)
+        const addressList = []
+        const shareList = []
+        const secondariesList = []
+        for (let i = 0; i < 10; i++) {
+          const beneficiary = data.beneficiaries[i]
+          if (beneficiary) {
+            if (i === 0) {
+              // address of the nft owner (i=0) is known at runtime.
+              // so we just enter the contract address as a placeholder.
+              // see payment-split method in contract.
+              addressList.push(standardPrincipalCV(data.contractAddress))
+            } else {
+              addressList.push(standardPrincipalCV(beneficiary.chainAddress))
+            }
+            shareList.push(uintCV(utils.toOnChainAmount(beneficiary.royalty * 100))) // allows 2 d.p.
+            secondariesList.push(uintCV(utils.toOnChainAmount(beneficiary.secondaryRoyalty * 100))) // allows 2 d.p.
+          } else {
+            addressList.push(standardPrincipalCV(data.contractAddress))
+            shareList.push(uintCV(0))
+            secondariesList.push(uintCV(0))
+          }
+        }
+        const addresses = listCV(addressList)
+        const shares = listCV(shareList)
+        const secondaries = listCV(secondariesList)
+
+        const hashes = []
+        const metaUrls = []
+        for (let i = 0; i < 20; i++) {
+          const twenty = data.twenties[i]
+          if (twenty) {
+            hashes.push(bufferCV(Buffer.from(twenty.assetHash, 'hex')))
+            metaUrls.push(bufferCV(Buffer.from(twenty.metaDataUrl, 'utf8')))
+          } else {
+            hashes.push(bufferCV(Buffer.from(data.twenties[0].assetHash, 'hex')))
+            metaUrls.push(bufferCV(Buffer.from('#', 'utf8')))
+          }
+        }
+        const hashList = listCV(hashes)
+        const metaUrlList = listCV(metaUrls)
+        data.functionArgs = [hashList, metaUrlList, editions, editionCost, mintPrice, buyNowPrice, addresses, shares, secondaries]
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch((data.methos || methos), data, { root: true }).then((result) => {
           result.opcode = 'stx-transaction-sent'
@@ -454,7 +529,7 @@ const rpayPurchaseStore = {
           postConds.push(makeStandardSTXPostCondition(
             postCondAddress,
             FungibleConditionCode.LessEqual, // less or equal - if the buyer is one of the royalties payment is skipped.
-            amount // uintCV(utils.toOnChainAmount(data.mintingFee))
+            amount
           ))
           const nonFungibleAssetInfo = createAssetInfo(
             data.contractAddress,
