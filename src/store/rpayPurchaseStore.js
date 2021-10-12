@@ -347,8 +347,7 @@ const rpayPurchaseStore = {
         const buyNowPrice = uintCV(utils.toOnChainAmount(data.buyNowPrice))
         const mintPrice = uintCV(utils.toOnChainAmount(data.mintPrice))
         const saleRoyalties = getSaleRoyalties(data)
-        const mintRoyalties = getMintRoyalties(data)
-        data.functionArgs = [buffer, metaDataUrl, editions, editionCost, mintPrice, buyNowPrice, mintRoyalties.addresses, mintRoyalties.shares, saleRoyalties.addresses, saleRoyalties.shares, saleRoyalties.secondaries]
+        data.functionArgs = [buffer, metaDataUrl, editions, editionCost, mintPrice, buyNowPrice, saleRoyalties.addresses, saleRoyalties.shares, saleRoyalties.secondaries]
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch((data.methos || methos), data, { root: true }).then((result) => {
           result.opcode = 'stx-transaction-sent'
