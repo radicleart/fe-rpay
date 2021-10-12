@@ -26,7 +26,6 @@ const getNewRootFile = function () {
   const now = new Date().getTime()
   const newRootFile = {
     created: now,
-    userProfile: {},
     records: []
   }
   return newRootFile
