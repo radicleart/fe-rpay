@@ -33,9 +33,10 @@ const captureResult = function (dispatch, rootGetters, result) {
   try {
     if (result.functionName === 'mint-token') {
       result.assetHash = cvToValue(result.functionArgs[0]).substring(2)
-      const configuration = rootGetters['rpayStore/getConfiguration']
-      const application = rootGetters['rpayStacksContractStore/getApplicationFromRegistryByContractId'](configuration.risidioProjectId)
-      result.amount = application.tokenContract.mintPrice * 1000000
+      // const configuration = rootGetters['rpayStore/getConfiguration']
+      // const application = rootGetters['rpayStacksContractStore/getApplicationFromRegistryByContractId'](configuration.risidioProjectId)
+      result.amount = Number(cvToValue(result.functionArgs[4]))
+      // result.amount = application.tokenContract.mintPrice * 1000000
       // console.log(typeof result.assetHash)
     } else {
       result.nftIndex = cvToValue(result.functionArgs[0])
@@ -575,7 +576,6 @@ const rpayStacksStore = {
             resolve({ result: result })
           }
         }).catch((err) => {
-          console.log(err)
           reject(err)
         })
       })

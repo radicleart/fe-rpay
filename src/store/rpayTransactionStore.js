@@ -6,32 +6,6 @@ import utils from '@/services/utils'
 // let socket = null
 // let stompClient = null
 
-/**
-const unsubscribeApiNews = function () {
-  if (socket && stompClient) {
-    stompClient.disconnect()
-  }
-}
-
-const subscribeApiNews = function (commit, connectUrl, contractId, network) {
-  if (!socket) socket = new SockJS(connectUrl + '/api-news')
-  if (!stompClient) stompClient = Stomp.over(socket)
-  stompClient.debug = () => {}
-  socket.onclose = function () {
-    stompClient.disconnect()
-  }
-  stompClient.connect({}, function () {
-    stompClient.subscribe('/queue/transaction-news', function (response) {
-      const pendingTxs = JSON.parse(response.body)
-      commit('setPendingTransactions', pendingTxs)
-    })
-  },
-  function (error) {
-    console.log(error)
-  })
-}
-**/
-
 const rpayTransactionStore = {
   namespaced: true,
   modules: {

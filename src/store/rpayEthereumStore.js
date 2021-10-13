@@ -90,7 +90,6 @@ const sendPayment = function (web3, data, account, resolve, reject, commit) {
       resolve(result)
     }
   }).on('error', function (error) {
-    console.log(error)
     reject(error)
   })
 }

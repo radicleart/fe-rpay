@@ -16,8 +16,7 @@ const lsatHelper = {
         rpayStore.commit('addPaymentChallenge', invoice)
       })
     },
-    function (error) {
-      console.log(error)
+    function () {
     })
   },
   stopListening () {

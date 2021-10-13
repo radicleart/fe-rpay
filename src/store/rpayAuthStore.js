@@ -42,25 +42,16 @@ const fetchProfileMetaData = function (profile, commit, dispatch) {
     const authHeaders = defAuthHeaders(profile)
     profile.counter = 1
     commit('setAuthHeaders', authHeaders)
-    dispatch('rpayAuthStore/fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }, { root: true }).then((accountInfo) => {
-      profile.accountInfo = accountInfo
+    dispatch('rpayPrivilegeStore/fetchUserAuthorisation', { stxAddress: profile.stxAddress }, { root: true }).then((auth) => {
+      profile.authorisation = auth
+      setSuperAdmin(profile, auth)
       commit('myProfile', profile)
-      // dispatch('rpayStacksContractStore/fetchAssetsByOwner', { stxAddress: profile.stxAddress, mine: true }, { root: true })
       profile.counter = profile.counter + 1
-      dispatch('rpayPrivilegeStore/fetchUserAuthorisation', { stxAddress: profile.stxAddress }, { root: true }).then((auth) => {
-        profile.authorisation = auth
-        setSuperAdmin(profile, auth)
+      dispatch('rpayMyItemStore/fetchExhibitRequest', profile.stxAddress, { root: true }).then((exhibitRequest) => {
+        profile.exhibitRequest = exhibitRequest
         commit('myProfile', profile)
         profile.counter = profile.counter + 1
-        dispatch('rpayMyItemStore/fetchExhibitRequest', profile.stxAddress, { root: true }).then((exhibitRequest) => {
-          profile.exhibitRequest = exhibitRequest
-          commit('myProfile', profile)
-          profile.counter = profile.counter + 1
-          resolve(profile)
-        }).catch(() => {
-          commit('myProfile', profile)
-          resolve(profile)
-        })
+        resolve(profile)
       }).catch(() => {
         commit('myProfile', profile)
         resolve(profile)
@@ -68,6 +59,15 @@ const fetchProfileMetaData = function (profile, commit, dispatch) {
     }).catch(() => {
       commit('myProfile', profile)
       resolve(profile)
+    })
+
+    dispatch('rpayAuthStore/fetchAccountInfo', { stxAddress: profile.stxAddress, force: true }, { root: true }).then((accountInfo) => {
+      profile.accountInfo = accountInfo
+      profile.counter = profile.counter + 1
+      commit('myProfile', profile)
+      // dispatch('rpayStacksContractStore/fetchAssetsByOwner', { stxAddress: profile.stxAddress, mine: true }, { root: true })
+    }).catch(() => {
+      commit('myProfile', profile)
     })
   })
 }
@@ -222,9 +222,9 @@ const rpayAuthStore = {
         if (!state.accountApi) {
           setupAccountApi(commit, configuration.risidioStacksApi)
         }
-
         if (userSession.isUserSignedIn()) {
           const profile = getProfile(configuration.network)
+          commit('myProfile', profile)
           fetchProfileMetaData(profile, commit, dispatch).then((profile) => {
             commit('myProfile', profile)
             resolve(profile)
@@ -232,6 +232,7 @@ const rpayAuthStore = {
         } else if (userSession.isSignInPending()) {
           userSession.handlePendingSignIn().then(() => {
             const profile = getProfile(configuration.network)
+            commit('myProfile', profile)
             fetchProfileMetaData(profile, commit, dispatch).then((profile) => {
               commit('myProfile', profile)
               resolve(profile)
