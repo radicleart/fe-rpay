@@ -71,8 +71,7 @@ const connectApiNews = function (commit, connectUrl, paymentId) {
       commit('setTickerRates', rates.tickerRates)
     })
   },
-  function (error) {
-    console.log(error)
+  function () {
   })
 }
 const subscribePayment = function (commit, paymentId) {
@@ -105,8 +104,7 @@ const checkPayment = function (resolve, reject, state, commit, paymentId) {
       window.eventBus.$emit('rpayEvent', invoice)
     }
     resolve(invoice)
-  }).catch((error) => {
-    console.log(error)
+  }).catch(() => {
     resolve(false)
   })
 }
@@ -357,7 +355,6 @@ const rpayStore = {
             commit('setTickerRates', response.data)
           })
         } catch (err) {
-          console.log(err)
         }
       })
     },
@@ -388,7 +385,6 @@ const rpayStore = {
               try {
                 subscribePayment(commit, savedInvoice.data.id)
               } catch (err) {
-                console.log(err)
               }
               checkPayment(resolve, reject, state, commit, savedInvoice.data.id)
               commit('addConfiguration', configuration)
@@ -409,8 +405,7 @@ const rpayStore = {
           }).catch(() => {
             resolve(false)
           })
-        }).catch((error) => {
-          console.log(error)
+        }).catch(() => {
           configuration.payment.paymentOptions[1].allowBitcoin = false
           configuration.payment.paymentOptions[2].allowLightning = false
           commit('addConfiguration', configuration)
@@ -432,8 +427,7 @@ const rpayStore = {
           checkPayment(resolve, reject, state, commit, invoice.data.id)
           commit('setInvoice', invoice)
           resolve(invoice)
-        }).catch((error) => {
-          console.log(error)
+        }).catch(() => {
           configuration.payment.paymentOptions[1].allowBitcoin = false
           configuration.payment.paymentOptions[2].allowLightning = false
           commit('addConfiguration', configuration)

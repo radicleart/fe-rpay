@@ -23,7 +23,7 @@ const loadAssetsFromGaia = function (tokens, commit, network) {
         const gaiaAsset = response.data
         gaiaAsset.contractAsset = token
         commit('addGaiaAsset', gaiaAsset)
-      }).catch((error) => {
+      }).catch(() => {
         commit('addGaiaAsset', {
           name: 'Unknown in Gaia',
           assetHash: token.tokenInfo.assetHash,
@@ -36,7 +36,6 @@ const loadAssetsFromGaia = function (tokens, commit, network) {
           },
           contractAsset: token
         })
-        console.log(error)
       })
     }
   })
@@ -64,8 +63,7 @@ const subscribeApiNews = function (commit, connectUrl, contractId, network) {
       })
     }
   },
-  function (error) {
-    console.log(error)
+  function () {
   })
 }
 
@@ -167,6 +165,9 @@ const rpayStacksContractStore = {
     },
     getGaiaAssetsByOwner: state => data => {
       return state.gaiaAssets.filter((o) => o.contractAsset.owner === data.stxAddress)
+    },
+    getGaiaAssetsByOwnerAndCollection: state => data => {
+      return state.gaiaAssets.filter((o) => o.contractAsset.tokenInfo.metaDataUrl.indexOf(data.runKey) > -1 && o.contractAsset.owner === data.stxAddress)
     },
     getGaiaAssetsByArtist: state => data => {
       if (!state.gaiaAssets) return

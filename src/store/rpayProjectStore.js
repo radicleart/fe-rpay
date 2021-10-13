@@ -30,8 +30,7 @@ const uploadProjectLogo = function (projectName, imageData) {
         }).catch(() => {
           resolve()
         })
-      }).catch((error) => {
-        console.log(error)
+      }).catch(() => {
         resolve()
       })
     })

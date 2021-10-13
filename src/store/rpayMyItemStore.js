@@ -188,8 +188,7 @@ const rpayMyItemStore = {
         searchIndexService.indexRootFile(state.rootFile).then((result) => {
           commit('indexResult', result)
           resolve(result)
-        }).catch((error) => {
-          console.log(error)
+        }).catch(() => {
         })
       })
     },
