@@ -267,7 +267,7 @@ const rpayStacksStore = {
             contractName: data.contractName,
             functionName: data.functionName,
             functionArgs: (data.functionArgs) ? data.functionArgs : [],
-            fee: new BigNum(3800),
+            fee: new BigNum(10000),
             senderKey: sender.keyInfo.privateKey,
             nonce: new BigNum(nonces.possible_next_nonce),
             network,

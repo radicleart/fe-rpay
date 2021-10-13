@@ -15,6 +15,55 @@ import {
   makeStandardNonFungiblePostCondition
 } from '@stacks/transactions'
 
+const getSaleRoyalties = function (data) {
+  const addressList = []
+  const shareList = []
+  const secondariesList = []
+  for (let i = 0; i < 10; i++) {
+    const beneficiary = data.beneficiaries[i]
+    if (beneficiary) {
+      if (i === 0) {
+        // address of the nft owner (i=0) is known at runtime.
+        // so we just enter the contract address as a placeholder.
+        // see payment-split method in contract.
+        addressList.push(standardPrincipalCV(data.contractAddress))
+      } else {
+        addressList.push(standardPrincipalCV(beneficiary.chainAddress))
+      }
+      shareList.push(uintCV(utils.toOnChainAmount(beneficiary.royalty * 100))) // allows 2 d.p.
+      secondariesList.push(uintCV(utils.toOnChainAmount(beneficiary.secondaryRoyalty * 100))) // allows 2 d.p.
+    } else {
+      addressList.push(standardPrincipalCV(data.contractAddress))
+      shareList.push(uintCV(0))
+      secondariesList.push(uintCV(0))
+    }
+  }
+  return {
+    addresses: listCV(addressList),
+    shares: listCV(shareList),
+    secondaries: listCV(secondariesList)
+  }
+}
+
+const getMintRoyalties = function (data) {
+  const addressList = []
+  const shareList = []
+  for (let i = 0; i < 4; i++) {
+    const beneficiary = data.minteficaries[i]
+    if (beneficiary) {
+      addressList.push(standardPrincipalCV(beneficiary.chainAddress))
+      shareList.push(uintCV(utils.toOnChainAmount(beneficiary.royalty * 100))) // allows 2 d.p.
+    } else {
+      addressList.push(standardPrincipalCV(data.contractAddress))
+      shareList.push(uintCV(0))
+    }
+  }
+  return {
+    addresses: listCV(addressList),
+    shares: listCV(shareList)
+  }
+}
+
 const isOpeneningBid = function (contractAsset) {
   // simple case - no bids ever
   if (contractAsset.bidCounter === 0 || contractAsset.bidHistory.length === 0) {
@@ -294,35 +343,50 @@ const rpayPurchaseStore = {
         const metaDataUrl = bufferCV(Buffer.from(data.metaDataUrl, 'utf8'))
         // const metaDataUrl = stringUtf8CV(data.metaDataUrl)
         const editions = uintCV(data.editions)
-        const editionCost = uintCV(data.editionCost)
-        const buyNowPrice = uintCV(data.buyNowPrice || 0)
-        const mintPrice = uintCV(data.mintPrice || 0)
-        const addressList = []
-        const shareList = []
-        const secondariesList = []
-        for (let i = 0; i < 10; i++) {
-          const beneficiary = data.beneficiaries[i]
-          if (beneficiary) {
-            if (i === 0) {
-              // address of the nft owner (i=0) is known at runtime.
-              // so we just enter the contract address as a placeholder.
-              // see payment-split method in contract.
-              addressList.push(standardPrincipalCV(data.contractAddress))
-            } else {
-              addressList.push(standardPrincipalCV(beneficiary.chainAddress))
-            }
-            shareList.push(uintCV(utils.toOnChainAmount(beneficiary.royalty * 100))) // allows 2 d.p.
-            secondariesList.push(uintCV(utils.toOnChainAmount(beneficiary.secondaryRoyalty * 100))) // allows 2 d.p.
-          } else {
-            addressList.push(standardPrincipalCV(data.contractAddress))
-            shareList.push(uintCV(0))
-            secondariesList.push(uintCV(0))
-          }
+        const editionCost = uintCV(utils.toOnChainAmount(data.editionCost))
+        const buyNowPrice = uintCV(utils.toOnChainAmount(data.buyNowPrice))
+        const mintPrice = uintCV(utils.toOnChainAmount(data.mintPrice))
+        const saleRoyalties = getSaleRoyalties(data)
+        data.functionArgs = [buffer, metaDataUrl, editions, editionCost, mintPrice, buyNowPrice, saleRoyalties.addresses, saleRoyalties.shares, saleRoyalties.secondaries]
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        dispatch((data.methos || methos), data, { root: true }).then((result) => {
+          result.opcode = 'stx-transaction-sent'
+          result.assetHash = data.assetHash
+          resolve(result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    mintTokenV3 ({ dispatch, rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const profile = rootGetters['rpayAuthStore/getMyProfile']
+        let postCondAddress = profile.stxAddress
+        if (configuration.network === 'local' && data.sendAsSky) {
+          postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
         }
-        const addresses = listCV(addressList)
-        const shares = listCV(shareList)
-        const secondaries = listCV(secondariesList)
-        data.functionArgs = [buffer, metaDataUrl, editions, editionCost, mintPrice, buyNowPrice, addresses, shares, secondaries]
+        let postConds = []
+        if (data.postConditions) {
+          postConds = data.postConditions
+        } else {
+          postConds.push(makeStandardSTXPostCondition(
+            postCondAddress,
+            FungibleConditionCode.Equal,
+            new BigNum(utils.toOnChainAmount(data.mintPrice))
+          ))
+        }
+        data.postConditions = postConds
+        const buffer = bufferCV(Buffer.from(data.assetHash, 'hex'))
+        const metaDataUrl = bufferCV(Buffer.from(data.metaDataUrl, 'utf8'))
+        // const metaDataUrl = stringUtf8CV(data.metaDataUrl)
+        const editions = uintCV(data.editions)
+        const editionCost = uintCV(utils.toOnChainAmount(data.editionCost))
+        const buyNowPrice = uintCV(utils.toOnChainAmount(data.buyNowPrice))
+        const mintPrice = uintCV(utils.toOnChainAmount(data.mintPrice))
+        const saleRoyalties = getSaleRoyalties(data)
+        const mintRoyalties = getMintRoyalties(data)
+        data.functionArgs = [buffer, metaDataUrl, editions, editionCost, mintPrice, buyNowPrice, mintRoyalties.addresses, mintRoyalties.shares, saleRoyalties.addresses, saleRoyalties.shares, saleRoyalties.secondaries]
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch((data.methos || methos), data, { root: true }).then((result) => {
           result.opcode = 'stx-transaction-sent'
@@ -353,34 +417,11 @@ const rpayPurchaseStore = {
         }
         data.postConditions = postConds
         const editions = uintCV(data.editions)
-        const editionCost = uintCV(data.editionCost)
-        const buyNowPrice = uintCV(data.buyNowPrice || 0)
-        const mintPrice = uintCV(data.mintPrice || 0)
-        const addressList = []
-        const shareList = []
-        const secondariesList = []
-        for (let i = 0; i < 10; i++) {
-          const beneficiary = data.beneficiaries[i]
-          if (beneficiary) {
-            if (i === 0) {
-              // address of the nft owner (i=0) is known at runtime.
-              // so we just enter the contract address as a placeholder.
-              // see payment-split method in contract.
-              addressList.push(standardPrincipalCV(data.contractAddress))
-            } else {
-              addressList.push(standardPrincipalCV(beneficiary.chainAddress))
-            }
-            shareList.push(uintCV(utils.toOnChainAmount(beneficiary.royalty * 100))) // allows 2 d.p.
-            secondariesList.push(uintCV(utils.toOnChainAmount(beneficiary.secondaryRoyalty * 100))) // allows 2 d.p.
-          } else {
-            addressList.push(standardPrincipalCV(data.contractAddress))
-            shareList.push(uintCV(0))
-            secondariesList.push(uintCV(0))
-          }
-        }
-        const addresses = listCV(addressList)
-        const shares = listCV(shareList)
-        const secondaries = listCV(secondariesList)
+        const editionCost = uintCV(utils.toOnChainAmount(data.editionCost))
+        const buyNowPrice = uintCV(utils.toOnChainAmount(data.buyNowPrice))
+        const mintPrice = uintCV(utils.toOnChainAmount(data.mintPrice))
+        const saleRoyalties = getSaleRoyalties(data)
+        const mintRoyalties = getMintRoyalties(data)
 
         const hashes = []
         const metaUrls = []
@@ -396,7 +437,7 @@ const rpayPurchaseStore = {
         }
         const hashList = listCV(hashes)
         const metaUrlList = listCV(metaUrls)
-        data.functionArgs = [hashList, metaUrlList, editions, editionCost, mintPrice, buyNowPrice, addresses, shares, secondaries]
+        data.functionArgs = [hashList, metaUrlList, editions, editionCost, mintPrice, buyNowPrice, mintRoyalties.addresses, mintRoyalties.shares, saleRoyalties.addresses, saleRoyalties.shares, saleRoyalties.secondaries]
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch((data.methos || methos), data, { root: true }).then((result) => {
           result.opcode = 'stx-transaction-sent'
