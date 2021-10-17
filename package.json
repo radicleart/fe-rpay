@@ -1,6 +1,6 @@
 {
   "name": "risidio-pay",
-  "version": "0.7.25",
+  "version": "0.7.31",
   "private": false,
   "files": [
     "dist"
@@ -30,6 +30,7 @@
   "dependencies": {
     "@stacks/blockchain-api-client": "^0.65.0",
     "@stacks/connect": "^6.2.0",
+    "@stacks/encryption": "^2.0.1",
     "@stacks/network": "^2.0.1",
     "@stacks/storage": "^2.0.1",
     "@stacks/transactions": "^2.0.1",

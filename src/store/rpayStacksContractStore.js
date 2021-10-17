@@ -423,6 +423,7 @@ const rpayStacksContractStore = {
         let uri = configuration.risidioBaseApi + '/mesh/v2/tokens'
         uri += '/' + data.contractId
         uri += '/' + data.runKey
+        uri += '/' + data.makerUrlKey
         uri += '/' + data.page
         uri += '/' + data.pageSize
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
