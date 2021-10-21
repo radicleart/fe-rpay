@@ -360,7 +360,10 @@ const rpayPurchaseStore = {
     },
     mintTokenV3 ({ dispatch, rootGetters }, data) {
       return new Promise((resolve, reject) => {
+        // const message = '462a32065d0e822be005867b6b56e7999bbd3d08aec80972c89c4556e4fb1168'
         const configuration = rootGetters['rpayStore/getConfiguration']
+        // utils.signWithPrivKey(keys.privateKey, Buffer.from(data.assetHash, 'hex')).then((sig) => {
+        // console.log(sig)
         const profile = rootGetters['rpayAuthStore/getMyProfile']
         let postCondAddress = profile.stxAddress
         if (configuration.network === 'local' && data.sendAsSky) {
@@ -377,6 +380,8 @@ const rpayPurchaseStore = {
           ))
         }
         data.postConditions = postConds
+        const pubkeyBuffer = bufferCV(Buffer.from(data.message, 'hex'))
+        const sigBuffer = bufferCV(Buffer.from(data.sig, 'hex'))
         const buffer = bufferCV(Buffer.from(data.assetHash, 'hex'))
         const metaDataUrl = bufferCV(Buffer.from(data.metaDataUrl, 'utf8'))
         // const metaDataUrl = stringUtf8CV(data.metaDataUrl)
@@ -386,7 +391,7 @@ const rpayPurchaseStore = {
         const mintPrice = uintCV(utils.toOnChainAmount(data.mintPrice))
         const saleRoyalties = getSaleRoyalties(data)
         const mintRoyalties = getMintRoyalties(data)
-        data.functionArgs = [buffer, metaDataUrl, editions, editionCost, mintPrice, buyNowPrice, mintRoyalties.addresses, mintRoyalties.shares, saleRoyalties.addresses, saleRoyalties.shares, saleRoyalties.secondaries]
+        data.functionArgs = [sigBuffer, pubkeyBuffer, buffer, metaDataUrl, editions, editionCost, mintPrice, buyNowPrice, mintRoyalties.addresses, mintRoyalties.shares, saleRoyalties.addresses, saleRoyalties.shares, saleRoyalties.secondaries]
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch((data.methos || methos), data, { root: true }).then((result) => {
           result.opcode = 'stx-transaction-sent'
@@ -395,6 +400,7 @@ const rpayPurchaseStore = {
         }).catch((error) => {
           reject(error)
         })
+        // })
       })
     },
     mintTwentyTokens ({ dispatch, rootGetters }, data) {

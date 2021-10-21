@@ -84,7 +84,7 @@ const defAuthHeaders = function (profile) {
       const decodedToken = decodeToken(authResponseToken)
       publicKey = decodedToken.payload.public_keys[0]
       // publicKey = Buffer.from(publicKey).toString()
-      // token = 'v1::' + profile.stxAddress + '::' + account.authResponseToken
+      // token = 'v1:' + account.authResponseToken
       token = 'v1:' + profile.stxAddress
     }
   }

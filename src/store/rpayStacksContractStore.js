@@ -420,9 +420,36 @@ const rpayStacksContractStore = {
     fetchTokensByContractIdAndRunKey ({ rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        let uri = configuration.risidioBaseApi + '/mesh/v2/tokens'
+        let uri = configuration.risidioBaseApi
+        if (data.asc) {
+          uri += '/mesh/v2/tokens-asc'
+        } else {
+          uri += '/mesh/v2/tokens'
+        }
         uri += '/' + data.contractId
         uri += '/' + data.runKey
+        uri += '/' + data.makerUrlKey
+        uri += '/' + data.page
+        uri += '/' + data.pageSize
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        axios.get(uri, authHeaders).then((response) => {
+          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data)
+          resolve(gaiaAssets)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    fetchTokensByContractId ({ rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        let uri = configuration.risidioBaseApi
+        if (data.asc) {
+          uri += '/mesh/v2/tokens-asc'
+        } else {
+          uri += '/mesh/v2/tokens'
+        }
+        uri += '/' + data.contractId
         uri += '/' + data.page
         uri += '/' + data.pageSize
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
