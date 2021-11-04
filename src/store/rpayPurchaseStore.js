@@ -64,6 +64,30 @@ const getMintRoyalties = function (data) {
   }
 }
 
+const getMintPostConds = function (rootGetters, data, batching) {
+  const configuration = rootGetters['rpayStore/getConfiguration']
+  const profile = rootGetters['rpayAuthStore/getMyProfile']
+  let postCondAddress = profile.stxAddress
+  if (configuration.network === 'local' && data.sendAsSky) {
+    postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
+  }
+  let postConds = []
+  let amount = new BigNum(utils.toOnChainAmount(data.mintPrice))
+  if (batching) {
+    amount = new BigNum(utils.toOnChainAmount(data.mintPrice * data.twenties.length))
+  }
+  if (data.postConditions) {
+    postConds = data.postConditions
+  } else {
+    postConds.push(makeStandardSTXPostCondition(
+      postCondAddress,
+      FungibleConditionCode.Equal,
+      amount
+    ))
+  }
+  return postConds
+}
+
 const isOpeneningBid = function (contractAsset) {
   // simple case - no bids ever
   if (contractAsset.bidCounter === 0 || contractAsset.bidHistory.length === 0) {
@@ -196,6 +220,18 @@ const rpayPurchaseStore = {
     }
   },
   actions: {
+    stacksmateSignme ({ commit, rootGetters }, assetHash) {
+      return new Promise(function (resolve) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        // const direct = STACKSMATE_API_PATH + '/stacksmate/signme/' + assetHash
+        const direct = configuration.risidioBaseApi + '/mesh/v2/stacksmate/signme/' + assetHash
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        axios.get(direct, authHeaders).then((response) => {
+          // commit('setSig', response.data)
+          resolve(response.data)
+        })
+      })
+    },
     cancelOffer ({ commit, rootGetters }, data) {
       return new Promise(function (resolve, reject) {
         const configuration = rootGetters['rpayStore/getConfiguration']
@@ -273,23 +309,7 @@ const rpayPurchaseStore = {
     mintToken ({ dispatch, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const profile = rootGetters['rpayAuthStore/getMyProfile']
-        let postCondAddress = profile.stxAddress
-        if (configuration.network === 'local' && data.sendAsSky) {
-          postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
-        }
-        let postConds = []
-        const amount = new BigNum(utils.toOnChainAmount(data.mintPrice))
-        if (data.postConditions) {
-          postConds = data.postConditions
-        } else {
-          postConds.push(makeStandardSTXPostCondition(
-            postCondAddress,
-            FungibleConditionCode.Equal,
-            amount
-          ))
-        }
-        data.postConditions = postConds
+        data.postConditions = getMintPostConds(rootGetters, data, false)
         const buffer = bufferCV(Buffer.from(data.assetHash, 'hex'))
         const metaDataUrl = bufferCV(Buffer.from(data.metaDataUrl, 'utf8'))
         // const metaDataUrl = stringUtf8CV(data.metaDataUrl)
@@ -323,22 +343,7 @@ const rpayPurchaseStore = {
     mintTokenV2 ({ dispatch, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const profile = rootGetters['rpayAuthStore/getMyProfile']
-        let postCondAddress = profile.stxAddress
-        if (configuration.network === 'local' && data.sendAsSky) {
-          postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
-        }
-        let postConds = []
-        if (data.postConditions) {
-          postConds = data.postConditions
-        } else {
-          postConds.push(makeStandardSTXPostCondition(
-            postCondAddress,
-            FungibleConditionCode.Equal,
-            new BigNum(utils.toOnChainAmount(data.mintPrice))
-          ))
-        }
-        data.postConditions = postConds
+        data.postConditions = getMintPostConds(rootGetters, data, false)
         const buffer = bufferCV(Buffer.from(data.assetHash, 'hex'))
         const metaDataUrl = bufferCV(Buffer.from(data.metaDataUrl, 'utf8'))
         // const metaDataUrl = stringUtf8CV(data.metaDataUrl)
@@ -358,30 +363,13 @@ const rpayPurchaseStore = {
         })
       })
     },
+    // V3 includes a signature in the call
     mintTokenV3 ({ dispatch, rootGetters }, data) {
       return new Promise((resolve, reject) => {
-        // const message = '462a32065d0e822be005867b6b56e7999bbd3d08aec80972c89c4556e4fb1168'
         const configuration = rootGetters['rpayStore/getConfiguration']
-        // utils.signWithPrivKey(keys.privateKey, Buffer.from(data.assetHash, 'hex')).then((sig) => {
-        // console.log(sig)
-        const profile = rootGetters['rpayAuthStore/getMyProfile']
-        let postCondAddress = profile.stxAddress
-        if (configuration.network === 'local' && data.sendAsSky) {
-          postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
-        }
-        let postConds = []
-        if (data.postConditions) {
-          postConds = data.postConditions
-        } else {
-          postConds.push(makeStandardSTXPostCondition(
-            postCondAddress,
-            FungibleConditionCode.Equal,
-            new BigNum(utils.toOnChainAmount(data.mintPrice))
-          ))
-        }
-        data.postConditions = postConds
-        const pubkeyBuffer = bufferCV(Buffer.from(data.message, 'hex'))
-        const sigBuffer = bufferCV(Buffer.from(data.sig, 'hex'))
+        data.postConditions = getMintPostConds(rootGetters, data, false)
+        const sigBufferCV = bufferCV(Buffer.from(data.sig, 'hex'))
+        const messageHashCV = bufferCV(Buffer.from(data.message, 'hex'))
         const buffer = bufferCV(Buffer.from(data.assetHash, 'hex'))
         const metaDataUrl = bufferCV(Buffer.from(data.metaDataUrl, 'utf8'))
         // const metaDataUrl = stringUtf8CV(data.metaDataUrl)
@@ -391,7 +379,7 @@ const rpayPurchaseStore = {
         const mintPrice = uintCV(utils.toOnChainAmount(data.mintPrice))
         const saleRoyalties = getSaleRoyalties(data)
         const mintRoyalties = getMintRoyalties(data)
-        data.functionArgs = [sigBuffer, pubkeyBuffer, buffer, metaDataUrl, editions, editionCost, mintPrice, buyNowPrice, mintRoyalties.addresses, mintRoyalties.shares, saleRoyalties.addresses, saleRoyalties.shares, saleRoyalties.secondaries]
+        data.functionArgs = [sigBufferCV, messageHashCV, buffer, metaDataUrl, editions, editionCost, mintPrice, buyNowPrice, mintRoyalties.addresses, mintRoyalties.shares, saleRoyalties.addresses, saleRoyalties.shares, saleRoyalties.secondaries]
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch((data.methos || methos), data, { root: true }).then((result) => {
           result.opcode = 'stx-transaction-sent'
@@ -400,28 +388,12 @@ const rpayPurchaseStore = {
         }).catch((error) => {
           reject(error)
         })
-        // })
       })
     },
     mintTwentyTokens ({ dispatch, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const profile = rootGetters['rpayAuthStore/getMyProfile']
-        let postCondAddress = profile.stxAddress
-        if (configuration.network === 'local' && data.sendAsSky) {
-          postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
-        }
-        let postConds = []
-        if (data.postConditions) {
-          postConds = data.postConditions
-        } else {
-          postConds.push(makeStandardSTXPostCondition(
-            postCondAddress,
-            FungibleConditionCode.Equal,
-            new BigNum(utils.toOnChainAmount(data.mintPrice * data.twenties.length))
-          ))
-        }
-        data.postConditions = postConds
+        data.postConditions = getMintPostConds(rootGetters, data, true)
         const editions = uintCV(data.editions)
         const editionCost = uintCV(utils.toOnChainAmount(data.editionCost))
         const buyNowPrice = uintCV(utils.toOnChainAmount(data.buyNowPrice))
@@ -484,6 +456,81 @@ const rpayPurchaseStore = {
             error: err
           }
           window.eventBus.$emit('rpayEvent', result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    setCollectionRoyalties ({ dispatch, rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const saleRoyalties = getSaleRoyalties(data)
+        const mintRoyalties = getMintRoyalties(data)
+        data.functionName = 'set-collection-royalties'
+        data.functionArgs = [mintRoyalties.addresses, mintRoyalties.shares, saleRoyalties.addresses, saleRoyalties.shares, saleRoyalties.secondaries]
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        dispatch((data.methos || methos), data, { root: true }).then((result) => {
+          result.opcode = 'stx-transaction-sent'
+          resolve(result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    mintCollectionSingle ({ dispatch, rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        data.postConditions = getMintPostConds(rootGetters, data, false)
+        const sigBufferCV = bufferCV(Buffer.from(data.sig, 'hex'))
+        const messageHashCV = bufferCV(Buffer.from(data.message, 'hex'))
+        const assetHashCV = bufferCV(Buffer.from(data.assetHash, 'hex'))
+        const metaDataUrl = bufferCV(Buffer.from(data.metaDataUrl, 'utf8'))
+        const editions = uintCV(data.editions)
+        const editionCost = uintCV(utils.toOnChainAmount(data.editionCost))
+        const buyNowPrice = uintCV(utils.toOnChainAmount(data.buyNowPrice))
+        const mintPrice = uintCV(utils.toOnChainAmount(data.mintPrice))
+        data.functionArgs = [sigBufferCV, messageHashCV, assetHashCV, metaDataUrl, editions, editionCost, mintPrice, buyNowPrice]
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        dispatch((data.methos || methos), data, { root: true }).then((result) => {
+          // result.opcode = 'collection-mint-token'
+          result.assetHash = data.assetHash
+          // window.eventBus.$emit('rpayEvent', result)
+          resolve(result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    mintCollectionBatch ({ dispatch, rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        data.postConditions = getMintPostConds(rootGetters, data, true)
+        const sigBufferCV = bufferCV(Buffer.from(data.sig, 'hex'))
+        const messageHashCV = bufferCV(Buffer.from(data.message, 'hex'))
+        const editions = uintCV(data.editions)
+        const editionCost = uintCV(utils.toOnChainAmount(data.editionCost))
+        const buyNowPrice = uintCV(utils.toOnChainAmount(data.buyNowPrice))
+        const mintPrice = uintCV(utils.toOnChainAmount(data.mintPrice))
+        const hashes = []
+        const metaUrls = []
+        for (let i = 0; i < 20; i++) {
+          const twenty = data.twenties[i]
+          if (twenty) {
+            hashes.push(bufferCV(Buffer.from(twenty.assetHash, 'hex')))
+            metaUrls.push(bufferCV(Buffer.from(twenty.metaDataUrl, 'utf8')))
+          } else {
+            hashes.push(bufferCV(Buffer.from(data.twenties[0].assetHash, 'hex')))
+            metaUrls.push(bufferCV(Buffer.from('#', 'utf8')))
+          }
+        }
+        const hashList = listCV(hashes)
+        const metaUrlList = listCV(metaUrls)
+        data.functionArgs = [sigBufferCV, messageHashCV, hashList, metaUrlList, editions, editionCost, mintPrice, buyNowPrice]
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        dispatch((data.methos || methos), data, { root: true }).then((result) => {
+          // result.opcode = 'collection-mint-token-twenty'
+          result.assetHash = data.assetHash
+          resolve(result)
         }).catch((error) => {
           reject(error)
         })

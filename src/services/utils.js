@@ -57,7 +57,7 @@ const utils = {
   getFileExtension: function (filename, type) {
     if (filename && filename.lastIndexOf('.') > 0) {
       const index = filename.lastIndexOf('.')
-      return filename.substring(index + 1).toLowerCase()
+      return '.' + filename.substring(index + 1).toLowerCase()
     } else if (type) {
       const index = type.lastIndexOf('/') + 1
       return '.' + type.substring(index).toLowerCase()

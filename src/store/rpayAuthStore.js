@@ -65,7 +65,6 @@ const fetchProfileMetaData = function (profile, commit, dispatch) {
       profile.accountInfo = accountInfo
       profile.counter = profile.counter + 1
       commit('myProfile', profile)
-      // dispatch('rpayStacksContractStore/fetchAssetsByOwner', { stxAddress: profile.stxAddress, mine: true }, { root: true })
     }).catch(() => {
       commit('myProfile', profile)
     })
@@ -84,12 +83,13 @@ const defAuthHeaders = function (profile) {
       const decodedToken = decodeToken(authResponseToken)
       publicKey = decodedToken.payload.public_keys[0]
       // publicKey = Buffer.from(publicKey).toString()
-      // token = 'v1:' + account.authResponseToken
-      token = 'v1:' + profile.stxAddress
+      token = 'v1:' + account.authResponseToken
+      // token = 'v1:' + profile.stxAddress
     }
   }
   const headers = {
     headers: {
+      STX_ADDRESS: profile.stxAddress,
       IdentityAddress: publicKey,
       'Content-Type': 'application/json',
       Authorization: 'Bearer ' + token
@@ -155,7 +155,7 @@ const rpayAuthStore = {
       return userSession
     },
     getAuthHeaders: state => {
-      return state.authHeaders
+      return (state.authHeaders) ? state.authHeaders.headers : {}
     },
     getUserStorage: state => {
       return storage

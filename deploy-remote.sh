@@ -1,7 +1,7 @@
 #!/bin/bash -e
 set -e;
 
-export SERVER=zeno.brightblock.org
+export SERVER=locke.brightblock.org
 export BUILDER=build-app-stag
 export DEPLOYMENT=$1
 if [ "$DEPLOYMENT" == "prod" ]; then
