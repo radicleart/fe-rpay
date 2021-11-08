@@ -12,8 +12,13 @@ const utils = {
   convertAddress: function (network, b160Address) {
     let version = 26
     if (network === 'mainnet') version = 22
-    const address = c32address(version, b160Address) // 22 for mainnet
-    return address
+    if (b160Address.indexOf('.') > -1) {
+      // deal with the owner address being a contract!
+      const addr = b160Address.split('.')[0]
+      return c32address(version, addr) + '.' + b160Address.split('.')[1]
+    } else {
+      return c32address(version, b160Address)
+    }
   },
   convertAddressFrom: function (stxAddress) {
     if (!stxAddress) return '?'
@@ -188,7 +193,6 @@ const utils = {
       return res.value.value.toNumber()
     } else if (method === 'get-app') {
       return {
-        // owner: td.decode(res.value.data.owner.buffer),
         contractId: td.decode(res.value.data['app-contract-id'].buffer),
         gaiaRootPath: td.decode(res.value.data['gaia-root-path'].buffer),
         status: res.value.data.status.value.toNumber(),
@@ -203,7 +207,11 @@ const utils = {
       clarityAsset.highBidCounter = tokenData.bidCounter.value.toNumber()
       clarityAsset.offerCounter = tokenData.offerCounter.value.toNumber()
       if (tokenData.owner) {
-        clarityAsset.owner = tokenData.owner.address.hash160
+        if (tokenData.owner.type === 6) {
+          clarityAsset.owner = tokenData.owner.address.hash160
+        } else {
+          clarityAsset.owner = tokenData.owner.contractName
+        }
       }
       clarityAsset.saleData = {
         saleType: 0,

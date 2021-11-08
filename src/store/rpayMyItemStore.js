@@ -400,7 +400,7 @@ const rpayMyItemStore = {
         if (item.externalUrl) delete item.externalUrl
         if (item.imageUrl) delete item.imageUrl
         if (item.contractAsset) delete item.contractAsset
-        if (item.nftIndex) delete item.nftIndex
+        // if (item.nftIndex) delete item.nftIndex
         if (item.nftMedia) delete item.nftMedia
         if (item.objType) delete item.objType
         if (item.domain) delete item.domain

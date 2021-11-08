@@ -1,5 +1,5 @@
 <template>
-<div>
+<div class="text-white">
 </div>
 </template>
 
@@ -16,6 +16,7 @@ import rpayStacksContractStore from './store/rpayStacksContractStore'
 import rpayStacksStore from './store/rpayStacksStore'
 import rpayPurchaseStore from './store/rpayPurchaseStore'
 import rpayProjectStore from './store/rpayProjectStore'
+// import { hexToCV, cvToJSON } from '@stacks/transactions'
 // import rpayEthereumStore from './store/rpayEthereumStore'
 // const rpayEthereumStore = () => import(/* webpackChunkName: "rpayEthereumStore" */ '@/views/Index.vue')
 
@@ -76,6 +77,9 @@ export default {
     // })
   },
   methods: {
+    deserThis () {
+      // return cvToJSON(hexToCV(this.serialed))
+    },
     parseConfiguration: function () {
       let paymentConfig = {}
       if (typeof this.paymentConfig === 'object') {

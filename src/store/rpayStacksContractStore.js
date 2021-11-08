@@ -495,6 +495,32 @@ const rpayStacksContractStore = {
         })
       })
     },
+    fetchTokensByContractIdAndName ({ rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        let uri = configuration.risidioBaseApi
+        if (data.asc) {
+          uri += (data.forSale) ? '/mesh/v2/tokensByName-for-sale-asc' : '/mesh/v2/tokensByName-asc'
+        } else {
+          uri += (data.forSale) ? '/mesh/v2/tokensByName-for-sale' : '/mesh/v2/tokensByName'
+        }
+        uri += '/' + data.contractId
+        uri += '/' + data.runKey // resolve to NFT name on server from nftMetaData collection
+        uri += '/' + data.page
+        uri += '/' + data.pageSize
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        axios.get(uri, authHeaders).then((response) => {
+          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens)
+          const result = {
+            gaiaAssets: gaiaAssets,
+            tokenCount: response.data.tokenCount
+          }
+          resolve(result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
     fetchMyTokens ({ rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
