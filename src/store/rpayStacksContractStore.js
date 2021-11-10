@@ -447,16 +447,13 @@ const rpayStacksContractStore = {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         let uri = configuration.risidioBaseApi
-        if (data.asc) {
-          uri += (data.forSale) ? '/mesh/v2/tokens-for-sale-asc' : '/mesh/v2/tokens-asc'
-        } else {
-          uri += (data.forSale) ? '/mesh/v2/tokens-for-sale' : '/mesh/v2/tokens'
-        }
+        uri += (data.forSale) ? '/mesh/v2/tokens-for-sale' : '/mesh/v2/tokens'
         if (data.contractId) uri += '/' + data.contractId
         if (data.runKey) uri += '/' + data.runKey
         if (data.makerUrlKey) uri += '/' + data.makerUrlKey
         uri += '/' + data.page
         uri += '/' + data.pageSize
+        if (data.query) uri += data.query
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.get(uri, authHeaders).then((response) => {
           const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens)
@@ -474,14 +471,11 @@ const rpayStacksContractStore = {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         let uri = configuration.risidioBaseApi
-        if (data.asc) {
-          uri += (data.forSale) ? '/mesh/v2/tokens-for-sale-asc' : '/mesh/v2/tokens-asc'
-        } else {
-          uri += (data.forSale) ? '/mesh/v2/tokens-for-sale' : '/mesh/v2/tokens'
-        }
+        uri += (data.forSale) ? '/mesh/v2/tokens-for-sale' : '/mesh/v2/tokens'
         uri += '/' + data.contractId
         uri += '/' + data.page
         uri += '/' + data.pageSize
+        if (data.query) uri += data.query
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.get(uri, authHeaders).then((response) => {
           const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens)
@@ -499,15 +493,33 @@ const rpayStacksContractStore = {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         let uri = configuration.risidioBaseApi
-        if (data.asc) {
-          uri += (data.forSale) ? '/mesh/v2/tokensByName-for-sale-asc' : '/mesh/v2/tokensByName-asc'
-        } else {
-          uri += (data.forSale) ? '/mesh/v2/tokensByName-for-sale' : '/mesh/v2/tokensByName'
-        }
-        uri += '/' + data.contractId
+        uri += '/mesh/v2/tokensByName'
+        if (data.contractId) uri += '/' + data.contractId
         uri += '/' + data.runKey // resolve to NFT name on server from nftMetaData collection
         uri += '/' + data.page
         uri += '/' + data.pageSize
+        if (data.query) uri += data.query
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        axios.get(uri, authHeaders).then((response) => {
+          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens)
+          const result = {
+            gaiaAssets: gaiaAssets,
+            tokenCount: response.data.tokenCount
+          }
+          resolve(result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    fetchTokensByFilters ({ rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        let uri = configuration.risidioBaseApi
+        uri += '/mesh/v2/tokensByFilters'
+        uri += '/' + data.page
+        uri += '/' + data.pageSize
+        if (data.query) uri += data.query
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.get(uri, authHeaders).then((response) => {
           const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens)
@@ -525,16 +537,13 @@ const rpayStacksContractStore = {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         let uri = configuration.risidioBaseApi
-        if (data.asc) {
-          uri += '/mesh/v2/my-tokens-asc'
-        } else {
-          uri += '/mesh/v2/my-tokens'
-        }
+        uri += '/mesh/v2/my-tokens'
         if (data.runKey) uri += '/' + data.runKey
         const b32Address = utils.convertAddressFrom(data.stxAddress)
         uri += '/' + b32Address[1]
         uri += '/' + data.page
         uri += '/' + data.pageSize
+        if (data.query) uri += data.query
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.get(uri, authHeaders).then((response) => {
           const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens)
@@ -564,7 +573,8 @@ const rpayStacksContractStore = {
     fetchTokenByContractIdAndAssetHash ({ commit, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const uri = configuration.risidioBaseApi + '/mesh/v2/token-by-hash/' + data.contractId + '/' + data.assetHash
+        let uri = configuration.risidioBaseApi + '/mesh/v2/token-by-hash/' + data.contractId + '/' + data.assetHash
+        if (data.query) uri += data.query
         axios.get(uri).then((response) => {
           try {
             const gaiaAsset = utils.resolvePrincipalsGaiaToken(configuration.network, response.data)
