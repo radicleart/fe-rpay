@@ -295,9 +295,10 @@ const rpayMyItemStore = {
         })
       })
     },
-    saveUserProfile ({ state }, userProfile) {
+    deleteUserProfile ({ state }) {
+      // Temporary method used to migrate profiles from Gaia to Mongo. Once all profiles are migrated we should not need this method.
       return new Promise((resolve) => {
-        state.rootFile.userProfile = userProfile
+        delete state.rootFile.userProfile
         rpayMyItemService.saveRootFile(state.rootFile).then((res) => {
           resolve(res)
         })
@@ -359,7 +360,6 @@ const rpayMyItemStore = {
             now: now,
             newRootFile: {
               created: now,
-              userProfile: {},
               records: []
             }
           }

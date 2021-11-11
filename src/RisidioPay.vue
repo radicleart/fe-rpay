@@ -16,6 +16,7 @@ import rpayStacksContractStore from './store/rpayStacksContractStore'
 import rpayStacksStore from './store/rpayStacksStore'
 import rpayPurchaseStore from './store/rpayPurchaseStore'
 import rpayProjectStore from './store/rpayProjectStore'
+import rpayProfileStore from './store/rpayProfileStore'
 // import { hexToCV, cvToJSON } from '@stacks/transactions'
 // import rpayEthereumStore from './store/rpayEthereumStore'
 // const rpayEthereumStore = () => import(/* webpackChunkName: "rpayEthereumStore" */ '@/views/Index.vue')
@@ -56,6 +57,7 @@ export default {
       this.$store.registerModule('rpayStacksStore', rpayStacksStore)
       this.$store.registerModule('rpayPurchaseStore', rpayPurchaseStore)
       this.$store.registerModule('rpayProjectStore', rpayProjectStore)
+      this.$store.registerModule('rpayProfileStore', rpayProfileStore)
       this.$store.registerModule('rpayStacksContractStore', rpayStacksContractStore)
       this.$store.registerModule('rpayStore', rpayStore)
       this.$store.commit('rpayStore/addConfiguration', configuration)
