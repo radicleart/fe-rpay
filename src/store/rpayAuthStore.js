@@ -155,7 +155,7 @@ const rpayAuthStore = {
       return userSession
     },
     getAuthHeaders: state => {
-      return (state.authHeaders) ? state.authHeaders.headers : {}
+      return (state.authHeaders) ? state.authHeaders.headers : { headers: {} }
     },
     getUserStorage: state => {
       return storage
