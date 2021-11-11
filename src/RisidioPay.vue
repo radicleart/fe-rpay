@@ -1,5 +1,5 @@
 <template>
-<div>
+<div class="text-white">
 </div>
 </template>
 
@@ -17,6 +17,7 @@ import rpayStacksStore from './store/rpayStacksStore'
 import rpayPurchaseStore from './store/rpayPurchaseStore'
 import rpayProjectStore from './store/rpayProjectStore'
 import rpayProfileStore from './store/rpayProfileStore'
+// import { hexToCV, cvToJSON } from '@stacks/transactions'
 // import rpayEthereumStore from './store/rpayEthereumStore'
 // const rpayEthereumStore = () => import(/* webpackChunkName: "rpayEthereumStore" */ '@/views/Index.vue')
 
@@ -61,23 +62,26 @@ export default {
       this.$store.registerModule('rpayStore', rpayStore)
       this.$store.commit('rpayStore/addConfiguration', configuration)
     }
-    this.$store.dispatch('rpayStacksContractStore/fetchContractDataFirstEditions').then(() => {
-      this.configured = true
-      this.$store.commit('rpayStore/addConfiguration', configuration)
-      this.$store.commit('rpayStore/setDisplayCard', 100) // initial screen for each flow.
-      this.$store.dispatch('rpayStore/initialiseRates', configuration)
-      this.$store.dispatch('rpayStacksStore/fetchMacSkyWalletInfo').then(() => {
-        this.loaded = true
-      }).catch(() => {
-        // error here just means blockchain not running - can ignore and continue.
-      })
+    // this.$store.dispatch('rpayStacksContractStore/fetchContractDataFirstEditions').then(() => {
+    this.configured = true
+    this.$store.commit('rpayStore/addConfiguration', configuration)
+    this.$store.commit('rpayStore/setDisplayCard', 100) // initial screen for each flow.
+    this.$store.dispatch('rpayStore/initialiseRates', configuration)
+    this.$store.dispatch('rpayStacksStore/fetchMacSkyWalletInfo').then(() => {
       this.loaded = true
-      if (!agetter) {
-        window.eventBus.$emit('rpayEvent', { opcode: 'configured' })
-      }
+    }).catch(() => {
+      // error here just means blockchain not running - can ignore and continue.
     })
+    this.loaded = true
+    if (!agetter) {
+      window.eventBus.$emit('rpayEvent', { opcode: 'configured' })
+    }
+    // })
   },
   methods: {
+    deserThis () {
+      // return cvToJSON(hexToCV(this.serialed))
+    },
     parseConfiguration: function () {
       let paymentConfig = {}
       if (typeof this.paymentConfig === 'object') {

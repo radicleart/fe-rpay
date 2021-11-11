@@ -183,6 +183,11 @@ const rpayMyItemStore = {
         })
       })
     },
+    saveRootFileOnce ({ state }) {
+      return new Promise((resolve) => {
+        rpayMyItemService.saveRootFile(state.rootFile)
+      })
+    },
     indexRootFile ({ state, commit }) {
       return new Promise((resolve) => {
         searchIndexService.indexRootFile(state.rootFile).then((result) => {
@@ -259,10 +264,17 @@ const rpayMyItemStore = {
         })
       })
     },
-    findItemByAssetHash ({ state }, assetHash) {
+    findItemByAssetHash ({ state, dispatch }, assetHash) {
       return new Promise((resolve) => {
-        const index = state.rootFile.records.findIndex((o) => o.assetHash === assetHash)
-        resolve(state.rootFile.records[index])
+        if (state.rootFile && state.rootFile.records) {
+          const index = state.rootFile.records.findIndex((o) => o.assetHash === assetHash)
+          resolve(state.rootFile.records[index])
+        } else {
+          dispatch('fetchItems').then((rootFile) => {
+            const index = rootFile.records.findIndex((o) => o.assetHash === assetHash)
+            resolve(rootFile.records[index])
+          })
+        }
       })
     },
     saveAttributesObject ({ state }, data) {
@@ -359,10 +371,6 @@ const rpayMyItemStore = {
         } else {
           rootFile.records.splice(index, 1, item)
         }
-        let assetPath = item.assetHash + '.json'
-        if (item.currentRunKey) {
-          assetPath = item.currentRunKey + '/' + item.assetHash + '.json'
-        }
         if (!profile.gaiaHubConfig) {
           try {
             const session = JSON.parse(localStorage.getItem('blockstack-session'))
@@ -376,17 +384,23 @@ const rpayMyItemStore = {
           window.location.reload()
           return
         }
+        let assetPath = item.assetHash + '.json'
+        if (item.cryptoPunk) {
+          assetPath = item.currentRunKey + '/' + item.attributes.index + '.json'
+        } else if (item.currentRunKey) {
+          assetPath = item.currentRunKey + '/' + item.assetHash + '.json'
+        }
         item.metaDataUrl = profile.gaiaHubConfig.url_prefix + profile.gaiaHubConfig.address + '/' + assetPath
         let token = null
         if (item.contractAsset) {
           token = item.contractAsset
-          item.external_url = location.origin + '/nfts/' + token.nftIndex
+          item.external_url = location.origin + '/nfts/' + item.projectId + '/' + token.nftIndex
           item.contractAsset = null
         }
         if (item.externalUrl) delete item.externalUrl
         if (item.imageUrl) delete item.imageUrl
         if (item.contractAsset) delete item.contractAsset
-        if (item.nftIndex) delete item.nftIndex
+        // if (item.nftIndex) delete item.nftIndex
         if (item.nftMedia) delete item.nftMedia
         if (item.objType) delete item.objType
         if (item.domain) delete item.domain
@@ -394,13 +408,6 @@ const rpayMyItemStore = {
         rpayMyItemService.saveAsset(item, assetPath).then((item) => {
           item.contractAsset = token
           commit('rootFile', rootFile)
-          // if (item.privacy === 'public') {
-          // const configuration = rootGetters['rpayStore/getConfiguration']
-          // searchIndexService.addRecord(configuration.risidioBaseApi, item)
-          // }
-          rpayMyItemService.saveRootFile(rootFile).then((item) => {
-            commit('rootFile', rootFile)
-          })
           resolve(item)
         }).catch(() => {
           resolve(item)
@@ -430,17 +437,10 @@ const rpayMyItemStore = {
         if (item.privacy !== 'public') {
           item.privacy = 'private'
         }
-        const configuration = rootGetters['rpayStore/getConfiguration']
-        item.projectId = configuration.risidioProjectId
-        const tempAttributes = item.attributes
-        if (tempAttributes.artworkClip && tempAttributes.artworkClip.dataUrl) tempAttributes.artworkClip.dataUrl = null
-        if (tempAttributes.artworkFile && tempAttributes.artworkFile.dataUrl) tempAttributes.artworkFile.dataUrl = null
-        if (tempAttributes.coverImage && tempAttributes.coverImage.dataUrl) tempAttributes.coverImage.dataUrl = null
-        item.attributes = {
-          artworkFile: tempAttributes.artworkFile,
-          coverImage: tempAttributes.coverImage,
-          artworkClip: tempAttributes.artworkClip
-        }
+        if (item.attributes.artworkClip && item.attributes.artworkClip.dataUrl) item.attributes.artworkClip.dataUrl = null
+        if (item.attributes.artworkFile && item.attributes.artworkFile.dataUrl) item.attributes.artworkFile.dataUrl = null
+        if (item.attributes.coverImage && item.attributes.coverImage.dataUrl) item.attributes.coverImage.dataUrl = null
+
         if (item.attributes.artworkFile.type.indexOf('image') === -1) {
           if (item.attributes.artworkFile.type.indexOf('youtube') > -1) {
             item.youtube_url = item.attributes.artworkFile.fileUrl

@@ -27,17 +27,13 @@ const contractDeployFee = 60000
 const testnet = new StacksTestnet()
 const mainnet = new StacksMainnet()
 
-const captureResult = function (dispatch, rootGetters, result) {
+const captureResult = function (result, dispatch) {
   result.opcode = 'stx-transaction-sent'
   result.txStatus = 'pending'
   try {
-    if (result.functionName === 'mint-token') {
-      result.assetHash = cvToValue(result.functionArgs[0]).substring(2)
-      // const configuration = rootGetters['rpayStore/getConfiguration']
-      // const application = rootGetters['rpayStacksContractStore/getApplicationFromRegistryByContractId'](configuration.risidioProjectId)
-      result.amount = Number(cvToValue(result.functionArgs[4]))
-      // result.amount = application.tokenContract.mintPrice * 1000000
-      // console.log(typeof result.assetHash)
+    if (result.functionName === 'mint-token' || result.functionName === 'collection-mint-token') {
+      result.assetHash = cvToValue(result.functionArgs[2]).substring(2)
+      result.amount = Number(cvToValue(result.functionArgs[6]))
     } else {
       result.nftIndex = cvToValue(result.functionArgs[0])
       if (typeof result.nftIndex === 'bigint') {
@@ -246,7 +242,7 @@ const rpayStacksStore = {
               functionName: data.functionName,
               functionArgs: data.functionArgs
             }
-            captureResult(dispatch, rootGetters, result)
+            captureResult(result, dispatch)
             resolve(result)
           }
         }
@@ -291,7 +287,7 @@ const rpayStacksStore = {
                 functionArgs: data.functionArgs
               }
               dispatch('fetchMacSkyWalletInfo')
-              captureResult(dispatch, rootGetters, result)
+              captureResult(result, dispatch)
               resolve(result)
             }).catch((error) => {
               dispatch('fetchMacSkyWalletInfo')
@@ -302,7 +298,7 @@ const rpayStacksStore = {
                 result.contractAddress = data.contractAddress
                 result.contractName = data.contractName
                 result.functionName = data.functionName
-                captureResult(dispatch, rootGetters, result)
+                captureResult(result, dispatch)
                 resolve(result)
               }).catch((error) => {
                 reject(error)

@@ -142,39 +142,48 @@ const rpayMyItemService = {
   saveRootFile: function (rootFile) {
     return new Promise((resolve) => {
       rootFile.updated = new Date().getTime()
-      storage.getFile(ITEM_ROOT_PATH, { decrypt: false }).then((file) => {
-        let rootFile2 = JSON.parse(file)
-        rootFile2 = rootFile
-        storage.putFile(ITEM_ROOT_PATH, JSON.stringify(rootFile2), { encrypt: false }).then(() => {
-          resolve(rootFile2)
-        }).catch(() => {
-          // reject(error)
-        })
+      storage.putFile(ITEM_ROOT_PATH, JSON.stringify(rootFile), { encrypt: false }).then(() => {
+        resolve(rootFile)
+        console.log('recovered from unexpected lack of file..')
       }).catch(() => {
-        storage.putFile(ITEM_ROOT_PATH, JSON.stringify(rootFile), { encrypt: false }).then(() => {
-          resolve(rootFile)
-          console.log('recovered from unexpected lack of file..')
+        storage.getFile(ITEM_ROOT_PATH, { decrypt: false }).then((file) => {
+          let rootFile2 = JSON.parse(file)
+          rootFile2 = rootFile
+          storage.putFile(ITEM_ROOT_PATH, JSON.stringify(rootFile2), { encrypt: false }).then(() => {
+            resolve(rootFile2)
+          }).catch(() => {
+            // reject(error)
+          })
         }).catch(() => {
-          // reject(error)
+          storage.putFile(ITEM_ROOT_PATH, JSON.stringify(rootFile), { encrypt: false }).then(() => {
+            resolve(rootFile)
+            console.log('recovered from unexpected lack of file..')
+          }).catch(() => {
+            // reject(error)
+          })
         })
       })
     })
   },
   saveAsset: function (item, assetPath) {
     return new Promise((resolve) => {
-      storage.getFile(assetPath, { decrypt: false }).then((file) => {
-        let item2 = JSON.parse(file)
-        item2 = item
-        storage.putFile(assetPath, JSON.stringify(item2), { encrypt: false }).then(() => {
-          resolve(item)
-        }).catch(() => {
-          // reject(error)
-        })
+      storage.putFile(assetPath, JSON.stringify(item), { encrypt: false }).then(() => {
+        resolve(item)
       }).catch(() => {
-        storage.putFile(assetPath, JSON.stringify(item), { encrypt: false }).then(() => {
-          resolve(item)
+        storage.getFile(assetPath, { decrypt: false }).then((file) => {
+          let item2 = JSON.parse(file)
+          item2 = item
+          storage.putFile(assetPath, JSON.stringify(item2), { encrypt: false }).then(() => {
+            resolve(item)
+          }).catch(() => {
+            // reject(error)
+          })
         }).catch(() => {
-          // reject(error)
+          storage.putFile(assetPath, JSON.stringify(item), { encrypt: false }).then(() => {
+            resolve(item)
+          }).catch(() => {
+            // reject(error)
+          })
         })
       })
     })

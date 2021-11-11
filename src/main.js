@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import store from './store/mainStore'
-const RisidioPay = () => import('risidio-pay')
+import RisidioPay from './RisidioPay'
+// const RisidioPay = () => import('risidio-pay')
 
 Vue.config.productionTip = false
 new Vue({
