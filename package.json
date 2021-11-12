@@ -1,6 +1,6 @@
 {
   "name": "risidio-pay",
-  "version": "0.7.89",
+  "version": "0.8.3",
   "private": false,
   "files": [
     "dist"

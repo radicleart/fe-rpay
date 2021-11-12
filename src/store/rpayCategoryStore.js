@@ -154,9 +154,8 @@ const rpayCategoryStore = {
     newLoopRun ({ rootGetters, commit }, loopRun) {
       return new Promise(resolve => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const url = configuration.risidioBaseApi + '/mesh/v2/loopRun'
-        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
-        axios.post(url, loopRun, authHeaders).then((response) => {
+        const url = configuration.risidioBaseApi + '/mesh/mgmnt-v2/loopRun'
+        axios.post(url, loopRun).then((response) => {
           commit('setLoopRun', response.data)
           resolve(response.data)
         }).catch(() => {
@@ -167,9 +166,8 @@ const rpayCategoryStore = {
     updateLoopRun ({ rootGetters, commit }, loopRun) {
       return new Promise(resolve => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const url = configuration.risidioBaseApi + '/mesh/v2/loopRun'
-        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
-        axios.put(url, loopRun, authHeaders).then((response) => {
+        const url = configuration.risidioBaseApi + '/mesh/mgmnt-v2/loopRun'
+        axios.put(url, loopRun).then((response) => {
           commit('setLoopRun', response.data)
           resolve(response.data)
         }).catch(() => {
@@ -181,8 +179,7 @@ const rpayCategoryStore = {
       return new Promise(resolve => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const url = configuration.risidioBaseApi + '/mesh/v2/royalties/' + currentRunKey
-        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
-        axios.get(url, authHeaders).then((response) => {
+        axios.get(url).then((response) => {
           resolve(response.data)
         }).catch(() => {
           resolve(null)
@@ -192,9 +189,8 @@ const rpayCategoryStore = {
     updateRoyalties ({ rootGetters }, data) {
       return new Promise(resolve => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const url = configuration.risidioBaseApi + '/mesh/v2/updateRoyalties'
-        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
-        axios.put(url, data, authHeaders).then((response) => {
+        const url = configuration.risidioBaseApi + '/mesh/mgmnt-v2/updateRoyalties'
+        axios.put(url, data).then((response) => {
           resolve(response.data)
         }).catch(() => {
           resolve(null)
@@ -205,8 +201,7 @@ const rpayCategoryStore = {
       return new Promise(resolve => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const url = configuration.risidioBaseApi + '/mesh/v2/loopRunAndAllocations'
-        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
-        axios.post(url, data, authHeaders).then((response) => {
+        axios.post(url, data).then((response) => {
           commit('setLoopRun', response.data.loopRun)
           resolve(response.data)
         }).catch(() => {
@@ -220,8 +215,7 @@ const rpayCategoryStore = {
         let url = configuration.risidioBaseApi + '/mesh/v2/lastLoopRun/' + data.currentRunKey
         const dt = DateTime.local()
         url += '/' + data.stxAddress + '/' + dt.ordinal + '/' + dt.year
-        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
-        axios.get(url, authHeaders).then((response) => {
+        axios.get(url).then((response) => {
           const loopRun = response.data.loopRun
           loopRun.spinsToday = response.data.loopSpinsToday
           commit('setLoopRun', loopRun)
@@ -393,7 +387,7 @@ const rpayCategoryStore = {
       return new Promise(resolve => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
-        axios.put(configuration.risidioBaseApi + '/mesh/v2/delete-allocation', data, authHeaders).then((response) => {
+        axios.put(configuration.risidioBaseApi + '/mesh/mgmnt-v2/delete-allocation', data, authHeaders).then((response) => {
           resolve(response.data)
         }).catch(() => {
           resolve(null)
@@ -436,7 +430,7 @@ const rpayCategoryStore = {
     saveGuestList ({ rootGetters }, guestList) {
       return new Promise(resolve => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const url = configuration.risidioBaseApi + '/mesh/v2/saveGuestList'
+        const url = configuration.risidioBaseApi + '/mesh/mgmnt-v2/saveGuestList'
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.post(url, guestList, authHeaders).then((response) => {
           resolve(response.data)
@@ -448,7 +442,7 @@ const rpayCategoryStore = {
     updateGuestList ({ rootGetters }, guestList) {
       return new Promise(resolve => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const url = configuration.risidioBaseApi + '/mesh/v2/updateGuestList'
+        const url = configuration.risidioBaseApi + '/mesh/mgmnt-v2/updateGuestList'
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.put(url, guestList, authHeaders).then((response) => {
           resolve(response.data)
@@ -460,7 +454,7 @@ const rpayCategoryStore = {
     addToBlockList ({ rootGetters }, data) {
       return new Promise(resolve => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const url = configuration.risidioBaseApi + '/mesh/v2/guest-list-block1/' + data.currentRunKey + '/' + data.stxAddress
+        const url = configuration.risidioBaseApi + '/mesh/mgmnt-v2/guest-list-block1/' + data.currentRunKey + '/' + data.stxAddress
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.put(url, authHeaders).then((response) => {
           resolve(response.data)

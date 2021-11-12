@@ -357,7 +357,7 @@ const rpayStacksContractStore = {
     indexGaiaData ({ rootGetters }) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const path = configuration.risidioBaseApi + '/mesh/v2/gaia/indexFiles'
+        const path = configuration.risidioBaseApi + '/mesh/mgmnt-v2/gaia/indexFiles'
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.get(path, authHeaders).then((response) => {
           resolve(true)

@@ -37,9 +37,47 @@ const setSuperAdmin = function (profile, privs) {
     }
   }
 }
+
+const defAuthHeaders = function (profile) {
+  let publicKey = null
+  let token = 'v1:no-token' // note: not all requests require auth token - e.g. getPaymentAddress
+  if (userSession.isUserSignedIn()) {
+    const account = userSession.loadUserData()
+    if (account) {
+      const authResponseToken = account.authResponseToken
+      const decodedToken = decodeToken(authResponseToken)
+      publicKey = decodedToken.payload.public_keys[0]
+      // publicKey = Buffer.from(publicKey).toString()
+      token = 'v1:' + account.authResponseToken
+      // token = 'v1:' + profile.stxAddress
+    }
+  }
+  const headers = {
+    headers: {
+      STX_ADDRESS: profile.stxAddress,
+      IdentityAddress: publicKey,
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer ' + token
+    }
+  }
+  // axios.defaults.headers.common['Content-Type'] = 'application/json'
+  // axios.defaults.headers.common.Authorization = 'Bearer ' + token
+  // axios.defaults.headers.common.IdentityAddress = publicKey
+  // axios.defaults.headers.common.STX_ADDRESS = profile.stxAddress
+  return headers
+}
+
 const fetchProfileMetaData = function (profile, commit, dispatch) {
   return new Promise((resolve) => {
     const authHeaders = defAuthHeaders(profile)
+    axios.interceptors.request.use(function (config) {
+      if (config.url.indexOf(location.hostname) > -1) {
+        config.headers.Authorization = authHeaders.headers.Authorization
+        config.headers.IdentityAddress = authHeaders.headers.IdentityAddress
+        config.headers.STX_ADDRESS = profile.stxAddress
+      }
+      return config
+    })
     profile.counter = 1
     commit('setAuthHeaders', authHeaders)
     dispatch('rpayPrivilegeStore/fetchUserAuthorisation', { stxAddress: profile.stxAddress }, { root: true }).then((auth) => {
@@ -72,31 +110,6 @@ const fetchProfileMetaData = function (profile, commit, dispatch) {
 }
 
 const BLOCKSTACK_LOGIN = Number(process.env.VUE_APP_BLOCKSTACK_LOGIN)
-
-const defAuthHeaders = function (profile) {
-  let publicKey = null
-  let token = 'v1:no-token' // note: not all requests require auth token - e.g. getPaymentAddress
-  if (userSession.isUserSignedIn()) {
-    const account = userSession.loadUserData()
-    if (account) {
-      const authResponseToken = account.authResponseToken
-      const decodedToken = decodeToken(authResponseToken)
-      publicKey = decodedToken.payload.public_keys[0]
-      // publicKey = Buffer.from(publicKey).toString()
-      token = 'v1:' + account.authResponseToken
-      // token = 'v1:' + profile.stxAddress
-    }
-  }
-  const headers = {
-    headers: {
-      STX_ADDRESS: profile.stxAddress,
-      IdentityAddress: publicKey,
-      'Content-Type': 'application/json',
-      Authorization: 'Bearer ' + token
-    }
-  }
-  return headers
-}
 
 const getProfile = function (network) {
   let myProfile = {}
@@ -155,7 +168,7 @@ const rpayAuthStore = {
       return userSession
     },
     getAuthHeaders: state => {
-      return (state.authHeaders) ? state.authHeaders.headers : { headers: {} }
+      return (state.authHeaders) ? state.authHeaders : { headers: {} }
     },
     getUserStorage: state => {
       return storage

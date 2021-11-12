@@ -40,6 +40,6 @@
     "src/**/*.tsx",
     "src/**/*.vue",
     "tests/**/*.ts",
-    "tests/**/*.tsx", "src/services/utils.js", "src/store/rpayStacksStore.js", "src/services/searchIndexService.js", "src/store/rpaySearchStore.jse.js", "src/router/index.js", "src/store/rpayAuthStore.js", "src/store/rpayCategoryStore.js", "src/store/rpayTransactionStore.js", "src/store/rpayPrivilegeStore.js", "src/store/rpayMyItemStore.js", "src/services/rpayMyItemService.js"  ],
+    "tests/**/*.tsx", "src/services/utils.js", "src/store/rpayStacksStore.js", "src/services/searchIndexService.js", "src/store/rpaySearchStore.jse.js", "src/router/index.js", "src/store/rpayAuthStore.js", "src/store/rpayCategoryStore.js", "src/store/rpayTransactionStore.js", "src/store/rpayPrivilegeStore.js", "src/store/rpayManageCacheStore.js", "src/store/rpayMyItemStore.js", "src/services/rpayMyItemService.js"  ],
   "exclude": ["node_modules"], "src/store/rpaySearchStore.js"
 }

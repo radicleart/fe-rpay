@@ -11,6 +11,7 @@ import rpayAuthStore from './store/rpayAuthStore'
 import rpayMyItemStore from './store/rpayMyItemStore'
 import rpayCategoryStore from './store/rpayCategoryStore'
 import rpayTransactionStore from './store/rpayTransactionStore'
+import rpayManageCacheStore from './store/rpayManageCacheStore'
 import rpayPrivilegeStore from './store/rpayPrivilegeStore'
 import rpayStacksContractStore from './store/rpayStacksContractStore'
 import rpayStacksStore from './store/rpayStacksStore'
@@ -53,6 +54,7 @@ export default {
       this.$store.registerModule('rpayMyItemStore', rpayMyItemStore)
       this.$store.registerModule('rpayTransactionStore', rpayTransactionStore)
       this.$store.registerModule('rpayPrivilegeStore', rpayPrivilegeStore)
+      this.$store.registerModule('rpayManageCacheStore', rpayManageCacheStore)
       this.$store.registerModule('rpayCategoryStore', rpayCategoryStore)
       this.$store.registerModule('rpayStacksStore', rpayStacksStore)
       this.$store.registerModule('rpayPurchaseStore', rpayPurchaseStore)
@@ -66,8 +68,7 @@ export default {
     this.configured = true
     this.$store.commit('rpayStore/addConfiguration', configuration)
     this.$store.commit('rpayStore/setDisplayCard', 100) // initial screen for each flow.
-    this.$store.dispatch('rpayStore/initialiseRates', configuration)
-    this.$store.dispatch('rpayStacksStore/fetchMacSkyWalletInfo').then(() => {
+    this.$store.dispatch('rpayStore/initialiseRates', configuration).then(() => {
       this.loaded = true
     }).catch(() => {
       // error here just means blockchain not running - can ignore and continue.

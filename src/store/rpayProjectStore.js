@@ -70,7 +70,7 @@ const rpayProjectStore = {
     deleteProjectByContractId ({ commit, rootGetters }, contractId) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        axios.delete(configuration.risidioBaseApi + '/mesh/v2/project/' + contractId).then((response) => {
+        axios.delete(configuration.risidioBaseApi + '/mesh/mgmnt-v2/project/' + contractId).then((response) => {
           commit('setProjects', response.data)
           resolve(response.data)
         }).catch((error) => {
@@ -81,7 +81,7 @@ const rpayProjectStore = {
     fetchProjectByContractId ({ commit, rootGetters }, contractId) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        axios.get(configuration.risidioBaseApi + '/mesh/v2/project/' + contractId).then((response) => {
+        axios.get(configuration.risidioBaseApi + '/mesh/mgmnt-v2/project/' + contractId).then((response) => {
           commit('setProject', response.data)
           resolve(response.data)
         }).catch((error) => {
@@ -124,7 +124,7 @@ const rpayProjectStore = {
           return
         }
         const configuration = rootGetters['rpayStore/getConfiguration']
-        axios.post(configuration.risidioBaseApi + '/mesh/v2/project', data.project).then((response) => {
+        axios.post(configuration.risidioBaseApi + '/mesh/mgmnt-v2/project', data.project).then((response) => {
           const project = response.data
           commit('setProject', project)
           resolve(project)
@@ -134,7 +134,7 @@ const rpayProjectStore = {
               project.image = gaiaUrl
               project.updated = new Date().getTime()
               commit('setProject', project)
-              axios.put(configuration.risidioBaseApi + '/mesh/v2/project', data.project)
+              axios.put(configuration.risidioBaseApi + '/mesh/mgmnt-v2/project', data.project)
             }).catch((error) => {
               reject(error)
             })
