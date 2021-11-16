@@ -71,7 +71,7 @@ const fetchProfileMetaData = function (profile, commit, dispatch) {
   return new Promise((resolve) => {
     const authHeaders = defAuthHeaders(profile)
     axios.interceptors.request.use(function (config) {
-      if (config.url.indexOf(location.hostname) > -1) {
+      if (config.url.indexOf('/mesh/') > -1) {
         config.headers.Authorization = authHeaders.headers.Authorization
         config.headers.IdentityAddress = authHeaders.headers.IdentityAddress
         config.headers.STX_ADDRESS = profile.stxAddress
