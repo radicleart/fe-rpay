@@ -254,8 +254,6 @@ const utils = {
         buyNowOrStartingPrice: this.fromMicroAmount(res.value.data['amount-stx'].value.toNumber()),
         saleType: res.value.data['sale-type'].value.toNumber()
       }
-    } else if (method === 'get-base-token-uri') {
-      return td.decode(res.buffer)
     }
   },
   resolveStacksTransactions: function (network, transactions) {

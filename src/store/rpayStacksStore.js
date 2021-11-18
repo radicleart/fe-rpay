@@ -344,22 +344,22 @@ const rpayStacksStore = {
         const headers = {
           'Content-Type': 'application/json'
         }
-        if (configuration.network === 'local') {
-          const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
-          axios.post(configuration.risidioBaseApi + '/mesh' + '/v2/accounts', txOptions, authHeaders).then(response => {
+        axios.post(configuration.risidioBaseApi + '/mesh' + '/v2/accounts', txOptions).then(response => {
+          data.result = utils.jsonFromTxResult(response.data.result)
+          resolve(data)
+        }).catch(() => {
+          const profile = rootGetters['rpayAuthStore/getMyProfile']
+          const txOptions = {
+            sender: profile.stxAddress, // data.contractAddress
+            arguments: (data.functionArgs) ? data.functionArgs : []
+          }
+          axios.post(configuration.risidioStacksApi + path, txOptions, { headers: headers }).then(response => {
             data.result = utils.jsonFromTxResult(response.data.result)
             resolve(data)
           }).catch((error) => {
             resolveError(commit, reject, error)
           })
-        } else {
-          axios.post(configuration.risidioStacksApi + path, txOptions.postData, { headers: headers }).then(response => {
-            data.result = utils.jsonFromTxResult(response.data.result)
-            resolve(data)
-          }).catch((error) => {
-            resolveError(commit, reject, error)
-          })
-        }
+        })
       })
     },
     lookupTokenContractData: function ({ dispatch }, data) {

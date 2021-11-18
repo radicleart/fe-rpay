@@ -3,6 +3,9 @@ import SockJS from 'sockjs-client'
 import Stomp from '@stomp/stompjs'
 import utils from '@/services/utils'
 import { APP_CONSTANTS } from '@/app-constants'
+import {
+  hexToCV
+} from '@stacks/transactions'
 
 let socket = null
 let stompClient = null
@@ -588,13 +591,77 @@ const rpayStacksContractStore = {
         })
       })
     },
-    fetchMetaData ({ rootGetters }, token) {
+    fetchWalletNftsByFilters ({ rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        let uri = configuration.risidioBaseApi
+        uri += '/mesh/v2/meta-data/' + data.stxAddress
+        uri += '/' + data.page
+        uri += '/' + data.pageSize
+        if (data.query) uri += data.query
+        axios.get(uri).then((response) => {
+          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens)
+          const result = {
+            gaiaAssets: gaiaAssets,
+            tokenCount: response.data.tokenCount
+          }
+          resolve(result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    cacheWalletNfts ({ dispatch, rootGetters }, data) {
       return new Promise((resolve) => {
-        axios.get(token.tokenInfo.metaDataUrl).then(response => {
-          const metaData = response.data
-          resolve(metaData)
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        let url = configuration.risidioStacksApi + '/extended/v1/address/' + data.stxAddress + '/nft_events'
+        if (data.pageSize) {
+          url += '?limit=' + data.pageSize + '&offset=' + data.pageSize * data.page
+        }
+        axios.get(url).then((response) => {
+          const nfts = response.data
+          if (nfts && nfts.total > 0) {
+            this.numberOfItems = nfts.nft_events.length
+            this.tokenCount = nfts.total
+            const walletNftBeans = []
+            nfts.nft_events.forEach((o) => {
+              if (o.asset_identifier) {
+                const walletNft = {
+                  contractId: o.asset_identifier.split('::')[0],
+                  assetName: o.asset_identifier.split('::')[1],
+                  owner: o.recipient,
+                  sender: o.sender,
+                  txId: o.tx_id,
+                  nftIndex: Number(hexToCV(o.value.hex).value)
+                }
+                walletNftBeans.push(walletNft)
+              }
+            })
+            resolve(nfts)
+            const configuration = rootGetters['rpayStore/getConfiguration']
+            const uri = configuration.risidioBaseApi + '/mesh/v2/meta-data/'
+            axios.post(uri, walletNftBeans).then((response) => {
+              if (data.pageSize * (data.page + 1) < nfts.total) {
+                data.page = data.page + 1
+                dispatch('cacheWalletNfts', data)
+              }
+            })
+          }
+          resolve(response.data)
         }).catch(() => {
-          resolve(null)
+          resolve()
+        })
+      })
+    },
+    cacheOneFromWallet ({ rootGetters }, data) {
+      return new Promise((resolve) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const uri = configuration.risidioBaseApi + '/mesh/v2/meta-data/' + data.contractId + '/' + data.nftIndex
+        axios.get(uri).then((response) => {
+          const gaiaAsset = utils.resolvePrincipalsGaiaToken(configuration.network, response.data)
+          resolve(gaiaAsset)
+        }).catch(() => {
+          resolve()
         })
       })
     }

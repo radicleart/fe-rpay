@@ -7,6 +7,7 @@ import {
   bufferCV,
   listCV,
   uintCV,
+  stringAsciiCV,
   standardPrincipalCV,
   makeStandardSTXPostCondition,
   FungibleConditionCode,
@@ -312,7 +313,6 @@ const rpayPurchaseStore = {
         data.postConditions = getMintPostConds(rootGetters, data, false)
         const buffer = bufferCV(Buffer.from(data.assetHash, 'hex'))
         const metaDataUrl = bufferCV(Buffer.from(data.metaDataUrl, 'utf8'))
-        // const metaDataUrl = stringUtf8CV(data.metaDataUrl)
         const editions = uintCV(data.editions)
         const editionCost = uintCV(data.editionCost)
         const addressList = []
@@ -371,7 +371,7 @@ const rpayPurchaseStore = {
         const sigBufferCV = bufferCV(Buffer.from(data.sig, 'hex'))
         const messageHashCV = bufferCV(Buffer.from(data.message, 'hex'))
         const buffer = bufferCV(Buffer.from(data.assetHash, 'hex'))
-        const metaDataUrl = bufferCV(Buffer.from(data.metaDataUrl, 'utf8'))
+        const metaDataUrl = stringAsciiCV(data.metaDataUrl)
         // const metaDataUrl = stringUtf8CV(data.metaDataUrl)
         const editions = uintCV(data.editions)
         const editionCost = uintCV(utils.toOnChainAmount(data.editionCost))
@@ -407,10 +407,10 @@ const rpayPurchaseStore = {
           const twenty = data.twenties[i]
           if (twenty) {
             hashes.push(bufferCV(Buffer.from(twenty.assetHash, 'hex')))
-            metaUrls.push(bufferCV(Buffer.from(twenty.metaDataUrl, 'utf8')))
+            metaUrls.push(stringAsciiCV(twenty.metaDataUrl))
           } else {
             hashes.push(bufferCV(Buffer.from(data.twenties[0].assetHash, 'hex')))
-            metaUrls.push(bufferCV(Buffer.from('#', 'utf8')))
+            metaUrls.push(stringAsciiCV(twenty.metaDataUrl))
           }
         }
         const hashList = listCV(hashes)
@@ -484,7 +484,7 @@ const rpayPurchaseStore = {
         const sigBufferCV = bufferCV(Buffer.from(data.sig, 'hex'))
         const messageHashCV = bufferCV(Buffer.from(data.message, 'hex'))
         const assetHashCV = bufferCV(Buffer.from(data.assetHash, 'hex'))
-        const metaDataUrl = bufferCV(Buffer.from(data.metaDataUrl, 'utf8'))
+        const metaDataUrl = stringAsciiCV(data.metaDataUrl)
         const editions = uintCV(data.editions)
         const editionCost = uintCV(utils.toOnChainAmount(data.editionCost))
         const buyNowPrice = uintCV(utils.toOnChainAmount(data.buyNowPrice))
@@ -517,10 +517,10 @@ const rpayPurchaseStore = {
           const twenty = data.twenties[i]
           if (twenty) {
             hashes.push(bufferCV(Buffer.from(twenty.assetHash, 'hex')))
-            metaUrls.push(bufferCV(Buffer.from(twenty.metaDataUrl, 'utf8')))
+            metaUrls.push(stringAsciiCV(twenty.metaDataUrl))
           } else {
             hashes.push(bufferCV(Buffer.from(data.twenties[0].assetHash, 'hex')))
-            metaUrls.push(bufferCV(Buffer.from('#', 'utf8')))
+            metaUrls.push(stringAsciiCV(twenty.metaDataUrl))
           }
         }
         const hashList = listCV(hashes)

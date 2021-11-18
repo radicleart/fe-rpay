@@ -80,6 +80,7 @@ const fetchProfileMetaData = function (profile, commit, dispatch) {
     })
     profile.counter = 1
     commit('setAuthHeaders', authHeaders)
+    dispatch('rpayStacksContractStore/cacheWalletNfts', { stxAddress: profile.stxAddress, page: 0, pageSize: 50 }, { root: true })
     dispatch('rpayPrivilegeStore/fetchUserAuthorisation', { stxAddress: profile.stxAddress }, { root: true }).then((auth) => {
       profile.authorisation = auth
       setSuperAdmin(profile, auth)
