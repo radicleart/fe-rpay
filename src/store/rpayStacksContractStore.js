@@ -591,6 +591,18 @@ const rpayStacksContractStore = {
         })
       })
     },
+    fetchMetaDataUrl ({ rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        let uri = configuration.risidioBaseApi
+        uri += '/mesh/v2/meta-data-url/' + data.contractId + '/' + data.nftIndex
+        axios.get(uri).then((response) => {
+          resolve(response.data)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
     fetchWalletNftsByFilters ({ rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
@@ -606,6 +618,19 @@ const rpayStacksContractStore = {
             tokenCount: response.data.tokenCount
           }
           resolve(result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    fetchAssetNames ({ rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        let uri = configuration.risidioBaseApi
+        uri += '/mesh/v2/meta-data-assetNames/' + data.stxAddress
+        if (data.query) uri += data.query
+        axios.get(uri).then((response) => {
+          resolve(response.data)
         }).catch((error) => {
           reject(error)
         })
@@ -629,6 +654,7 @@ const rpayStacksContractStore = {
                 const walletNft = {
                   contractId: o.asset_identifier.split('::')[0],
                   assetName: o.asset_identifier.split('::')[1],
+                  blockHeight: o.block_height,
                   owner: o.recipient,
                   sender: o.sender,
                   txId: o.tx_id,
@@ -639,7 +665,7 @@ const rpayStacksContractStore = {
             })
             resolve(nfts)
             const configuration = rootGetters['rpayStore/getConfiguration']
-            const uri = configuration.risidioBaseApi + '/mesh/v2/meta-data/'
+            const uri = configuration.risidioBaseApi + '/mesh/v2/meta-data'
             axios.post(uri, walletNftBeans).then((response) => {
               if (data.pageSize * (data.page + 1) < nfts.total) {
                 data.page = data.page + 1

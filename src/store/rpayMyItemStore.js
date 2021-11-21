@@ -356,13 +356,11 @@ const rpayMyItemStore = {
         item.updated = new Date().getTime()
         if (!state.rootFile) {
           const now = new Date().getTime()
-          state.rootFile = {
-            now: now,
-            newRootFile: {
-              created: now,
-              records: []
-            }
+          const newRootFile = {
+            created: now,
+            records: []
           }
+          state.rootFile = newRootFile
         }
         const rootFile = state.rootFile
         const index = rootFile.records.findIndex((o) => o.assetHash === item.assetHash)
