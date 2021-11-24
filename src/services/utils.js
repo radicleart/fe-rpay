@@ -279,25 +279,27 @@ const utils = {
     })
     return gaiaAssets
   },
-  resolvePrincipalsToken: function (network, token) {
+  convertAddressInt: function (network, address) {
     try {
-      token.owner = this.convertAddress(network, token.owner)
+      return this.convertAddress(network, address)
     } catch (err) {
       // c32address fails if the address is already converted - use this to prevent
-      // double conversions
-      return token
+      return address
     }
+  },
+  resolvePrincipalsToken: function (network, token) {
+    token.owner = this.convertAddressInt(network, token.owner)
     token.tokenInfo.editionCost = this.fromMicroAmount(token.tokenInfo.editionCost)
     if (token.offerHistory) {
       token.offerHistory.forEach((offer) => {
-        offer.offerer = this.convertAddress(network, offer.offerer)
+        offer.offerer = this.convertAddressInt(network, offer.offerer)
         offer.amount = this.fromMicroAmount(offer.amount)
       })
     }
     if (token.transferHistory) {
       token.transferHistory.forEach((transfer) => {
-        transfer.from = this.convertAddress(network, transfer.from)
-        transfer.to = this.convertAddress(network, transfer.to)
+        transfer.from = this.convertAddressInt(network, transfer.from)
+        transfer.to = this.convertAddressInt(network, transfer.to)
         transfer.amount = this.fromMicroAmount(transfer.amount)
       })
     }
@@ -313,7 +315,7 @@ const utils = {
       }
       token.beneficiaries.shares.forEach((share) => {
         token.beneficiaries.shares[idx].value = this.fromMicroAmount(share.value) / 100
-        token.beneficiaries.addresses[idx].valueHex = this.convertAddress(network, token.beneficiaries.addresses[idx].valueHex)
+        token.beneficiaries.addresses[idx].valueHex = this.convertAddressInt(network, token.beneficiaries.addresses[idx].valueHex)
         if (token.beneficiaries.secondaries[idx]) {
           const secondary = token.beneficiaries.secondaries[idx]
           secondary.value = this.fromMicroAmount(secondary.value) / 100
@@ -327,7 +329,7 @@ const utils = {
       const cycledBidHistory = []
       token.bidHistory.forEach((bid) => {
         bid.amount = this.fromMicroAmount(bid.amount)
-        bid.bidder = this.convertAddress(network, bid.bidder)
+        bid.bidder = this.convertAddressInt(network, bid.bidder)
         if (token.saleData.saleCycleIndex === bid.saleCycle) {
           cycledBidHistory.push(bid)
         }
@@ -339,7 +341,7 @@ const utils = {
   resolvePrincipals: function (registry, network) {
     if (!registry || !registry.administrator) return
     try {
-      registry.administrator = this.convertAddress(network, registry.administrator)
+      registry.administrator = this.convertAddressInt(network, registry.administrator)
     } catch (err) {
       // c32address fails if the address is already converted - use this to prevent
       // double conversions
@@ -347,9 +349,9 @@ const utils = {
     }
     if (registry.applications) {
       registry.applications.forEach((app) => {
-        app.owner = this.convertAddress(network, app.owner)
+        app.owner = this.convertAddressInt(network, app.owner)
         if (app.tokenContract) {
-          app.tokenContract.administrator = this.convertAddress(network, app.tokenContract.administrator)
+          app.tokenContract.administrator = this.convertAddressInt(network, app.tokenContract.administrator)
           app.tokenContract.mintPrice = this.fromMicroAmount(app.tokenContract.mintPrice)
         }
       })

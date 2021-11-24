@@ -7,6 +7,8 @@ import {
   bufferCV,
   listCV,
   uintCV,
+  trueCV,
+  falseCV,
   stringAsciiCV,
   standardPrincipalCV,
   makeStandardSTXPostCondition,
@@ -520,7 +522,7 @@ const rpayPurchaseStore = {
             metaUrls.push(stringAsciiCV(twenty.metaDataUrl))
           } else {
             hashes.push(bufferCV(Buffer.from(data.twenties[0].assetHash, 'hex')))
-            metaUrls.push(stringAsciiCV(twenty.metaDataUrl))
+            metaUrls.push(stringAsciiCV(''))
           }
         }
         const hashList = listCV(hashes)
@@ -540,6 +542,23 @@ const rpayPurchaseStore = {
       return new Promise((resolve, reject) => {
         data.functionName = 'make-offer'
         data.functionArgs = [uintCV(data.nftIndex), uintCV(utils.toOnChainAmount(data.offerAmount)), uintCV(data.biddingEndTime)]
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        dispatch(methos, data, { root: true }).then((result) => {
+          resolve(result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    setApproval ({ dispatch, rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        data.functionArgs = [standardPrincipalCV(data.operator), uintCV(data.nftIndex)]
+        if (data.approval) {
+          data.functionArgs.push(trueCV())
+        } else {
+          data.functionArgs.push(falseCV())
+        }
         const configuration = rootGetters['rpayStore/getConfiguration']
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, data, { root: true }).then((result) => {

@@ -35,11 +35,10 @@ const captureResult = function (result, dispatch) {
       result.assetHash = cvToValue(result.functionArgs[2]).substring(2)
       result.amount = Number(cvToValue(result.functionArgs[6]))
     } else {
-      result.nftIndex = cvToValue(result.functionArgs[0])
-      if (typeof result.nftIndex === 'bigint') {
-        result.nftIndex = Number(result.nftIndex)
-      } else {
-        result.nftIndex = null
+      try {
+        result.nftIndex = cvToValue(result.functionArgs[0])
+      } catch (e) {
+        // nft index not at index 0
       }
       if (result.functionName === 'set-sale-data') {
         result.saleType = Number(cvToValue(result.functionArgs[1]))
@@ -57,6 +56,14 @@ const captureResult = function (result, dispatch) {
         result.to = cvToValue(result.functionArgs[2])
       } else if (result.functionName === 'opening-bid' || result.functionName === 'place-bid') {
         result.amount = Number(cvToValue(result.functionArgs[1]))
+      } else if (result.functionName === 'set-approved') {
+        result.to = cvToValue(result.functionArgs[0])
+        result.nftIndex = cvToValue(result.functionArgs[1])
+      }
+      if (typeof result.nftIndex === 'bigint') {
+        result.nftIndex = Number(result.nftIndex)
+      } else {
+        result.nftIndex = null
       }
     }
   } catch (err) {
