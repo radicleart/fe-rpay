@@ -10,6 +10,7 @@ const rpayCategoryStore = {
     loopRun: null,
     runCounts: [],
     loopRuns: [],
+    adminLoopRuns: [],
     loopSpins: null,
     waitingImage: 'https://images.prismic.io/dbid/831f1712-450d-42fb-be30-c7721f770e5e_Hash_One_90_rx1wf1.png?auto=compress,format',
     // silver loopbomb https://images.prismic.io/dbid/cc7d59a2-65f4-45a2-b6e5-df136e2fd952_OS_thumb.png?auto=compress,format',
@@ -108,6 +109,9 @@ const rpayCategoryStore = {
     getLoopRuns: state => {
       return state.loopRuns
     },
+    getAdminLoopRuns: state => {
+      return state.adminLoopRuns
+    },
     getLoopSpins: state => {
       return state.loopSpins
     },
@@ -140,11 +144,16 @@ const rpayCategoryStore = {
       }
       state.runCounts = runCounts
     },
-    setLoopRuns (state, loopRuns) {
-      loopRuns.forEach((loopRun) => {
+    setLoopRuns (state, allLoopRuns) {
+      allLoopRuns.forEach((loopRun) => {
         if (loopRun && !loopRun.spinsToday) loopRun.spinsToday = 0
       })
-      if (loopRuns) state.loopRuns = loopRuns
+      if (allLoopRuns) {
+        state.adminLoopRuns = allLoopRuns
+        state.loopRuns = allLoopRuns.filter(function (loopRun) {
+          return loopRun.domains.includes(location.hostname)
+        })
+      }
     },
     setLoopSpins (state, loopSpins) {
       state.loopSpins = loopSpins
