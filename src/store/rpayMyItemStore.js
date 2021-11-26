@@ -81,10 +81,10 @@ const rpayMyItemStore = {
         return (item.artist && item.artist.length > 2)
       } else if (param === 'name') {
         return (item.name && item.name.length > 2)
-      } else if (param === 'keywords') {
-        return (item.keywords && item.keywords.length > 0)
       } else if (param === 'editions') {
-        return (item.editions > 0)
+        return (item.attributes.editions > 0)
+      } else if (param === 'category') {
+        return (item.attributes.category && item.attributes.category.name)
       } else if (param === 'coverArtist') {
         return (item.attributes.coverArtist && item.attributes.coverArtist.length > 1)
       }
@@ -101,7 +101,7 @@ const rpayMyItemStore = {
       if (!getters[myGetter](item, 'artworkFile')) invalidParams.push('artworkFile')
       if (!getters[myGetter](item, 'artworkClip')) invalidParams.push('artworkClip')
       if (!getters[myGetter](item, 'coverImage')) invalidParams.push('coverImage')
-      if (!getters[myGetter](item, 'keywords')) invalidParams.push('keywords')
+      if (!getters[myGetter](item, 'category')) invalidParams.push('category')
       return invalidParams
     },
     myItem: state => assetHash => {
@@ -384,9 +384,9 @@ const rpayMyItemStore = {
         }
         let assetPath = item.assetHash + '.json'
         if (item.cryptoPunk) {
-          assetPath = item.currentRunKey + '/' + item.attributes.index + '.json'
-        } else if (item.currentRunKey) {
-          assetPath = item.currentRunKey + '/' + item.assetHash + '.json'
+          assetPath = item.attributes.collection + '/' + item.attributes.index + '.json'
+        } else if (item.attributes.collection) {
+          assetPath = item.attributes.collection + '/' + item.assetHash + '.json'
         }
         item.metaDataUrl = profile.gaiaHubConfig.url_prefix + profile.gaiaHubConfig.address + '/' + assetPath
         let token = null
