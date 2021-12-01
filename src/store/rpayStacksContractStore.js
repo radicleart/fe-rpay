@@ -603,6 +603,18 @@ const rpayStacksContractStore = {
         })
       })
     },
+    fetchWalletCount ({ rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        let uri = configuration.risidioBaseApi
+        uri += '/mesh/v2/meta-data-count/' + data.stxAddress
+        axios.get(uri).then((response) => {
+          resolve(response.data)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
     fetchWalletNftsByFilters ({ rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
@@ -663,13 +675,20 @@ const rpayStacksContractStore = {
                 walletNftBeans.push(walletNft)
               }
             })
-            resolve(nfts)
-            const configuration = rootGetters['rpayStore/getConfiguration']
-            const uri = configuration.risidioBaseApi + '/mesh/v2/meta-data'
-            axios.post(uri, walletNftBeans).then((response) => {
-              if (data.pageSize * (data.page + 1) < nfts.total) {
-                data.page = data.page + 1
-                dispatch('cacheWalletNfts', data)
+            dispatch('fetchWalletCount', data).then((count) => {
+              resolve(nfts)
+              if (data.force || count < nfts.total) {
+                const configuration = rootGetters['rpayStore/getConfiguration']
+                const uri = configuration.risidioBaseApi + '/mesh/v2/meta-data'
+                axios.post(uri, walletNftBeans).then((response) => {
+                  if (data.pageSize * (data.page + 1) < (nfts.total)) {
+                    data.page = data.page + 1
+                    dispatch('cacheWalletNfts', data)
+                  } else if (data.pageSize * (data.page + 1) < (nfts.total + data.pageSize)) {
+                    data.page = data.page + 1
+                    dispatch('cacheWalletNfts', data)
+                  }
+                })
               }
             })
           }

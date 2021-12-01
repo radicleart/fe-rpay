@@ -5,7 +5,7 @@ export SERVER=locke.brightblock.org
 export BUILDER=build-app-stag
 export DEPLOYMENT=$1
 if [ "$DEPLOYMENT" == "prod" ]; then
-  SERVER=hume.brightblock.org;
+  SERVER=russell.brightblock.org;
   BUILDER=build-app-prod
 fi
 

@@ -553,7 +553,7 @@ const rpayPurchaseStore = {
     },
     setApproval ({ dispatch, rootGetters }, data) {
       return new Promise((resolve, reject) => {
-        data.functionArgs = [standardPrincipalCV(data.operator), uintCV(data.nftIndex)]
+        data.functionArgs = [uintCV(data.nftIndex), standardPrincipalCV(data.operator)]
         if (data.approval) {
           data.functionArgs.push(trueCV())
         } else {

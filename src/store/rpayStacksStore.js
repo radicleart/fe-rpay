@@ -23,7 +23,7 @@ import BigNum from 'bn.js'
 
 const network = new StacksTestnet()
 const precision = 1000000
-const contractDeployFee = 60000
+const contractDeployFee = 100000
 const testnet = new StacksTestnet()
 const mainnet = new StacksMainnet()
 

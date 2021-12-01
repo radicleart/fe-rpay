@@ -80,7 +80,6 @@ const fetchProfileMetaData = function (profile, commit, dispatch) {
     })
     profile.counter = 1
     commit('setAuthHeaders', authHeaders)
-    dispatch('rpayStacksContractStore/cacheWalletNfts', { stxAddress: profile.stxAddress, page: 0, pageSize: 50 }, { root: true })
     dispatch('rpayPrivilegeStore/fetchUserAuthorisation', { stxAddress: profile.stxAddress }, { root: true }).then((auth) => {
       profile.authorisation = auth
       setSuperAdmin(profile, auth)
@@ -280,6 +279,7 @@ const rpayAuthStore = {
             const profile = getProfile(configuration.network)
             fetchProfileMetaData(profile, commit, dispatch).then((profile) => {
               commit('myProfile', profile)
+              dispatch('rpayStacksContractStore/cacheWalletNfts', { stxAddress: profile.stxAddress, page: 0, pageSize: 50 }, { root: true })
               dispatch('rpayMyItemStore/initSchema', true, { root: true }).then(() => {
                 resolve(profile)
               })
@@ -289,9 +289,13 @@ const rpayAuthStore = {
         }
         try {
           if (BLOCKSTACK_LOGIN === 1) {
-            showConnect(authOptions)
+            showConnect(authOptions).catch((err) => {
+              reject(err)
+            })
           } else {
-            authenticate(authOptions)
+            authenticate(authOptions).catch((err) => {
+              reject(err)
+            })
           }
         } catch (err) {
           reject(err)

@@ -7,6 +7,7 @@ const rpayCategoryStore = {
   modules: {
   },
   state: {
+    splitter: 'hub/',
     loopRun: null,
     runCounts: [],
     loopRuns: [],
@@ -121,6 +122,15 @@ const rpayCategoryStore = {
     },
     getLoopRun: state => {
       return state.loopRun
+    },
+    getRunKeyFromMetaDataUrl: state => token => {
+      if (token && token.tokenInfo && token.tokenInfo.metaDataUrl) {
+        const parts = token.tokenInfo.metaDataUrl.split(state.splitter)[1]
+        // https://gaia.blockstack.org/hub/19DffsW3zbGGwSQ4D7h6x5SxdHXrs1riW9/budgies_v01/liam_onairigh/ff35f9e28451c911a961b24f12a7e227d1e10251bf9c322fb62c4442dcb99d46.json
+        const parts2 = parts.split('/')
+        return parts2[1]
+      }
+      return null
     }
   },
   mutations: {
