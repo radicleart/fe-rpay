@@ -268,6 +268,46 @@ const rpayPurchaseStore = {
         })
       })
     },
+    updateSigner ({ dispatch, rootGetters }, data) {
+      return new Promise(function (resolve, reject) {
+        const functionArgs = [bufferCV(Buffer.from(data.signer, 'hex'))]
+        const callData = {
+          contractAddress: data.contractId.split('.')[0],
+          contractName: data.contractId.split('.')[1],
+          functionName: 'update-signer',
+          functionArgs: functionArgs,
+          eventCode: 'update-signer'
+        }
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        dispatch(methos, callData).then((result) => {
+          resolve(result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    updateMintPrice ({ dispatch, rootGetters }, data) {
+      return new Promise(function (resolve, reject) {
+        const functionArgs = [uintCV(utils.toOnChainAmount(data.mintPrice))]
+        const callData = {
+          contractAddress: data.contractId.split('.')[0],
+          contractName: data.contractId.split('.')[1],
+          functionName: 'update-mint-price',
+          functionArgs: functionArgs
+        }
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        if (configuration.network === 'local' && data.sendAsSky) {
+          callData.sendAsSky = true
+        }
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        dispatch(methos, callData, { root: true }).then((result) => {
+          resolve(result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
     fetchOffers ({ commit, rootGetters }) {
       return new Promise(function (resolve, reject) {
         const configuration = rootGetters['rpayStore/getConfiguration']

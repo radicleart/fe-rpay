@@ -57,8 +57,8 @@ const captureResult = function (result, dispatch) {
       } else if (result.functionName === 'opening-bid' || result.functionName === 'place-bid') {
         result.amount = Number(cvToValue(result.functionArgs[1]))
       } else if (result.functionName === 'set-approved') {
-        result.to = cvToValue(result.functionArgs[0])
-        result.nftIndex = cvToValue(result.functionArgs[1])
+        result.nftIndex = cvToValue(result.functionArgs[0])
+        result.to = cvToValue(result.functionArgs[1])
       }
       if (typeof result.nftIndex === 'bigint') {
         result.nftIndex = Number(result.nftIndex)

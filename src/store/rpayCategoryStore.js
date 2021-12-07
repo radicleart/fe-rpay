@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { DateTime } from 'luxon'
 import { APP_CONSTANTS } from '@/app-constants'
+import utils from '@/services/utils'
 
 const rpayCategoryStore = {
   namespaced: true,
@@ -512,6 +513,19 @@ const rpayCategoryStore = {
         const url = configuration.risidioBaseApi + '/mesh/v2/guest-list'
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.get(url + '/' + data.currentRunKey, authHeaders).then((response) => {
+          resolve(response.data)
+        }).catch(() => {
+          resolve(null)
+        })
+      })
+    },
+    fetchLoopRunForReveal ({ rootGetters }, data) {
+      return new Promise(resolve => {
+        const profile = rootGetters['rpayAuthStore/getMyProfile']
+        const b32Address = utils.convertAddressFrom(profile.stxAddress)
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const url = configuration.risidioBaseApi + '/mesh/v2/reveal-info/' + b32Address[1] + '/' + data.currentRunKey + '/' + data.contractId + '/' + data.nftIndex
+        axios.get(url).then((response) => {
           resolve(response.data)
         }).catch(() => {
           resolve(null)
