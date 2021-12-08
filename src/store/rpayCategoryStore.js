@@ -425,12 +425,13 @@ const rpayCategoryStore = {
         })
       })
     },
-    registerSpin ({ state, commit, rootGetters }) {
+    registerSpin ({ state, commit, rootGetters }, data) {
       return new Promise(resolve => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
         const dt = DateTime.local()
         const spin = {
+          numbSpins: (data && data.numbSpins) ? data.numbSpins : 1,
           stxAddress: profile.stxAddress,
           dayOfYear: dt.ordinal,
           year: dt.year
@@ -439,7 +440,7 @@ const rpayCategoryStore = {
         axios.put(configuration.risidioBaseApi + '/mesh/v2/loopspin', spin, authHeaders).then(() => {
           const loopRun = state.loopRun
           if (!loopRun.spinsToday) loopRun.spinsToday = 0
-          loopRun.spinsToday = loopRun.spinsToday + 1
+          loopRun.spinsToday = loopRun.spinsToday + spin.numbSpins
           commit('setLoopRun', loopRun)
           resolve(loopRun)
         }).catch(() => {
@@ -487,8 +488,7 @@ const rpayCategoryStore = {
       return new Promise(resolve => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const url = configuration.risidioBaseApi + '/mesh/v2/guest-list'
-        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
-        axios.get(url + '/' + data.contractId + '/' + data.currentRunKey, authHeaders).then((response) => {
+        axios.get(url + '/' + data.contractId + '/' + data.currentRunKey).then((response) => {
           resolve(response.data)
         }).catch(() => {
           resolve(null)
@@ -499,8 +499,7 @@ const rpayCategoryStore = {
       return new Promise(resolve => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const url = configuration.risidioBaseApi + '/mesh/v2/guest-list-check'
-        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
-        axios.get(url + '/' + data.contractId + '/' + data.currentRunKey + '/' + data.stxAddress, authHeaders).then((response) => {
+        axios.get(url + '/' + data.contractId + '/' + data.currentRunKey + '/' + data.stxAddress).then((response) => {
           resolve(response.data)
         }).catch(() => {
           resolve(null)

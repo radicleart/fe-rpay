@@ -100,6 +100,8 @@ const rpayTransactionStore = {
           contractId: txData.contractId,
           functionName: txData.functionName,
           assetHash: txData.assetHash,
+          assetHashes: txData.assetHashes,
+          batchSize: txData.batchSize,
           txId: txData.txId,
           saleType: txData.saleType,
           amount: txData.amount,
@@ -126,6 +128,8 @@ const rpayTransactionStore = {
           contractId: txData.contractId,
           functionName: txData.functionName,
           assetHash: txData.assetHash,
+          assetHashes: txData.assetHashes,
+          batchSize: txData.batchSize,
           txId: txData.txId,
           saleType: txData.saleType,
           amount: txData.amount,
@@ -177,6 +181,17 @@ const rpayTransactionStore = {
         }).catch(() => {
           // the stacks node that services these can be a bit flaky / intermittent
           resolve(false)
+        })
+      })
+    },
+    fetchPendingCount ({ rootGetters }, data) {
+      return new Promise(function (resolve) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const url = configuration.risidioBaseApi + '/mesh/v2/transactions-count/' + data.contractId + '/pending/mint-token'
+        axios.get(url).then((response) => {
+          resolve(response.data)
+        }).catch((error) => {
+          resolve(new Error('Unable to find token filters: ' + error))
         })
       })
     },

@@ -34,6 +34,20 @@ const captureResult = function (result, dispatch) {
     if (result.functionName === 'mint-token' || result.functionName === 'collection-mint-token') {
       result.assetHash = cvToValue(result.functionArgs[2]).substring(2)
       result.amount = Number(cvToValue(result.functionArgs[6]))
+      result.batchSize = 1
+    } else if (result.functionName === 'mint-token-twenty' || result.functionName === 'collection-mint-token-twenty') {
+      const hashes = cvToValue(result.functionArgs[2])
+      const metaDataUrls = cvToValue(result.functionArgs[3])
+      result.assetHashes = []
+      let batchSize = 0
+      metaDataUrls.forEach((o) => {
+        if (o && o.value.length > 5) {
+          result.assetHashes.push(hashes[batchSize].value.substring(2))
+          batchSize++
+        }
+      })
+      result.batchSize = batchSize
+      result.amount = Number(cvToValue(result.functionArgs[6])) * batchSize
     } else {
       try {
         result.nftIndex = cvToValue(result.functionArgs[0])
