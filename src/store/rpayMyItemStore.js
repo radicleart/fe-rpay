@@ -392,7 +392,7 @@ const rpayMyItemStore = {
         let token = null
         if (item.contractAsset) {
           token = item.contractAsset
-          item.external_url = location.origin + '/nfts/' + item.projectId + '/' + token.nftIndex
+          item.external_url = location.origin + '/nfts/' + item.contractId + '/' + token.nftIndex
           item.contractAsset = null
         }
         if (item.externalUrl) delete item.externalUrl

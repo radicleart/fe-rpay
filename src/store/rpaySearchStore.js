@@ -49,9 +49,9 @@ const sortResults = function (state, resultSet) {
       if (parseInt(a.nftIndex) < parseInt(b.nftIndex)) return 1
       return 0
     } else if (currentSearch.filter === 'sort-by-application') {
-      if (!b.projectId || !a.projectId) return -1
-      if (a.projectId > b.projectId) return -1
-      if (a.projectId < b.projectId) return 1
+      if (!b.contractId || !a.contractId) return -1
+      if (a.contractId > b.contractId) return -1
+      if (a.contractId < b.contractId) return 1
       return 0
     } else if (currentSearch.filter === 'sort-by-artist') {
       if (!b.artist) return -1
@@ -237,10 +237,10 @@ const rpaySearchStore = {
         }
       })
     },
-    findByProjectId ({ commit, dispatch, rootGetters }, projectId) {
+    findByProjectId ({ commit, dispatch, rootGetters }, contractId) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        searchIndexService.findByProjectId(configuration.risidioBaseApi, projectId).then((resultSet) => {
+        searchIndexService.findByProjectId(configuration.risidioBaseApi, contractId).then((resultSet) => {
           matchContractAssetsFromJson(commit, dispatch, rootGetters, resultSet)
           commit('setSearchResults', resultSet)
           resolve(resultSet)
