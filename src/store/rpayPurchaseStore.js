@@ -621,7 +621,7 @@ const rpayPurchaseStore = {
         })
       })
     },
-    transferAsset ({ state, dispatch, rootGetters }, data) {
+    transferAsset ({ dispatch, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const nonFungibleAssetInfo = createAssetInfo(
           data.contractAddress,
@@ -640,6 +640,23 @@ const rpayPurchaseStore = {
         data.functionName = 'transfer'
         data.postConditions = [standardNonFungiblePostCondition]
         data.functionArgs = [uintCV(data.nftIndex), standardPrincipalCV(data.owner), standardPrincipalCV(data.recipient)]
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        if (getProvider(data) === 'risidio') {
+          data.sendAsSky = (data.owner === 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG')
+        }
+        dispatch(methos, data, { root: true }).then((result) => {
+          resolve(result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    updateMetaDataUrl ({ dispatch, rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        data.functionName = 'update-meta-data-url'
+        const metaDataUrl = stringAsciiCV(data.metaDataUrl)
+        data.functionArgs = [uintCV(data.nftIndex), metaDataUrl]
         const configuration = rootGetters['rpayStore/getConfiguration']
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         if (getProvider(data) === 'risidio') {

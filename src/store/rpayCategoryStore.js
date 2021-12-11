@@ -429,7 +429,7 @@ const rpayCategoryStore = {
       return new Promise(resolve => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
-        const dt = DateTime.local()
+        const dt = DateTime.utc()
         const spin = {
           numbSpins: (data && data.numbSpins) ? data.numbSpins : 1,
           stxAddress: profile.stxAddress,
@@ -525,6 +525,41 @@ const rpayCategoryStore = {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const url = configuration.risidioBaseApi + '/mesh/v2/reveal-info/' + b32Address[1] + '/' + data.currentRunKey + '/' + data.contractId + '/' + data.nftIndex
         axios.get(url).then((response) => {
+          resolve(response.data)
+        }).catch(() => {
+          resolve(null)
+        })
+      })
+    },
+    fetchTraits ({ rootGetters }, edition) {
+      return new Promise((resolve) => {
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const url = configuration.risidioBaseApi + '/mesh/v2/rarities/' + edition
+        axios.get(url, authHeaders).then((response) => {
+          resolve(response.data)
+        }).catch(() => {
+          resolve(null)
+        })
+      })
+    },
+    saveTrait ({ rootGetters }, trait) {
+      return new Promise((resolve) => {
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const url = configuration.risidioBaseApi + '/mesh/v2/rarities/' + trait.imageHash + '/' + trait.edition
+        axios.put(url, authHeaders).then((response) => {
+          resolve(response.data)
+        }).catch(() => {
+          resolve(null)
+        })
+      })
+    },
+    saveOneHash ({ rootGetters }, data) {
+      return new Promise((resolve) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const url = configuration.risidioBaseApi + '/mesh/v2/loopRuns-one-hash/' + data.currentRunKey + '/' + data.oneHash
+        axios.put(url).then((response) => {
           resolve(response.data)
         }).catch(() => {
           resolve(null)
