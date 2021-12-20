@@ -91,6 +91,30 @@ const getMintPostConds = function (rootGetters, data, batching) {
   return postConds
 }
 
+const getCPSMintPostConds = function (rootGetters, data) {
+  const configuration = rootGetters['rpayStore/getConfiguration']
+  const profile = rootGetters['rpayAuthStore/getMyProfile']
+  let postCondAddress = profile.stxAddress
+  if (configuration.network === 'local' && data.sendAsSky) {
+    postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
+  }
+  let postConds = []
+  let amount = new BigNum(utils.toOnChainAmount(data.mintPrice + 0.001))
+  if (data.batchOption > 1) {
+    amount = new BigNum(utils.toOnChainAmount((data.mintPrice * data.batchOption + 0.001)))
+  }
+  if (data.postConditions) {
+    postConds = data.postConditions
+  } else {
+    postConds.push(makeStandardSTXPostCondition(
+      postCondAddress,
+      FungibleConditionCode.Less,
+      amount
+    ))
+  }
+  return postConds
+}
+
 const isOpeneningBid = function (contractAsset) {
   // simple case - no bids ever
   if (contractAsset.bidCounter === 0 || contractAsset.bidHistory.length === 0) {
@@ -280,7 +304,7 @@ const rpayPurchaseStore = {
         }
         const configuration = rootGetters['rpayStore/getConfiguration']
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
-        dispatch(methos, callData).then((result) => {
+        dispatch(methos, callData, { root: true }).then((result) => {
           resolve(result)
         }).catch((error) => {
           reject(error)
@@ -295,6 +319,27 @@ const rpayPurchaseStore = {
           contractName: data.contractId.split('.')[1],
           functionName: 'update-mint-price',
           functionArgs: functionArgs
+        }
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        if (configuration.network === 'local' && data.sendAsSky) {
+          callData.sendAsSky = true
+        }
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        dispatch(methos, callData, { root: true }).then((result) => {
+          resolve(result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    updateTokenUri ({ dispatch, rootGetters }, data) {
+      return new Promise(function (resolve, reject) {
+        const tokenUri = stringAsciiCV(data.tokenUri)
+        const callData = {
+          contractAddress: data.contractId.split('.')[0],
+          contractName: data.contractId.split('.')[1],
+          functionName: 'set-token-uri',
+          functionArgs: [tokenUri]
         }
         const configuration = rootGetters['rpayStore/getConfiguration']
         if (configuration.network === 'local' && data.sendAsSky) {
@@ -343,6 +388,30 @@ const rpayPurchaseStore = {
         }
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, callData, { root: true }).then((result) => {
+          resolve(result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    cpsMintToken ({ dispatch, rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const entries = []
+        for (let i = 0; i < data.batchOption; i++) {
+          entries.push(uintCV(i))
+        }
+        const callData = {
+          postConditions: getCPSMintPostConds(rootGetters, data),
+          contractAddress: data.contractAddress,
+          contractName: data.contractName,
+          functionName: (data.batchOption === 1) ? 'mint-token' : 'batch-mint-token',
+          functionArgs: (data.batchOption === 1) ? [] : [listCV(entries)]
+        }
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        dispatch((data.methos || methos), callData, { root: true }).then((result) => {
+          result.opcode = 'stx-transaction-sent'
+          result.assetHash = data.assetHash
           resolve(result)
         }).catch((error) => {
           reject(error)

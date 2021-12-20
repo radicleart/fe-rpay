@@ -246,6 +246,7 @@ const rpayStacksStore = {
           functionName: data.functionName,
           functionArgs: (data.functionArgs) ? data.functionArgs : [],
           postConditions: (data.postConditions) ? data.postConditions : [],
+          postConditionMode: (data.postConditionMode) ? data.postConditionMode : PostConditionMode.Deny,
           network: (configuration.network === 'mainnet') ? mainnet : testnet,
           appDetails: {
             name: state.appName,
@@ -289,7 +290,7 @@ const rpayStacksStore = {
             senderKey: sender.keyInfo.privateKey,
             nonce: new BigNum(nonces.possible_next_nonce),
             network,
-            postConditionMode: PostConditionMode.Allow,
+            postConditionMode: (data.postConditionMode) ? data.postConditionMode : PostConditionMode.Deny,
             postConditions: (data.postConditions) ? data.postConditions : []
           }
           makeContractCall(txOptions).then((transaction) => {

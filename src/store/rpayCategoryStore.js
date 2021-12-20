@@ -14,7 +14,7 @@ const rpayCategoryStore = {
     loopRuns: [],
     adminLoopRuns: [],
     loopSpins: null,
-    waitingImage: 'https://images.prismic.io/dbid/831f1712-450d-42fb-be30-c7721f770e5e_Hash_One_90_rx1wf1.png?auto=compress,format',
+    waitingImage: 'https://res.cloudinary.com/mijo-enterprises/image/upload/v1639091454/collections/artists/artist1/CrashPunks-Placeholder.gif',
     // silver loopbomb https://images.prismic.io/dbid/cc7d59a2-65f4-45a2-b6e5-df136e2fd952_OS_thumb.png?auto=compress,format',
     categories: [
       {
@@ -426,9 +426,10 @@ const rpayCategoryStore = {
       })
     },
     registerSpin ({ state, commit, rootGetters }, data) {
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const profile = rootGetters[APP_CONSTANTS.KEY_PROFILE]
+        if (!profile.loggedIn) reject(new Error('Not logged in'))
         const dt = DateTime.utc()
         const spin = {
           numbSpins: (data && data.numbSpins) ? data.numbSpins : 1,
@@ -443,8 +444,8 @@ const rpayCategoryStore = {
           loopRun.spinsToday = loopRun.spinsToday + spin.numbSpins
           commit('setLoopRun', loopRun)
           resolve(loopRun)
-        }).catch(() => {
-          resolve(null)
+        }).catch((err) => {
+          reject(err)
         })
       })
     },
@@ -525,41 +526,6 @@ const rpayCategoryStore = {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const url = configuration.risidioBaseApi + '/mesh/v2/reveal-info/' + b32Address[1] + '/' + data.currentRunKey + '/' + data.contractId + '/' + data.nftIndex
         axios.get(url).then((response) => {
-          resolve(response.data)
-        }).catch(() => {
-          resolve(null)
-        })
-      })
-    },
-    fetchTraits ({ rootGetters }, edition) {
-      return new Promise((resolve) => {
-        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
-        const configuration = rootGetters['rpayStore/getConfiguration']
-        const url = configuration.risidioBaseApi + '/mesh/v2/rarities/' + edition
-        axios.get(url, authHeaders).then((response) => {
-          resolve(response.data)
-        }).catch(() => {
-          resolve(null)
-        })
-      })
-    },
-    saveTrait ({ rootGetters }, trait) {
-      return new Promise((resolve) => {
-        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
-        const configuration = rootGetters['rpayStore/getConfiguration']
-        const url = configuration.risidioBaseApi + '/mesh/v2/rarities/' + trait.imageHash + '/' + trait.edition
-        axios.put(url, authHeaders).then((response) => {
-          resolve(response.data)
-        }).catch(() => {
-          resolve(null)
-        })
-      })
-    },
-    saveOneHash ({ rootGetters }, data) {
-      return new Promise((resolve) => {
-        const configuration = rootGetters['rpayStore/getConfiguration']
-        const url = configuration.risidioBaseApi + '/mesh/v2/loopRuns-one-hash/' + data.currentRunKey + '/' + data.oneHash
-        axios.put(url).then((response) => {
           resolve(response.data)
         }).catch(() => {
           resolve(null)

@@ -562,6 +562,32 @@ const rpayStacksContractStore = {
         })
       })
     },
+    fetchMyTokensCPSV2 ({ rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        let uri = configuration.risidioBaseApi
+        uri += '/mesh/v2'
+        // if (data.runKey && !data.contractId) uri += '/my-tokens/' + data.runKey
+        if (data.contractId) uri += '/my-tokens-by-contract/' + data.contractId
+        else uri += '/my-tokens'
+        const b32Address = utils.convertAddressFrom(data.stxAddress)
+        uri += '/' + b32Address[1]
+        uri += '/' + data.page
+        uri += '/' + data.pageSize
+        if (data.query) uri += data.query
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        axios.get(uri, authHeaders).then((response) => {
+          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens)
+          const result = {
+            gaiaAssets: gaiaAssets,
+            tokenCount: response.data.tokenCount
+          }
+          resolve(result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
     fetchTokenByContractIdAndNftIndex ({ commit, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
@@ -668,17 +694,20 @@ const rpayStacksContractStore = {
             const walletNftBeans = []
             nfts.nft_events.forEach((o) => {
               if (o.asset_identifier) {
-                const b32Address = utils.convertAddressFrom(o.recipient)
-                const walletNft = {
-                  contractId: o.asset_identifier.split('::')[0],
-                  assetName: o.asset_identifier.split('::')[1],
-                  blockHeight: o.block_height,
-                  owner: b32Address[1],
-                  sender: o.sender,
-                  txId: o.tx_id,
-                  nftIndex: Number(hexToCV(o.value.hex).value)
+                if (data.contractFilter && o.asset_identifier.indexOf(data.contractFilter) > -1) {
+                  const b32Address = utils.convertAddressFrom(o.recipient)
+                  const walletNft = {
+                    contractId: o.asset_identifier.split('::')[0],
+                    stxAddress: o.recipient,
+                    assetName: o.asset_identifier.split('::')[1],
+                    blockHeight: o.block_height,
+                    owner: b32Address[1],
+                    sender: o.sender,
+                    txId: o.tx_id,
+                    nftIndex: Number(hexToCV(o.value.hex).value)
+                  }
+                  walletNftBeans.push(walletNft)
                 }
-                walletNftBeans.push(walletNft)
               }
             })
             dispatch('fetchWalletCount', data).then((count) => {

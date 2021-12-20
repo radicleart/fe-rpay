@@ -5,7 +5,7 @@
  */
 import { AppConfig, UserSession, authenticate, showConnect } from '@stacks/connect'
 import { AccountsApi, Configuration } from '@stacks/blockchain-api-client'
-import { decodeToken } from 'jsontokens'
+// import { decodeToken } from 'jsontokens'
 import { Storage } from '@stacks/storage'
 import axios from 'axios'
 import utils from '@/services/utils'
@@ -39,23 +39,22 @@ const setSuperAdmin = function (profile, privs) {
 }
 
 const defAuthHeaders = function (profile) {
-  let publicKey = null
+  // let publicKey = null
   let token = 'v1:no-token' // note: not all requests require auth token - e.g. getPaymentAddress
   if (userSession.isUserSignedIn()) {
     const account = userSession.loadUserData()
     if (account) {
-      const authResponseToken = account.authResponseToken
-      const decodedToken = decodeToken(authResponseToken)
-      publicKey = decodedToken.payload.public_keys[0]
+      // const authResponseToken = account.authResponseToken
+      // const decodedToken = decodeToken(authResponseToken)
+      // publicKey = decodedToken.payload.public_keys[0]
       // publicKey = Buffer.from(publicKey).toString()
-      token = 'v1:' + account.authResponseToken
-      // token = 'v1:' + profile.stxAddress
+      token = 'v1:' + profile.stxAddress
     }
   }
   const headers = {
     headers: {
       STX_ADDRESS: profile.stxAddress,
-      IdentityAddress: publicKey,
+      // IdentityAddress: publicKey,
       'Content-Type': 'application/json',
       Authorization: 'Bearer ' + token
     }
@@ -279,7 +278,7 @@ const rpayAuthStore = {
             const profile = getProfile(configuration.network)
             fetchProfileMetaData(profile, commit, dispatch).then((profile) => {
               commit('myProfile', profile)
-              dispatch('rpayStacksContractStore/cacheWalletNfts', { stxAddress: profile.stxAddress, force: true, page: 0, pageSize: 50 }, { root: true })
+              dispatch('rpayStacksContractStore/cacheWalletNfts', { contractFilter: 'crashpunks', stxAddress: profile.stxAddress, force: true, page: 0, pageSize: 50 }, { root: true })
               dispatch('rpayMyItemStore/initSchema', true, { root: true }).then(() => {
                 resolve(profile)
               })
