@@ -143,6 +143,17 @@ const rpayManageCacheStore = {
         })
       })
     },
+    cacheNewMints ({ commit, rootGetters }, contractId) {
+      return new Promise(function (resolve) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.get(configuration.risidioBaseApi + '/mesh/mgmnt-v2/cache/check-new-mints/' + contractId).then((result) => {
+          commit('setCacheState', result.data)
+          resolve(result.data)
+        }).catch((error) => {
+          resolve(new Error('Unable to build cache: ' + error))
+        })
+      })
+    },
     buildCacheFromCounter ({ commit, rootGetters }, appCounter) {
       return new Promise(function (resolve) {
         const configuration = rootGetters['rpayStore/getConfiguration']
