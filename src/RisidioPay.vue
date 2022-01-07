@@ -16,6 +16,7 @@ import rpayPrivilegeStore from './store/rpayPrivilegeStore'
 import rpayStacksContractStore from './store/rpayStacksContractStore'
 import rpayStacksStore from './store/rpayStacksStore'
 import rpayPurchaseStore from './store/rpayPurchaseStore'
+import rpayMarketStore from './store/rpayMarketStore'
 import rpayProjectStore from './store/rpayProjectStore'
 import rpayProfileStore from './store/rpayProfileStore'
 // import { hexToCV, cvToJSON } from '@stacks/transactions'
@@ -58,6 +59,7 @@ export default {
       this.$store.registerModule('rpayCategoryStore', rpayCategoryStore)
       this.$store.registerModule('rpayStacksStore', rpayStacksStore)
       this.$store.registerModule('rpayPurchaseStore', rpayPurchaseStore)
+      this.$store.registerModule('rpayMarketStore', rpayMarketStore)
       this.$store.registerModule('rpayProjectStore', rpayProjectStore)
       this.$store.registerModule('rpayProfileStore', rpayProfileStore)
       this.$store.registerModule('rpayStacksContractStore', rpayStacksContractStore)

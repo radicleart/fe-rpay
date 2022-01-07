@@ -156,7 +156,11 @@ const utils = {
     }
   },
   jsonFromTxResult: function (tx) {
-    if (!tx || !tx.tx_result) return null
+    if (!tx) return null
+    if (tx.startsWith('0x') || !tx.tx_result) {
+      const cvVer = hexToCV(tx)
+      return cvToJSON(cvVer)
+    }
     return cvToJSON(hexToCV(tx.tx_result.hex))
   },
   fromHex: function (method, rawResponse, strResponse) {
