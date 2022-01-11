@@ -353,6 +353,26 @@ const rpayPurchaseStore = {
         })
       })
     },
+    freezeMetaData ({ dispatch, rootGetters }, data) {
+      return new Promise(function (resolve, reject) {
+        const callData = {
+          contractAddress: data.contractId.split('.')[0],
+          contractName: data.contractId.split('.')[1],
+          functionName: 'freeze-metadata',
+          functionArgs: []
+        }
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        if (configuration.network === 'local' && data.sendAsSky) {
+          callData.sendAsSky = true
+        }
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        dispatch(methos, callData, { root: true }).then((result) => {
+          resolve(result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
     fetchOffers ({ commit, rootGetters }) {
       return new Promise(function (resolve, reject) {
         const configuration = rootGetters['rpayStore/getConfiguration']

@@ -278,7 +278,7 @@ const rpayAuthStore = {
             const profile = getProfile(configuration.network)
             fetchProfileMetaData(profile, commit, dispatch).then((profile) => {
               commit('myProfile', profile)
-              dispatch('rpayStacksContractStore/cacheWalletNfts', { contractFilter: 'crashpunks', stxAddress: profile.stxAddress, force: true, page: 0, pageSize: 50 }, { root: true })
+              dispatch('rpayStacksContractStore/cacheWalletNfts', { contractFilter: '', stxAddress: profile.stxAddress, force: true, page: 0, pageSize: 50 }, { root: true })
               dispatch('rpayMyItemStore/initSchema', true, { root: true }).then(() => {
                 resolve(profile)
               })
