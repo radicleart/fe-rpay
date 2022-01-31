@@ -14,7 +14,7 @@ const rpayCategoryStore = {
     loopRuns: [],
     adminLoopRuns: [],
     loopSpins: null,
-    waitingImage: 'https://res.cloudinary.com/mijo-enterprises/image/upload/v1639091454/collections/artists/artist1/CrashPunks-Placeholder.gif',
+    waitingImage: 'https://images.prismic.io/dbid/d83c4d94-8684-4df9-a92e-7476e616508a_magicpattern-saRKnTHBEhU-unsplash.jpg?auto=compress,format',
     // silver loopbomb https://images.prismic.io/dbid/cc7d59a2-65f4-45a2-b6e5-df136e2fd952_OS_thumb.png?auto=compress,format',
     categories: [
       {
@@ -126,10 +126,12 @@ const rpayCategoryStore = {
     },
     getRunKeyFromMetaDataUrl: state => token => {
       if (token && token.tokenInfo && token.tokenInfo.metaDataUrl) {
-        const parts = token.tokenInfo.metaDataUrl.split(state.splitter)[1]
-        // https://gaia.blockstack.org/hub/19DffsW3zbGGwSQ4D7h6x5SxdHXrs1riW9/budgies_v01/liam_onairigh/ff35f9e28451c911a961b24f12a7e227d1e10251bf9c322fb62c4442dcb99d46.json
-        const parts2 = parts.split('/')
-        return parts2[1]
+        if (token.tokenInfo.metaDataUrl.indexOf(state.splitter) > -1) {
+          const parts = token.tokenInfo.metaDataUrl.split(state.splitter)[1]
+          // https://gaia.blockstack.org/hub/19DffsW3zbGGwSQ4D7h6x5SxdHXrs1riW9/budgies_v01/liam_onairigh/ff35f9e28451c911a961b24f12a7e227d1e10251bf9c322fb62c4442dcb99d46.json
+          const parts2 = parts.split('/')
+          return parts2[1]
+        }
       }
       return null
     }

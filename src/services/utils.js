@@ -157,11 +157,17 @@ const utils = {
   },
   jsonFromTxResult: function (tx) {
     if (!tx) return null
-    if (tx.startsWith('0x') || !tx.tx_result) {
-      const cvVer = hexToCV(tx)
-      return cvToJSON(cvVer)
+    try {
+      if (typeof tx === 'string' && tx.startsWith('0x')) {
+        const cvVer = hexToCV(tx)
+        return cvToJSON(cvVer)
+      } else {
+        const cvVer = hexToCV(tx.tx_result.hex)
+        return cvToJSON(cvVer)
+      }
+    } catch (e) {
+      return null
     }
-    return cvToJSON(hexToCV(tx.tx_result.hex))
   },
   fromHex: function (method, rawResponse, strResponse) {
     if (method === 'mint-token' || method === 'mint-edition') {
@@ -306,6 +312,10 @@ const utils = {
         transfer.to = this.convertAddressInt(network, transfer.to)
         transfer.amount = this.fromMicroAmount(transfer.amount)
       })
+    }
+    if (token.listingInUstx) {
+      token.listingInUstx.price = this.fromMicroAmount(token.listingInUstx.price)
+      token.listingInUstx.commissionContractId = this.convertAddressInt(token.listingInUstx.commissionContractId)
     }
     if (token.saleData) {
       token.saleData.buyNowOrStartingPrice = this.fromMicroAmount(token.saleData.buyNowOrStartingPrice)

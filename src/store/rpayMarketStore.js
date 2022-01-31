@@ -59,8 +59,7 @@ const rpayMarketStore = {
     listInUstx ({ dispatch, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        // const functionArgs = [`0x${serializeCV(uintCV(data.nftIndex)).toString('hex')}`, `0x${serializeCV(uintCV(data.price)).toString('hex')}`, `0x${serializeCV(contractPrincipalCV(data.commissionContract)).toString('hex')}`]
-        const functionArgs = [uintCV(data.nftIndex), uintCV(data.price), contractPrincipalCV(data.commissionContract)]
+        const functionArgs = [uintCV(data.nftIndex), uintCV(utils.toOnChainAmount(data.price)), contractPrincipalCV(data.commissionContractAddress, data.commissionContractName)]
         const callData = {
           postConditions: [],
           contractAddress: data.contractAddress,
@@ -100,14 +99,14 @@ const rpayMarketStore = {
     buyInUstx ({ dispatch, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const functionArgs = [uintCV(data.nftIndex), contractPrincipalCV(data.commissionContract)]
+        const functionArgs = [uintCV(data.nftIndex), contractPrincipalCV(data.commissionContractAddress, data.commissionContractName)]
         const profile = rootGetters['rpayAuthStore/getMyProfile']
         let postCondAddress = profile.stxAddress
         if (configuration.network === 'local' && data.sendAsSky) {
           postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
         }
         let postConds = []
-        const amount = new BigNum(utils.toOnChainAmount(data.buyNowOrStartingPrice))
+        const amount = new BigNum(utils.toOnChainAmount(data.price))
         if (data.postConditions) {
           postConds = data.postConditions
         } else {
@@ -119,7 +118,7 @@ const rpayMarketStore = {
           const nonFungibleAssetInfo = createAssetInfo(
             data.contractAddress,
             data.contractName,
-            data.contractName.split('-')[0]
+            data.assetName
           )
           postConds.push(makeStandardNonFungiblePostCondition(
             data.owner,

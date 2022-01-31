@@ -94,6 +94,11 @@ const rpayTransactionStore = {
     registerTransaction ({ rootGetters, commit }, txData) {
       return new Promise(function (resolve, reject) {
         const profile = rootGetters['rpayAuthStore/getMyProfile']
+        if (!txData.txId || typeof txData.txId !== 'string') {
+          throw new Error('txId of txData not a string')
+        } else if (!txData.txId.startsWith('0x')) {
+          txData.txId = '0x' + txData.txId
+        }
         const stacksTx = {
           timestamp: txData.timestamp || new Date().getTime(),
           nftIndex: txData.nftIndex,
@@ -122,6 +127,11 @@ const rpayTransactionStore = {
     updateTransaction ({ rootGetters, commit }, txData) {
       return new Promise(function (resolve, reject) {
         const profile = rootGetters['rpayAuthStore/getMyProfile']
+        if (!txData.txId || typeof txData.txId !== 'string') {
+          throw new Error('txId of txData not a string')
+        } else if (!txData.txId.startsWith('0x')) {
+          txData.txId = '0x' + txData.txId
+        }
         const stacksTx = {
           timestamp: txData.timestamp || new Date().getTime(),
           nftIndex: txData.nftIndex,
@@ -150,13 +160,14 @@ const rpayTransactionStore = {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         let onchainTxId = txId
-        if (!onchainTxId.startsWith('0x')) onchainTxId = '0x' + txId
+        if (typeof txId === 'object') onchainTxId = txId.txid
+        if (!onchainTxId.startsWith('0x')) onchainTxId = '0x' + onchainTxId
         const stacksNode = configuration.risidioStacksApi + '/extended/v1/tx/' + onchainTxId
         axios.get(stacksNode).then((response) => {
           const txData = response.data
           if (txData && txData.tx_status) {
             const result = {}
-            result.txId = txId
+            result.txId = onchainTxId
             result.txStatus = txData.tx_status
             result.txResult = txData.tx_result
             // result.opcode = 'stx-transaction-update'
@@ -165,12 +176,12 @@ const rpayTransactionStore = {
               result.functionName = txData.contract_call.function_name
               if (txData.tx_result && txData.tx_status !== 'pending') {
                 const jsonRes = utils.jsonFromTxResult(txData)
-                if (result.functionName.indexOf('mint-') > 0 && jsonRes.success && jsonRes.value.type === 'uint') {
+                if (jsonRes && result.functionName.indexOf('mint-') > 0 && jsonRes.success && jsonRes.value.type === 'uint') {
                   result.nftIndex = jsonRes.value.value
                 }
               }
             }
-            if (txData.tx_status === 'success') {
+            if (txData.tx_status !== 'pending') {
               dispatch('rpayStacksContractStore/updateCache', result, { root: true })
             }
             dispatch('updateTransaction', result)

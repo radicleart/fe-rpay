@@ -68,6 +68,8 @@ const captureResult = function (result, dispatch) {
       } else if (result.functionName === 'transfer') {
         result.from = cvToValue(result.functionArgs[1])
         result.to = cvToValue(result.functionArgs[2])
+      } else if (result.functionName === 'list-in-ustx') {
+        result.amount = Number(cvToValue(result.functionArgs[1]))
       } else if (result.functionName === 'opening-bid' || result.functionName === 'place-bid') {
         result.amount = Number(cvToValue(result.functionArgs[1]))
       } else if (result.functionName === 'set-approved') {
@@ -83,6 +85,7 @@ const captureResult = function (result, dispatch) {
   } catch (err) {
     console.log('no nft index in first arg for function - ' + result.functionName)
   }
+  if (typeof result.txId === 'object') result.txId = result.txId.txid
   result.contractId = result.contractAddress + '.' + result.contractName
   result.timestamp = new Date().getTime()
   dispatch('rpayTransactionStore/registerTransaction', result, { root: true }).then(() => {
@@ -254,7 +257,7 @@ const rpayStacksStore = {
           },
           onFinish: (response) => {
             const result = {
-              txId: response.txId,
+              txId: (response.txId && response.txId.txid) ? response.txId.txid : response.txId,
               txRaw: response.txRaw,
               stacksTransaction: response.stacksTransaction,
               network: 15,
