@@ -715,7 +715,7 @@ const rpayPurchaseStore = {
         const nonFungibleAssetInfo = createAssetInfo(
           data.contractAddress,
           data.contractName,
-          data.contractName.split('-')[0]
+          (data.assetName) ? data.assetName : data.contractName.split('-')[0]
         )
         // Post-condition check failure on non-fungible asset ST1ESYCGJB5Z5NBHS39XPC70PGC14WAQK5XXNQYDW.thisisnumberone-v1::my-nft owned by STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG: UInt(3) Sent
         const standardNonFungiblePostCondition = makeStandardNonFungiblePostCondition(
