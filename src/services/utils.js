@@ -315,7 +315,7 @@ const utils = {
     }
     if (token.listingInUstx) {
       token.listingInUstx.price = this.fromMicroAmount(token.listingInUstx.price)
-      token.listingInUstx.commissionContractId = this.convertAddressInt(token.listingInUstx.commissionContractId)
+      token.listingInUstx.commission = this.convertAddressInt(network, token.listingInUstx.commission)
     }
     if (token.saleData) {
       token.saleData.buyNowOrStartingPrice = this.fromMicroAmount(token.saleData.buyNowOrStartingPrice)
