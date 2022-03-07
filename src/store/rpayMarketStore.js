@@ -38,7 +38,7 @@ const rpayMarketStore = {
         })
       })
     },
-    getListingInUstx ({ dispatch, rootGetters }, data) {
+    getListingInUstx ({ dispatch }, data) {
       return new Promise((resolve, reject) => {
         const functionArgs = [`0x${serializeCV(uintCV(data.nftIndex)).toString('hex')}`]
         // const functionArgs = [uintCV(data.nftIndex)]

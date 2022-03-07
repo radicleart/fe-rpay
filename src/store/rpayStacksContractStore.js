@@ -744,6 +744,20 @@ const rpayStacksContractStore = {
           resolve()
         })
       })
+    },
+    fetchNftEvents ({ rootGetters }, data) {
+      return new Promise((resolve) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        let url = configuration.risidioBaseApi + '/mesh/v2/nft-events/' + data.stxAddress
+        if (data.bns) {
+          url += '/bns'
+        }
+        axios.get(url).then((response) => {
+          resolve(response.data)
+        }).catch(() => {
+          resolve()
+        })
+      })
     }
   }
 }
