@@ -269,6 +269,44 @@ const rpayMarketGenFungStore = {
           reject(error)
         })
       })
+    },
+    sipTenTokenDelete: function ({ rootGetters }, data) {
+      return new Promise(function (resolve) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.delete(configuration.risidioBaseApi + '/mesh/mgmnt-v2/sip-ten-token', data.sipTenToken).then((response) => {
+          resolve(response.data)
+        }).catch(() => {
+          resolve()
+        })
+      })
+    },
+    sipTenTokenUpdate: function ({ rootGetters }, data) {
+      return new Promise(function (resolve) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.post(configuration.risidioBaseApi + '/mesh/mgmnt-v2/sip-ten-token', data.sipTenToken).then((response) => {
+          resolve(response.data)
+        }).catch(() => {
+          resolve()
+        })
+      })
+    },
+    sipTenTokenFindBy: function ({ rootGetters }, data) {
+      return new Promise(function (resolve) {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        let field = 'sip-ten-tokens'
+        if (data.field === 'name') {
+          field = 'sip-ten-token-by-name'
+        } else if (data.field === 'symbol') {
+          field = 'sip-ten-token-by-symbol'
+        } else if (data.field === 'contractId') {
+          field = 'sip-ten-token-by-contract'
+        }
+        axios.get(configuration.risidioBaseApi + '/mesh/v2/' + field + '/' + data.value).then((response) => {
+          resolve(response.data)
+        }).catch(() => {
+          resolve()
+        })
+      })
     }
   }
 }
