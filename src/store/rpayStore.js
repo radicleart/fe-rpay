@@ -289,7 +289,7 @@ const rpayStore = {
       state.beneficiary = beneficiary
     },
     addConfiguration (state, configuration) {
-      if (configuration.risidioCardMode === 'payment-flow') {
+      if (configuration.risidioCardMode === 'purchase-flow') {
         if (configuration.payment.allowMultiples) {
           if (!configuration.payment.creditAttributes) {
             configuration.payment.creditAttributes = {
@@ -380,6 +380,8 @@ const rpayStore = {
               // window.eventBus.$emit('rpayEvent', savedInvoice)
               // resolve(savedInvoice)
               // return
+            } else if (savedInvoice && !savedInvoice.data.lightning_invoice) {
+              localStorage.removeItem('OP_INVOICE')
             } else if (!lsatHelper.lsatExpired(savedInvoice)) {
               commit('setInvoice', savedInvoice)
               try {
@@ -418,7 +420,8 @@ const rpayStore = {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const data = {
           amount: configuration.payment.amountSat,
-          description: (configuration.payment.description) ? configuration.payment.description : 'Stacksmate STX swap'
+          description: (configuration.payment.description) ? configuration.payment.description : 'Stacksmate STX swap',
+          transactionData: configuration.transactionData
         }
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.post(MESH_API + '/v2/fetchPayment', data, authHeaders).then(response => {

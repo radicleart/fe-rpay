@@ -110,6 +110,8 @@ const rpayTransactionStore = {
           txId: txData.txId,
           saleType: txData.saleType,
           amount: txData.amount,
+          commissionContractId: txData.commissionContractId,
+          tokenContractId: txData.tokenContractId,
           from: (txData.from) ? txData.from : profile.stxAddress,
           to: txData.to,
           txStatus: txData.txStatus

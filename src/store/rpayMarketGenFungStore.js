@@ -2,10 +2,10 @@ import utils from '@/services/utils'
 import BigNum from 'bn.js'
 import {
   uintCV,
-  listCV,
   hexToCV,
   cvToHex,
   cvToJSON,
+  PostConditionMode,
   contractPrincipalCV,
   standardPrincipalCV,
   makeStandardSTXPostCondition,
@@ -13,11 +13,12 @@ import {
   NonFungibleConditionCode,
   createAssetInfo,
   serializeCV,
-  makeStandardNonFungiblePostCondition
+  makeStandardNonFungiblePostCondition,
+  makeStandardFungiblePostCondition
 } from '@stacks/transactions'
 import axios from 'axios'
 
-const getCPSMintPostConds = function (rootGetters, data) {
+const getSTXMintPostConds = function (rootGetters, data) {
   const configuration = rootGetters['rpayStore/getConfiguration']
   const profile = rootGetters['rpayAuthStore/getMyProfile']
   let postCondAddress = profile.stxAddress
@@ -41,30 +42,69 @@ const getCPSMintPostConds = function (rootGetters, data) {
   return postConds
 }
 
+const getGFTMintPostConds = function (rootGetters, data) {
+  const configuration = rootGetters['rpayStore/getConfiguration']
+  const profile = rootGetters['rpayAuthStore/getMyProfile']
+
+  let postConditionAddress = profile.stxAddress
+  if (configuration.network === 'local' && data.sendAsSky) {
+    postConditionAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
+  }
+  const postConditionCode = FungibleConditionCode.LessEqual
+  const postConditionAmount = new BigNum(utils.toOnChainAmount((data.mintPrice * data.batchOption + 0.001), data.sipTenToken.decimals))
+  const fungibleAssetInfo = createAssetInfo(data.sipTenToken.contractId.split('.')[0], data.sipTenToken.contractId.split('.')[1], data.sipTenToken.contractId.split('.')[1])
+
+  const standardFungiblePostCondition = makeStandardFungiblePostCondition(
+    postConditionAddress,
+    postConditionCode,
+    postConditionAmount,
+    fungibleAssetInfo
+  )
+
+  let postConds = []
+  if (data.postConditions) {
+    postConds = data.postConditions
+  } else {
+    postConds.push(standardFungiblePostCondition)
+  }
+  return postConds
+}
+
 const rpayMarketGenFungStore = {
   namespaced: true,
   state: {
+    sipTenTokens: null
   },
   getters: {
+    getSipTenTokens: state => {
+      return state.sipTenTokens
+    },
+    getSipTenTokensBySymbol: state => symbol => {
+      return state.sipTenTokens.filter((o) => o.symbol === symbol)
+    },
+    getSipTenTokensByContractId: state => contractId => {
+      return state.sipTenTokens.filter((o) => o.contractId === contractId)
+    }
   },
   mutations: {
+    setSipTenTokens (state, sipTenTokens) {
+      state.sipTenTokens = sipTenTokens
+    }
   },
   actions: {
     mintWithToken ({ dispatch, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const tender = contractPrincipalCV(data.tokenContractAddress, data.tokenContractName)
-        const entries = []
-        for (let i = 0; i < data.batchOption; i++) {
-          entries.push(uintCV(i))
-        }
+        const localPCs = (data.tokenContractName === 'stx-token') ? getSTXMintPostConds(rootGetters, data, false) : getGFTMintPostConds(rootGetters, data, false)
         const callData = {
-          postConditions: getCPSMintPostConds(rootGetters, data, false),
+          postConditionMode: (data.postConditionMode) ? data.postConditionMode : PostConditionMode.Deny,
+          postConditions: (data.postConditions) ? data.postConditions : localPCs,
           contractAddress: data.contractAddress,
           contractName: data.contractName,
           sendAsSky: data.sendAsSky,
           functionName: (data.batchOption === 1) ? 'mint-with' : 'mint-with-many',
-          functionArgs: (data.batchOption === 1) ? [tender] : [listCV(entries), tender]
+          functionArgs: (data.batchOption === 1) ? [tender] : [uintCV(data.batchOption), tender]
         }
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch((data.methos || methos), callData, { root: true }).then((result) => {
@@ -78,7 +118,7 @@ const rpayMarketGenFungStore = {
     getCommissionTokensByContract: function ({ rootGetters }, data) {
       return new Promise(function (resolve) {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        axios.get(configuration.risidioBaseApi + '/mesh/mgmnt-v2/mint-commissions-by-contract/' + data.contractId).then((response) => {
+        axios.get(configuration.risidioBaseApi + '/mesh/v2/mint-commissions-by-contract/' + data.contractId).then((response) => {
           resolve(response.data)
         }).catch(() => {
           resolve()
@@ -119,7 +159,7 @@ const rpayMarketGenFungStore = {
         }
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch(methos, callData, { root: true }).then((response) => {
-          dispatch('saveMintCommissionMongo', data).then((result) => {
+          dispatch('saveMintCommissionMongo', data).then(() => {
             resolve(response.data)
           })
         }).catch((e) => {
@@ -186,7 +226,7 @@ const rpayMarketGenFungStore = {
     listInToken ({ dispatch, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        const functionArgs = [uintCV(data.nftIndex), uintCV(utils.toOnChainAmount(data.price)), contractPrincipalCV(data.commissionContractAddress, data.commissionContractName), contractPrincipalCV(data.tokenContractAddress, data.tokenContractName)]
+        const functionArgs = [uintCV(data.nftIndex), uintCV(utils.toOnChainAmount(data.price, data.decimals)), contractPrincipalCV(data.commissionContractAddress, data.commissionContractName), contractPrincipalCV(data.tokenContractAddress, data.tokenContractName)]
         const callData = {
           postConditions: [],
           contractAddress: data.contractAddress,
@@ -227,32 +267,25 @@ const rpayMarketGenFungStore = {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const functionArgs = [uintCV(data.nftIndex), contractPrincipalCV(data.commissionContractAddress, data.commissionContractName), contractPrincipalCV(data.tokenContractAddress, data.tokenContractName)]
-        const profile = rootGetters['rpayAuthStore/getMyProfile']
-        let postCondAddress = profile.stxAddress
-        if (configuration.network === 'local' && data.sendAsSky) {
-          postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
-        }
         let postConds = []
-        const amount = new BigNum(utils.toOnChainAmount(data.price))
         if (data.postConditions) {
           postConds = data.postConditions
         } else {
-          postConds.push(makeStandardSTXPostCondition(
-            postCondAddress,
-            FungibleConditionCode.LessEqual, // less or equal - if the buyer is one of the royalties payment is skipped.
-            amount
-          ))
-          const nonFungibleAssetInfo = createAssetInfo(
-            data.contractAddress,
-            data.contractName,
-            data.assetName
-          )
-          postConds.push(makeStandardNonFungiblePostCondition(
-            data.owner,
-            NonFungibleConditionCode.DoesNotOwn,
-            nonFungibleAssetInfo,
-            uintCV(data.nftIndex)
-          ))
+          const profile = rootGetters['rpayAuthStore/getMyProfile']
+          let postCondAddress = profile.stxAddress
+          if (configuration.network === 'local' && data.sendAsSky) {
+            postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
+          }
+          const postConditionAmount = new BigNum(utils.toOnChainAmount(data.price, data.decimals))
+          if (data.tokenContractName === 'stx-token') {
+            postConds.push(makeStandardSTXPostCondition(postCondAddress, FungibleConditionCode.LessEqual, postConditionAmount))
+          } else {
+            const fungibleAssetInfo = createAssetInfo(data.tokenContractAddress, data.tokenContractName, data.tokenAssetName)
+            const standardFungiblePostCondition = makeStandardFungiblePostCondition(postCondAddress, FungibleConditionCode.LessEqual, postConditionAmount, fungibleAssetInfo)
+            postConds.push(standardFungiblePostCondition)
+          }
+          const nonFungibleAssetInfo = createAssetInfo(data.contractAddress, data.contractName, data.assetName)
+          postConds.push(makeStandardNonFungiblePostCondition(data.owner, NonFungibleConditionCode.DoesNotOwn, nonFungibleAssetInfo, uintCV(data.nftIndex)))
         }
         const callData = {
           postConditions: postConds,
@@ -270,10 +303,10 @@ const rpayMarketGenFungStore = {
         })
       })
     },
-    sipTenTokenDelete: function ({ rootGetters }, data) {
+    sipTenTokenDelete: function ({ rootGetters }, sipTenToken) {
       return new Promise(function (resolve) {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        axios.delete(configuration.risidioBaseApi + '/mesh/mgmnt-v2/sip-ten-token', data.sipTenToken).then((response) => {
+        axios.delete(configuration.risidioBaseApi + '/mesh/mgmnt-v2/sip-ten-token', sipTenToken).then((response) => {
           resolve(response.data)
         }).catch(() => {
           resolve()
@@ -290,18 +323,21 @@ const rpayMarketGenFungStore = {
         })
       })
     },
-    sipTenTokenFindBy: function ({ rootGetters }, data) {
+    sipTenTokenFindBy: function ({ commit, rootGetters }, data) {
       return new Promise(function (resolve) {
         const configuration = rootGetters['rpayStore/getConfiguration']
-        let field = 'sip-ten-tokens'
-        if (data.field === 'name') {
-          field = 'sip-ten-token-by-name'
-        } else if (data.field === 'symbol') {
-          field = 'sip-ten-token-by-symbol'
-        } else if (data.field === 'contractId') {
-          field = 'sip-ten-token-by-contract'
+        let path = '/mesh/v2/sip-ten-tokens'
+        if (data) {
+          if (data.field === 'name') {
+            path = '/mesh/v2/sip-ten-token-by-name/' + data.value
+          } else if (data.field === 'symbol') {
+            path = '/mesh/v2/sip-ten-token-by-symbol/' + data.value
+          } else if (data.field === 'contractId') {
+            path = '/mesh/v2/sip-ten-token-by-contract/' + data.value
+          }
         }
-        axios.get(configuration.risidioBaseApi + '/mesh/v2/' + field + '/' + data.value).then((response) => {
+        axios.get(configuration.risidioBaseApi + path).then((response) => {
+          commit('setSipTenTokens', response.data)
           resolve(response.data)
         }).catch(() => {
           resolve()

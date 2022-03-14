@@ -92,23 +92,35 @@ const utils = {
     }
     return Math.round(amount * precision) / precision // amount.toFixed(2)
   },
-  fromOnChainAmount: function (amountMicroStx) {
+  fromOnChainAmount: function (amountMicroStx, gftPrecision) {
     try {
       amountMicroStx = parseInt(amountMicroStx, 16)
       if (typeof amountMicroStx === 'string') {
         amountMicroStx = Number(amountMicroStx)
       }
       if (amountMicroStx === 0) return 0
-      amountMicroStx = amountMicroStx / precision
-      return Math.round(amountMicroStx * precision) / precision
+      if (!gftPrecision) {
+        amountMicroStx = amountMicroStx / precision
+        return Math.round(amountMicroStx * precision) / precision
+      } else {
+        const newPrec = Math.pow(10, gftPrecision)
+        amountMicroStx = amountMicroStx / newPrec
+        return Math.round(amountMicroStx * newPrec) / newPrec
+      }
     } catch {
       return 0
     }
   },
-  toOnChainAmount: function (amount) {
+  toOnChainAmount: function (amount, gftPrecision) {
     try {
-      amount = amount * precision
-      return Math.round(amount * precision) / precision
+      if (!gftPrecision) {
+        amount = amount * precision
+        return Math.round(amount * precision) / precision
+      } else {
+        const newPrec = Math.pow(10, gftPrecision)
+        amount = amount * newPrec
+        return Math.round(amount * newPrec) / newPrec
+      }
     } catch {
       return 0
     }
@@ -272,20 +284,20 @@ const utils = {
     })
     return transactions
   },
-  resolvePrincipalsTokens: function (network, tokens) {
+  resolvePrincipalsTokens: function (network, tokens, sipTenTokens) {
     const resolvedTokens = []
     tokens.forEach((token) => {
-      resolvedTokens.push(this.resolvePrincipalsToken(network, token))
+      resolvedTokens.push(this.resolvePrincipalsToken(network, token, sipTenTokens))
     })
     return resolvedTokens
   },
-  resolvePrincipalsGaiaToken: function (network, gaiaAsset) {
-    gaiaAsset.contractAsset = this.resolvePrincipalsToken(network, gaiaAsset.contractAsset)
+  resolvePrincipalsGaiaToken: function (network, gaiaAsset, sipTenTokens) {
+    gaiaAsset.contractAsset = this.resolvePrincipalsToken(network, gaiaAsset.contractAsset, sipTenTokens)
     return gaiaAsset
   },
-  resolvePrincipalsGaiaTokens: function (network, gaiaAssets) {
+  resolvePrincipalsGaiaTokens: function (network, gaiaAssets, sipTenTokens) {
     gaiaAssets.forEach((gaiaAsset) => {
-      gaiaAsset.contractAsset = this.resolvePrincipalsToken(network, gaiaAsset.contractAsset)
+      gaiaAsset.contractAsset = this.resolvePrincipalsToken(network, gaiaAsset.contractAsset, sipTenTokens)
     })
     return gaiaAssets
   },
@@ -297,7 +309,7 @@ const utils = {
       return address
     }
   },
-  resolvePrincipalsToken: function (network, token) {
+  resolvePrincipalsToken: function (network, token, sipTenTokens) {
     token.owner = this.convertAddressInt(network, token.owner)
     token.tokenInfo.editionCost = this.fromMicroAmount(token.tokenInfo.editionCost)
     if (token.offerHistory) {
@@ -313,9 +325,16 @@ const utils = {
         transfer.amount = this.fromMicroAmount(transfer.amount)
       })
     }
-    if (token.listingInUstx) {
-      token.listingInUstx.price = this.fromMicroAmount(token.listingInUstx.price)
+    if (token.listingInUstx && token.listingInUstx.price > 0) {
       token.listingInUstx.commission = this.convertAddressInt(network, token.listingInUstx.commission)
+      token.listingInUstx.price = this.fromMicroAmount(token.listingInUstx.price)
+      if (token.listingInUstx.token) {
+        token.listingInUstx.token = this.convertAddressInt(network, token.listingInUstx.token)
+        const sipTen = sipTenTokens.find((o) => o.token === token.listingInUstx.token)
+        if (sipTen) {
+          token.listingInUstx.price = this.fromMicroAmount(token.listingInUstx.price, sipTen.decimals)
+        }
+      }
     }
     if (token.saleData) {
       token.saleData.buyNowOrStartingPrice = this.fromMicroAmount(token.saleData.buyNowOrStartingPrice)

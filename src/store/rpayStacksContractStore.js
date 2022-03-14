@@ -18,10 +18,10 @@ const sortResults = function (gaiaAssets) {
   }
 }
 
-const loadAssetsFromGaia = function (tokens, commit, network) {
+const loadAssetsFromGaia = function (tokens, commit, network, sipTenTokens) {
   tokens.forEach((token) => {
     if (token && token.tokenInfo) {
-      token = utils.resolvePrincipalsToken(network, token)
+      token = utils.resolvePrincipalsToken(network, token, sipTenTokens)
       axios.get(token.tokenInfo.metaDataUrl).then(response => {
         const gaiaAsset = response.data
         gaiaAsset.contractAsset = token
@@ -44,7 +44,7 @@ const loadAssetsFromGaia = function (tokens, commit, network) {
   })
 }
 
-const subscribeApiNews = function (commit, connectUrl, contractId, network) {
+const subscribeApiNews = function (commit, connectUrl, contractId, network, sipTenTokens) {
   if (!socket) socket = new SockJS(connectUrl + '/api-news')
   if (!stompClient) stompClient = Stomp.over(socket)
   stompClient.debug = () => {}
@@ -59,14 +59,12 @@ const subscribeApiNews = function (commit, connectUrl, contractId, network) {
     if (!contractId) {
       stompClient.subscribe('/queue/contract-news', function (response) {
         const cacheUpdateResult = JSON.parse(response.body)
-        // loadAssetsFromGaia(cacheUpdateResult.tokens, commit, network)
-        commit('updateTokens', { tokens: cacheUpdateResult.tokens, network: network })
+        commit('updateTokens', { tokens: cacheUpdateResult.tokens, network: network, sipTenTokens: sipTenTokens })
       })
     } else {
       stompClient.subscribe('/queue/contract-news-' + contractId, function (response) {
         const cacheUpdateResult = JSON.parse(response.body)
-        // loadAssetsFromGaia(cacheUpdateResult.tokens, commit, network)
-        commit('updateTokens', { tokens: cacheUpdateResult.tokens, network: network })
+        commit('updateTokens', { tokens: cacheUpdateResult.tokens, network: network, sipTenTokens: sipTenTokens })
       })
     }
   },
@@ -96,6 +94,7 @@ const unsubscribeApiNews = function () {
 const rpayStacksContractStore = {
   namespaced: true,
   state: {
+    bnsNames: null,
     registry: null,
     gaiaAssets: [],
     tokens: [],
@@ -104,6 +103,12 @@ const rpayStacksContractStore = {
     myContractAssets: null
   },
   getters: {
+    getBnsNames: state => {
+      return state.bnsNames
+    },
+    getBnsName: state => stxAddress => {
+      return (state.bnsNames) ? state.bnsNames.find((o) => o.stxAddress === stxAddress) : null
+    },
     getMempool: state => {
       return state.mempool
     },
@@ -196,6 +201,9 @@ const rpayStacksContractStore = {
     }
   },
   mutations: {
+    setBnsNames (state, bnsNames) {
+      state.bnsNames = bnsNames
+    },
     setMempool (state, mempool) {
       state.mempool = mempool
     },
@@ -210,7 +218,7 @@ const rpayStacksContractStore = {
     },
     updateTokens (state, data) {
       data.tokens.forEach((token) => {
-        token = utils.resolvePrincipalsToken(data.network, token)
+        token = utils.resolvePrincipalsToken(data.network, token, data.sipTenTokens)
         let index = state.gaiaAssets.findIndex((o) => o.contractAsset && o.contractAsset.nftIndex === token.nftIndex)
         if (index > -1) {
           state.gaiaAssets[index].contractAsset = token
@@ -347,10 +355,9 @@ const rpayStacksContractStore = {
           const path = configuration.risidioBaseApi + '/mesh/v2/tokensByContractIdAndEdition/' + configuration.risidioProjectId + '/' + 1
           const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
           axios.get(path, authHeaders).then(response => {
-            // const tokens = utils.resolvePrincipalsTokens(configuration.network, response.data)
             resolve(true)
             loadAssetsFromGaia(response.data, commit, configuration.network)
-            subscribeApiNews(commit, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId, configuration.network)
+            subscribeApiNews(commit, configuration.risidioBaseApi + '/mesh', configuration.risidioProjectId, configuration.network, rootGetters['rpayMarketGenFungStore/getSipTenTokens'])
           }).catch(() => {
             resolve(null)
           })
@@ -377,18 +384,18 @@ const rpayStacksContractStore = {
         const path = configuration.risidioBaseApi + '/mesh/v2/tokensByProjectAndOwner/' + configuration.risidioProjectId + '/' + b32Address[1]
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.get(path, authHeaders).then((response) => {
-          const tokens = utils.resolvePrincipalsTokens(configuration.network, response.data)
+          const tokens = utils.resolvePrincipalsTokens(configuration.network, response.data, rootGetters['rpayMarketGenFungStore/getSipTenTokens'])
           if (data.mine) {
             commit('setMyContractAssets', tokens)
           }
-          loadAssetsFromGaia(response.data, commit, configuration.network)
+          loadAssetsFromGaia(response.data, commit, configuration.network, rootGetters['rpayMarketGenFungStore/getSipTenTokens'])
           resolve(tokens)
         }).catch((error) => {
           reject(error)
         })
       })
     },
-    fetchContractAssetByNftIndex ({ commit, rootGetters }, data) {
+    fetchContractAssetByNftIndex ({ rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
@@ -406,7 +413,7 @@ const rpayStacksContractStore = {
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         const path = configuration.risidioBaseApi + '/mesh/v2/tokenByHash/' + assetHash
         axios.get(path, authHeaders).then((response) => {
-          loadAssetsFromGaia([response.data], commit, configuration.network)
+          loadAssetsFromGaia([response.data], commit, configuration.network, rootGetters['rpayMarketGenFungStore/getSipTenTokens'])
           resolve(null)
         }).catch((error) => {
           reject(error)
@@ -419,7 +426,7 @@ const rpayStacksContractStore = {
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         const path = configuration.risidioBaseApi + '/mesh/v2/tokenByAssetHashAndEdition/' + data.assetHash + '/' + data.edition
         axios.get(path, authHeaders).then((response) => {
-          const gaiaAsset = utils.resolvePrincipalsGaiaToken(configuration.network, response.data)
+          const gaiaAsset = utils.resolvePrincipalsGaiaToken(configuration.network, response.data, rootGetters['rpayMarketGenFungStore/getSipTenTokens'])
           commit('addGaiaAsset', gaiaAsset)
           resolve(gaiaAsset)
         }).catch(() => {
@@ -438,8 +445,8 @@ const rpayStacksContractStore = {
           hashes: assetHashes
         }
         axios.post(path, data, authHeaders).then((response) => {
-          const tokens = utils.resolvePrincipalsTokens(configuration.network, response.data)
-          loadAssetsFromGaia(tokens, commit, configuration.network)
+          const tokens = utils.resolvePrincipalsTokens(configuration.network, response.data, rootGetters['rpayMarketGenFungStore/getSipTenTokens'])
+          loadAssetsFromGaia(tokens, commit, configuration.network, rootGetters['rpayMarketGenFungStore/getSipTenTokens'])
           resolve(null)
         }).catch((error) => {
           reject(error)
@@ -459,7 +466,7 @@ const rpayStacksContractStore = {
         if (data.query) uri += data.query
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.get(uri, authHeaders).then((response) => {
-          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens)
+          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens, rootGetters['rpayMarketGenFungStore/getSipTenTokens'])
           const result = {
             gaiaAssets: gaiaAssets,
             tokenCount: response.data.tokenCount
@@ -481,7 +488,7 @@ const rpayStacksContractStore = {
         if (data.query) uri += data.query
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.get(uri, authHeaders).then((response) => {
-          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens)
+          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens, rootGetters['rpayMarketGenFungStore/getSipTenTokens'])
           const result = {
             gaiaAssets: gaiaAssets,
             tokenCount: response.data.tokenCount
@@ -504,7 +511,7 @@ const rpayStacksContractStore = {
         if (data.query) uri += data.query
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.get(uri, authHeaders).then((response) => {
-          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens)
+          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens, rootGetters['rpayMarketGenFungStore/getSipTenTokens'])
           const result = {
             gaiaAssets: gaiaAssets,
             tokenCount: response.data.tokenCount
@@ -525,7 +532,7 @@ const rpayStacksContractStore = {
         if (data.query) uri += data.query
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.get(uri, authHeaders).then((response) => {
-          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens)
+          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens, rootGetters['rpayMarketGenFungStore/getSipTenTokens'])
           const result = {
             gaiaAssets: gaiaAssets,
             tokenCount: response.data.tokenCount
@@ -551,7 +558,7 @@ const rpayStacksContractStore = {
         if (data.query) uri += data.query
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.get(uri, authHeaders).then((response) => {
-          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens)
+          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens, rootGetters['rpayMarketGenFungStore/getSipTenTokens'])
           const result = {
             gaiaAssets: gaiaAssets,
             tokenCount: response.data.tokenCount
@@ -577,7 +584,7 @@ const rpayStacksContractStore = {
         if (data.query) uri += data.query
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.get(uri, authHeaders).then((response) => {
-          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens)
+          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens, rootGetters['rpayMarketGenFungStore/getSipTenTokens'])
           const result = {
             gaiaAssets: gaiaAssets,
             tokenCount: response.data.tokenCount
@@ -593,7 +600,7 @@ const rpayStacksContractStore = {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const uri = configuration.risidioBaseApi + '/mesh/v2/token-by-index/' + data.contractId + '/' + data.nftIndex
         axios.get(uri).then((response) => {
-          const gaiaAsset = utils.resolvePrincipalsGaiaToken(configuration.network, response.data)
+          const gaiaAsset = utils.resolvePrincipalsGaiaToken(configuration.network, response.data, rootGetters['rpayMarketGenFungStore/getSipTenTokens'])
           commit('addGaiaAsset', gaiaAsset)
           resolve(gaiaAsset)
         }).catch((error) => {
@@ -608,7 +615,7 @@ const rpayStacksContractStore = {
         if (data.query) uri += data.query
         axios.get(uri).then((response) => {
           try {
-            const gaiaAsset = utils.resolvePrincipalsGaiaToken(configuration.network, response.data)
+            const gaiaAsset = utils.resolvePrincipalsGaiaToken(configuration.network, response.data, rootGetters['rpayMarketGenFungStore/getSipTenTokens'])
             commit('addGaiaAsset', gaiaAsset)
             resolve(gaiaAsset)
           } catch (err) {
@@ -655,7 +662,7 @@ const rpayStacksContractStore = {
         uri += '/' + data.pageSize
         if (data.query) uri += data.query
         axios.get(uri).then((response) => {
-          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens)
+          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens, rootGetters['rpayMarketGenFungStore/getSipTenTokens'])
           const result = {
             gaiaAssets: gaiaAssets,
             tokenCount: response.data.tokenCount
@@ -738,7 +745,7 @@ const rpayStacksContractStore = {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const uri = configuration.risidioBaseApi + '/mesh/v2/meta-data/' + data.contractId + '/' + data.nftIndex
         axios.get(uri).then((response) => {
-          const gaiaAsset = utils.resolvePrincipalsGaiaToken(configuration.network, response.data)
+          const gaiaAsset = utils.resolvePrincipalsGaiaToken(configuration.network, response.data, rootGetters['rpayMarketGenFungStore/getSipTenTokens'])
           resolve(gaiaAsset)
         }).catch(() => {
           resolve()
@@ -756,6 +763,19 @@ const rpayStacksContractStore = {
           resolve(response.data)
         }).catch(() => {
           resolve()
+        })
+      })
+    },
+    fetchBnsNames ({ commit, rootGetters }, stxAddresses) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        const path = configuration.risidioBaseApi + '/mesh/v2/nft-events/bns'
+        axios.post(path, stxAddresses).then((response) => {
+          const bnsNames = response.data
+          commit('setBnsNames', bnsNames)
+          resolve(bnsNames)
+        }).catch((error) => {
+          reject(error)
         })
       })
     }

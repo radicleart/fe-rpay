@@ -70,6 +70,13 @@ const captureResult = function (result, dispatch) {
         result.to = cvToValue(result.functionArgs[2])
       } else if (result.functionName === 'list-in-ustx') {
         result.amount = Number(cvToValue(result.functionArgs[1]))
+      } else if (result.functionName === 'list-in-token') {
+        result.amount = Number(cvToValue(result.functionArgs[1]))
+        result.commissionContractId = cvToValue(result.functionArgs[2])
+        result.tokenContractId = cvToValue(result.functionArgs[3])
+      } else if (result.functionName === 'buy-in-token') {
+        result.commission = cvToValue(result.functionArgs[1])
+        result.token = cvToValue(result.functionArgs[2])
       } else if (result.functionName === 'opening-bid' || result.functionName === 'place-bid') {
         result.amount = Number(cvToValue(result.functionArgs[1]))
       } else if (result.functionName === 'set-approved') {

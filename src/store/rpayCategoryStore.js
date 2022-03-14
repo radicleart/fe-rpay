@@ -273,6 +273,20 @@ const rpayCategoryStore = {
         }
       })
     },
+    fetchLoopRunByContractId ({ dispatch, rootGetters }, contractId) {
+      return new Promise(resolve => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.get(configuration.risidioBaseApi + '/mesh/v2/loopRuns/' + contractId).then((response) => {
+          const loopRuns = response.data
+          if (loopRuns && loopRuns.length > 0) {
+            resolve(loopRuns[0])
+          }
+          resolve(null)
+        }).catch(() => {
+          resolve(null)
+        })
+      })
+    },
     fetchLoopRuns ({ commit, rootGetters }) {
       return new Promise(resolve => {
         const configuration = rootGetters['rpayStore/getConfiguration']
