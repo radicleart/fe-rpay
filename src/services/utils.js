@@ -328,7 +328,7 @@ const utils = {
     if (token.listingInUstx && token.listingInUstx.price > 0) {
       token.listingInUstx.commission = this.convertAddressInt(network, token.listingInUstx.commission)
       token.listingInUstx.price = this.fromMicroAmount(token.listingInUstx.price)
-      if (token.listingInUstx.token) {
+      if (sipTenTokens && token.listingInUstx.token) {
         token.listingInUstx.token = this.convertAddressInt(network, token.listingInUstx.token)
         const sipTen = sipTenTokens.find((o) => o.token === token.listingInUstx.token)
         if (sipTen) {

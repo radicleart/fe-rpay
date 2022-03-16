@@ -12,11 +12,12 @@ const precision = 100000000
 const precisionStx = 1000000
 const setAmounts = function (tickerRates, configuration) {
   try {
-    let amountFiat = configuration.payment.amountFiat
-    if (configuration.payment.allowMultiples) {
-      amountFiat = configuration.payment.amountFiat * configuration.payment.creditAttributes.start
-    }
     const rate = tickerRates.find((o) => o.currency === configuration.payment.currency)
+    let amountFiat = configuration.payment.amountFiat
+    if (configuration.priceInStx) amountFiat = (configuration.priceInStx * rate.stxPrice)
+    if (configuration.payment.allowMultiples) {
+      amountFiat = amountFiat * configuration.payment.creditAttributes.start
+    }
     const amountBtc = amountFiat / rate.last
     configuration.payment.amountBtc = amountBtc
     configuration.payment.amountBtc = Math.round(amountBtc * precision) / precision
@@ -79,8 +80,8 @@ const subscribePayment = function (commit, paymentId) {
   stompClient.subscribe('/queue/payment-news-' + paymentId, function (response) {
     const invoice = { data: JSON.parse(response.body) }
     commit('mergePaidCharge', invoice)
-    if (invoice && invoice.data) {
-      if (invoice.data.status === 'paid' || invoice.data.status === 'processing') {
+    if (invoice) {
+      if (invoice.status === 'paid' || invoice.status === 'processing') {
         invoice.opcode = 'btc-crypto-payment-success'
         window.eventBus.$emit('rpayEvent', invoice)
       }
@@ -97,7 +98,7 @@ const disconnectApiNews = function () {
 const checkPayment = function (resolve, reject, state, commit, paymentId) {
   axios.post(MESH_API + '/v2/checkPayment/' + paymentId).then(response => {
     const invoice = response.data
-    if (invoice.data && (invoice.data.status === 'paid' || invoice.data.status === 'processing')) {
+    if (invoice && (invoice.status === 'paid' || invoice.status === 'processing')) {
       localStorage.setItem('OP_INVOICE', JSON.stringify(invoice))
       commit('mergePaidCharge', invoice)
       invoice.opcode = 'btc-crypto-payment-success'
@@ -233,20 +234,24 @@ const rpayStore = {
       return state.invoice
     },
     isInvoiceExpired: state => invoice => {
+      if (!state.invoice) return
       try {
-        console.log(state.invoice.data.id === invoice.data.id)
+        console.log(state.invoice.id === invoice.id)
       } catch (err) {
         console.log(invoice)
       }
       return lsatHelper.lsatExpired(invoice)
     },
     getInvoiceExpired: state => {
+      if (!state.invoice) return
       return lsatHelper.lsatExpired(state.invoice)
     },
     getInvoiceExpires: state => {
+      if (!state.invoice) return
       return lsatHelper.lsatExpires(state.invoice)
     },
     getInvoiceDuration: state => {
+      if (!state.invoice) return
       return lsatHelper.lsatDuration(state.invoice)
     },
     getExchangeRateFormatted: state => amountStx => {
@@ -332,7 +337,7 @@ const rpayStore = {
     },
     mergePaidCharge (state, charge) {
       if (charge && charge.data) {
-        state.invoice.data = Object.assign(state.invoice.data, charge.data)
+        state.invoice = Object.assign(state.invoice, charge.data)
       }
     },
     setTickerRates (state, tickerRates) {
@@ -373,22 +378,22 @@ const rpayStore = {
           commit('addConfiguration', configuration)
           if (localStorage.getItem('OP_INVOICE')) {
             const savedInvoice = JSON.parse(localStorage.getItem('OP_INVOICE'))
-            if (savedInvoice && (savedInvoice.data.status === 'paid' || savedInvoice.data.status === 'processing')) {
+            if (savedInvoice && (savedInvoice.status === 'paid' || savedInvoice.status === 'processing')) {
               localStorage.removeItem('OP_INVOICE')
               // commit('setInvoice', savedInvoice)
               // savedInvoice.opcode = 'btc-crypto-payment-prior'
               // window.eventBus.$emit('rpayEvent', savedInvoice)
               // resolve(savedInvoice)
               // return
-            } else if (savedInvoice && !savedInvoice.data.lightning_invoice) {
+            } else if (savedInvoice && !savedInvoice.lightning_invoice) {
               localStorage.removeItem('OP_INVOICE')
             } else if (!lsatHelper.lsatExpired(savedInvoice)) {
               commit('setInvoice', savedInvoice)
               try {
-                subscribePayment(commit, savedInvoice.data.id)
+                subscribePayment(commit, savedInvoice.id)
               } catch (err) {
               }
-              checkPayment(resolve, reject, state, commit, savedInvoice.data.id)
+              checkPayment(resolve, reject, state, commit, savedInvoice.id)
               commit('addConfiguration', configuration)
               resolve(savedInvoice)
               return
@@ -397,12 +402,12 @@ const rpayStore = {
           const allowed = configuration.payment.paymentOptions.find((o) => o.allowBitcoin) ||
             configuration.payment.paymentOptions.find((o) => o.allowLightning)
           if (!allowed) {
-            resolve({ data: { status: 'unpaid' } })
+            resolve({ status: 'unpaid' })
             return
           }
           dispatch('fetchPayment').then((invoice) => {
             localStorage.setItem('OP_INVOICE', JSON.stringify(invoice))
-            if (invoice) subscribePayment(commit, invoice.data.id)
+            if (invoice) subscribePayment(commit, invoice.id)
             resolve(invoice)
           }).catch(() => {
             resolve(false)
@@ -411,7 +416,7 @@ const rpayStore = {
           configuration.payment.paymentOptions[1].allowBitcoin = false
           configuration.payment.paymentOptions[2].allowLightning = false
           commit('addConfiguration', configuration)
-          resolve({ data: { status: 'unpaid' } })
+          resolve({ status: 'unpaid' })
         })
       })
     },
@@ -426,15 +431,15 @@ const rpayStore = {
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.post(MESH_API + '/v2/fetchPayment', data, authHeaders).then(response => {
           const invoice = response.data
-          subscribePayment(commit, invoice.data.id)
-          checkPayment(resolve, reject, state, commit, invoice.data.id)
+          subscribePayment(commit, invoice.id)
+          checkPayment(resolve, reject, state, commit, invoice.id)
           commit('setInvoice', invoice)
           resolve(invoice)
         }).catch(() => {
           configuration.payment.paymentOptions[1].allowBitcoin = false
           configuration.payment.paymentOptions[2].allowLightning = false
           commit('addConfiguration', configuration)
-          resolve({ data: { status: 'unpaid' } })
+          resolve({ status: 'unpaid' })
         })
       })
     },
