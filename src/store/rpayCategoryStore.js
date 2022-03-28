@@ -231,8 +231,13 @@ const rpayCategoryStore = {
         })
       })
     },
-    fetchLatestLoopRunForStxAddress ({ rootGetters, commit }, data) {
+    fetchLatestLoopRunForStxAddress ({ state, rootGetters, commit }, data) {
       return new Promise(resolve => {
+        const loopRun = state.loopRuns.find((o) => o.currentRunKey === data.currentRunKey)
+        if (loopRun) {
+          resolve(loopRun)
+          return
+        }
         const configuration = rootGetters['rpayStore/getConfiguration']
         let url = configuration.risidioBaseApi + '/mesh/v2/lastLoopRun/' + data.currentRunKey
         const dt = DateTime.local()
@@ -247,8 +252,13 @@ const rpayCategoryStore = {
         })
       })
     },
-    fetchLatestLoopRunForAnon ({ rootGetters, commit }, data) {
+    fetchLatestLoopRunForAnon ({ state, rootGetters, commit }, data) {
       return new Promise(resolve => {
+        const loopRun = state.loopRuns.find((o) => o.currentRunKey === data.currentRunKey)
+        if (loopRun) {
+          resolve(loopRun)
+          return
+        }
         const configuration = rootGetters['rpayStore/getConfiguration']
         const url = configuration.risidioBaseApi + '/mesh/v2/lastLoopRun/' + data.currentRunKey
         axios.get(url).then((response) => {
@@ -259,8 +269,13 @@ const rpayCategoryStore = {
         })
       })
     },
-    fetchLoopRun ({ dispatch, rootGetters }, currentRunKey) {
+    fetchLoopRun ({ state, dispatch, rootGetters }, currentRunKey) {
       return new Promise(resolve => {
+        const loopRun = state.loopRuns.find((o) => o.currentRunKey === currentRunKey)
+        if (loopRun) {
+          resolve(loopRun)
+          return
+        }
         const profile = rootGetters['rpayAuthStore/getMyProfile']
         if (profile.loggedIn) {
           dispatch('fetchLatestLoopRunForStxAddress', { currentRunKey: currentRunKey, stxAddress: profile.stxAddress }).then((loopRun) => {
@@ -273,12 +288,18 @@ const rpayCategoryStore = {
         }
       })
     },
-    fetchLoopRunByContractId ({ dispatch, rootGetters }, contractId) {
+    fetchLoopRunByContractId ({ state, commit, rootGetters }, contractId) {
       return new Promise(resolve => {
+        const loopRun = state.loopRuns.find((o) => o.contractId === contractId)
+        if (loopRun) {
+          resolve(loopRun)
+          return
+        }
         const configuration = rootGetters['rpayStore/getConfiguration']
         axios.get(configuration.risidioBaseApi + '/mesh/v2/loopRuns/' + contractId).then((response) => {
           const loopRuns = response.data
           if (loopRuns && loopRuns.length > 0) {
+            commit('setLoopRun', loopRuns[0])
             resolve(loopRuns[0])
           }
           resolve(null)
@@ -287,8 +308,12 @@ const rpayCategoryStore = {
         })
       })
     },
-    fetchLoopRuns ({ commit, rootGetters }) {
+    fetchLoopRuns ({ state, commit, rootGetters }) {
       return new Promise(resolve => {
+        if (state.loopRuns && state.loopRuns.length > 0) {
+          resolve(state.loopRuns)
+          return
+        }
         const configuration = rootGetters['rpayStore/getConfiguration']
         const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
         axios.get(configuration.risidioBaseApi + '/mesh/v2/loopRuns', authHeaders).then((response) => {

@@ -96,7 +96,7 @@ const rpayMarketGenFungStore = {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
         const tender = contractPrincipalCV(data.tokenContractAddress, data.tokenContractName)
-        const localPCs = (data.tokenContractName === 'stx-token') ? getSTXMintPostConds(rootGetters, data, false) : getGFTMintPostConds(rootGetters, data, false)
+        const localPCs = (data.tokenContractName === 'stx-token' || data.tokenContractName === 'unwrapped-stx-token') ? getSTXMintPostConds(rootGetters, data, false) : getGFTMintPostConds(rootGetters, data, false)
         const callData = {
           postConditionMode: (data.postConditionMode) ? data.postConditionMode : PostConditionMode.Deny,
           postConditions: (data.postConditions) ? data.postConditions : localPCs,
@@ -277,7 +277,7 @@ const rpayMarketGenFungStore = {
             postCondAddress = 'STFJEDEQB1Y1CQ7F04CS62DCS5MXZVSNXXN413ZG'
           }
           const postConditionAmount = new BigNum(utils.toOnChainAmount(data.price, data.decimals))
-          if (data.tokenContractName === 'stx-token') {
+          if (data.tokenContractName === 'stx-token' || data.tokenContractName === 'unwrapped-stx-token') {
             postConds.push(makeStandardSTXPostCondition(postCondAddress, FungibleConditionCode.LessEqual, postConditionAmount))
           } else {
             const fungibleAssetInfo = createAssetInfo(data.tokenContractAddress, data.tokenContractName, data.tokenAssetName)

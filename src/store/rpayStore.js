@@ -208,17 +208,21 @@ const rpayStore = {
       return state.beneficiary
     },
     getPreferredNetwork: (state) => {
-      const networkConfig = state.configuration.minter.networks.filter(obj => {
-        return obj.network === state.configuration.minter.preferredNetwork
-      })[0]
-      return networkConfig
+      try {
+        const networkConfig = state.configuration.minter.networks.filter(obj => {
+          return obj.network === state.configuration.minter.preferredNetwork
+        })[0]
+        return networkConfig
+      } catch (err) {
+        return null
+      }
     },
     getEnabledNetworks: (state) => {
-      const networks = state.configuration.minter.networks.filter(o => o.enabled)
+      const networks = (state.configuration.minter) ? state.configuration.minter.networks.filter(o => o.enabled) : null
       return networks
     },
     getCurrentPaymentOption: (state) => {
-      return state.configuration.payment.paymentOption
+      return (state.configuration.payment) ? state.configuration.payment.paymentOption : null
     },
     getPaymentOptions: state => {
       const paymentOptions = getPaymentOptions(state.configuration)
@@ -284,7 +288,7 @@ const rpayStore = {
         val = 100
       }
       if (val === 100) {
-        if (!state.configuration.payment.allowMultiples) {
+        if (state.configuration.payment && !state.configuration.payment.allowMultiples) {
           val = 102
         }
       }
@@ -318,17 +322,17 @@ const rpayStore = {
       state.mintingMessage = o
     },
     setPreferredNetwork (state, o) {
-      state.configuration.minter.preferredNetwork = o
+      if (state.configuration.minter) state.configuration.minter.preferredNetwork = o
     },
     setCurrentCryptoPaymentOption (state, o) {
-      state.configuration.payment.paymentOption = o
+      if (state.configuration.payment) state.configuration.payment.paymentOption = o
     },
     addPaymentOption (state, o) {
-      state.configuration.payment.paymentOption = o
+      if (state.configuration.payment) state.configuration.payment.paymentOption = o
     },
     addPaymentOptions (state, o) {
       state.paymentOptions = getPaymentOptions(state.configuration)
-      if (!state.configuration.payment.paymentOption) {
+      if (state.configuration.payment && !state.configuration.payment.paymentOption) {
         state.configuration.payment.paymentOption = state.configuration.payment.paymentOptions[0].value
       }
     },
