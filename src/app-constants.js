@@ -6,7 +6,6 @@ export const APP_CONSTANTS = {
   KEY_AUTH_HEADERS: 'rpayAuthStore/getAuthHeaders',
 
   GET_HEADERS: 'rpayStore/getHeaders',
-  KEY_EDIT_BENEFICIARY: 'rpayStore/getEditBeneficiary',
   KEY_CONFIGURATION: 'rpayStore/getConfiguration',
   KEY_MINTING_MESSAGE: 'rpayStore/getMintingMessage',
   SET_MINTING_MESSAGE: 'rpayStore/setMintingMessage',
