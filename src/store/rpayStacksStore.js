@@ -394,6 +394,17 @@ const rpayStacksStore = {
         })
       })
     },
+    callApi ({ rootGetters }, txOptions) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        axios.post(configuration.risidioBaseApi + '/mesh' + '/v2/accounts', txOptions).then(response => {
+          // const result = utils.jsonFromTxResult(response.data)
+          resolve(response.data)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
     lookupTokenContractData: function ({ dispatch }, data) {
       return new Promise(function (resolve) {
         const functionArgs = []
