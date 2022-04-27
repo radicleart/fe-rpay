@@ -5,6 +5,8 @@ import {
   hexToCV,
   cvToHex,
   cvToJSON,
+  tupleCV,
+  listCV,
   PostConditionMode,
   contractPrincipalCV,
   standardPrincipalCV,
@@ -40,6 +42,19 @@ const getSTXMintPostConds = function (rootGetters, data) {
     ))
   }
   return postConds
+}
+
+const getAdminMintManyArgs = function (data) {
+  const entryList = []
+  for (let i = 0; i < data.entries.length; i++) {
+    const entry = data.entries[i]
+    const tupCV = tupleCV({
+      account: standardPrincipalCV(entry.recipient),
+      limit: uintCV(entry.nftIndex)
+    })
+    entryList.push(tupCV)
+  }
+  return [listCV(entryList)]
 }
 
 const getGFTMintPostConds = function (rootGetters, data) {
@@ -103,8 +118,37 @@ const rpayMarketGenFungStore = {
           contractAddress: data.contractAddress,
           contractName: data.contractName,
           sendAsSky: data.sendAsSky,
-          functionName: (data.batchOption === 1) ? 'mint-with' : 'mint-with-many',
+          functionName: data.functionName,
           functionArgs: (data.batchOption === 1) ? [tender] : [uintCV(data.batchOption), tender]
+        }
+        const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
+        dispatch((data.methos || methos), callData, { root: true }).then((result) => {
+          result.opcode = 'stx-transaction-sent'
+          resolve(result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
+    adminMintNFT ({ dispatch, rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        if (!data.batchOption) data.batchOption = 1
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        console.log('admin mint nft: data=', data)
+        // if (!checkOpenNodeApiKey(data)) throw new Error('Not called via open node!')
+        // const tender = contractPrincipalCV(data.tokenContractAddress, data.tokenContractName)
+        const localPCs = [] // (data.tokenContractName === 'unwrapped-stx-token') ? getSTXMintPostConds(data) : getGFTMintPostConds(data)
+        const callData = {
+          postConditionMode: (data.postConditionMode) ? data.postConditionMode : PostConditionMode.Deny,
+          postConditions: (data.postConditions) ? data.postConditions : localPCs,
+          contractAddress: data.contractId.split('.')[0],
+          contractName: data.contractId.split('.')[1],
+          functionName: data.functionName
+        }
+        if (data.functionName === 'admin-mint') {
+          callData.functionArgs = [standardPrincipalCV(data.recipient), uintCV(data.nftIndex)]
+        } else {
+          callData.functionArgs = getAdminMintManyArgs(data)
         }
         const methos = (configuration.network === 'local') ? 'rpayStacksStore/callContractRisidio' : 'rpayStacksStore/callContractBlockstack'
         dispatch((data.methos || methos), callData, { root: true }).then((result) => {
