@@ -49,8 +49,8 @@ const getAdminMintManyArgs = function (data) {
   for (let i = 0; i < data.entries.length; i++) {
     const entry = data.entries[i]
     const tupCV = tupleCV({
-      account: standardPrincipalCV(entry.recipient),
-      limit: uintCV(entry.nftIndex)
+      recipient: standardPrincipalCV(entry.recipient),
+      nftIndex: uintCV(entry.nftIndex)
     })
     entryList.push(tupCV)
   }
