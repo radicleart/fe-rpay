@@ -286,6 +286,7 @@ const utils = {
   },
   resolvePrincipalsTokens: function (network, tokens, sipTenTokens) {
     const resolvedTokens = []
+    if (!tokens) return resolvedTokens
     tokens.forEach((token) => {
       resolvedTokens.push(this.resolvePrincipalsToken(network, token, sipTenTokens))
     })
@@ -296,6 +297,7 @@ const utils = {
     return gaiaAsset
   },
   resolvePrincipalsGaiaTokens: function (network, gaiaAssets, sipTenTokens) {
+    if (!gaiaAssets) return null
     gaiaAssets.forEach((gaiaAsset) => {
       gaiaAsset.contractAsset = this.resolvePrincipalsToken(network, gaiaAsset.contractAsset, sipTenTokens)
     })
@@ -310,6 +312,7 @@ const utils = {
     }
   },
   resolvePrincipalsToken: function (network, token, sipTenTokens) {
+    if (!token) return null
     token.owner = this.convertAddressInt(network, token.owner)
     token.tokenInfo.editionCost = this.fromMicroAmount(token.tokenInfo.editionCost)
     if (token.offerHistory) {
