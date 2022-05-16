@@ -595,6 +595,31 @@ const rpayStacksContractStore = {
         })
       })
     },
+    fetchMyTokensSip013 ({ rootGetters }, data) {
+      return new Promise((resolve, reject) => {
+        const configuration = rootGetters['rpayStore/getConfiguration']
+        let uri = configuration.risidioBaseApi
+        uri += '/mesh/v2'
+        // if (data.runKey && !data.contractId) uri += '/my-tokens/' + data.runKey
+        if (data.contractId) uri += '/my-tokens-by-contract/' + data.contractId
+        else uri += '/my-tokens'
+        uri += '/' + data.stxAddress
+        uri += '/' + data.page
+        uri += '/' + data.pageSize
+        if (data.query) uri += data.query
+        const authHeaders = rootGetters[APP_CONSTANTS.KEY_AUTH_HEADERS]
+        axios.get(uri, authHeaders).then((response) => {
+          const gaiaAssets = utils.resolvePrincipalsGaiaTokens(configuration.network, response.data.tokens, rootGetters['rpayMarketGenFungStore/getSipTenTokens'])
+          const result = {
+            gaiaAssets: gaiaAssets,
+            tokenCount: response.data.tokenCount
+          }
+          resolve(result)
+        }).catch((error) => {
+          reject(error)
+        })
+      })
+    },
     fetchTokenByContractIdAndNftIndex ({ commit, rootGetters }, data) {
       return new Promise((resolve, reject) => {
         const configuration = rootGetters['rpayStore/getConfiguration']
