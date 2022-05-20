@@ -577,8 +577,12 @@ const rpayStacksContractStore = {
         // if (data.runKey && !data.contractId) uri += '/my-tokens/' + data.runKey
         if (data.contractId) uri += '/my-tokens-by-contract/' + data.contractId
         else uri += '/my-tokens'
-        const b32Address = utils.convertAddressFrom(data.stxAddress)
-        uri += '/' + b32Address[1]
+        if (data.type && data.type === 'SIP-013') {
+          uri += '/' + data.stxAddress
+        } else {
+          const b32Address = utils.convertAddressFrom(data.stxAddress)
+          uri += '/' + b32Address[1]
+        }
         uri += '/' + data.page
         uri += '/' + data.pageSize
         if (data.query) uri += data.query

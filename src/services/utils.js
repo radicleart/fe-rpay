@@ -22,7 +22,6 @@ const utils = {
   },
   convertAddressFrom: function (stxAddress) {
     if (!stxAddress) return '?'
-    if (stxAddress.startsWith('S')) return stxAddress
     const decoded = c32addressDecode(stxAddress)
     return decoded
   },
